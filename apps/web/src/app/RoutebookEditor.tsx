@@ -239,6 +239,9 @@ export function RoutebookEditor() {
 
     async function loadAccountTrips() {
       const sessionResponse = await fetch("/auth/session", { credentials: "include" });
+      if (!sessionResponse.ok) {
+        return;
+      }
       const session = (await sessionResponse.json()) as { user?: SessionUser | null };
       if (!session.user) {
         return;
