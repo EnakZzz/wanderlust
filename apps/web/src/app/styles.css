@@ -94,7 +94,7 @@ label span {
   color: #fff8ee;
 }
 
-.brand, .nav-actions, .hero-buttons, .rail-item, .panel-heading, .billing-band, .ticket-row, .save-button, .add-button, .sync-card, .auth-panel, .provider-button, .signed-in form, .new-trip-button {
+.brand, .nav-actions, .hero-buttons, .rail-item, .panel-heading, .billing-band, .ticket-row, .save-button, .sample-button, .add-button, .sync-card, .auth-panel, .provider-button, .signed-in form, .new-trip-button {
   display: flex;
   align-items: center;
 }
@@ -349,7 +349,7 @@ h3 { font-size: 22px; }
   font-size: clamp(24px, 3vw, 38px);
   min-height: 58px;
 }
-.save-button, .add-button, .delete-button {
+.save-button, .sample-button, .add-button, .delete-button {
   border: 0;
   border-radius: 8px;
   cursor: pointer;
@@ -362,6 +362,45 @@ h3 { font-size: 22px; }
   gap: 8px;
   background: var(--ink);
   color: #fff8ee;
+}
+.sample-button {
+  min-height: 46px;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  background: #f3e7d9;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+.plan-home {
+  min-height: 420px;
+  display: grid;
+  align-content: center;
+  gap: 22px;
+  padding: clamp(22px, 4vw, 42px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 250, 242, 0.96), rgba(239, 230, 216, 0.84)),
+    repeating-linear-gradient(45deg, rgba(148,111,71,0.08) 0 12px, transparent 12px 24px);
+}
+.plan-home h3 {
+  font-size: clamp(32px, 4vw, 48px);
+}
+.plan-home p:not(.eyebrow) {
+  max-width: 620px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.45;
+}
+.plan-home-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.plan-home-actions .save-button {
+  padding: 0 16px;
 }
 .module-heading {
   margin: -6px 0 18px;
@@ -597,6 +636,27 @@ h3 { font-size: 22px; }
   color: var(--muted);
   line-height: 1.35;
 }
+.plan-summary-card {
+  min-height: 220px;
+  display: grid;
+  align-content: end;
+  gap: 6px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(30deg, rgba(71,104,120,0.18), rgba(148,111,71,0.16)),
+    #fffaf2;
+}
+.plan-summary-card strong {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 64px;
+  line-height: 0.9;
+}
+.plan-summary-card span {
+  color: var(--muted);
+  font-weight: 900;
+}
 .map-card {
   min-height: 310px;
   border-radius: 8px;
@@ -668,6 +728,7 @@ h3 { font-size: 22px; }
   .rail { grid-template-columns: repeat(3, 1fr); }
   .trip-library, .trip-card-grid { grid-template-columns: 1fr; }
   .new-trip-button { width: 100%; justify-content: center; }
+  .plan-home-actions { display: grid; }
   .editor-heading, .title-fields, .day-editor, .editable-item { grid-template-columns: 1fr; }
   .place-row, .map-editor, .ticket-row-editor, .check-row { grid-template-columns: 1fr; }
   .ticket-row-editor svg { margin-bottom: 0; }

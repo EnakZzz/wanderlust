@@ -69,11 +69,6 @@ async function listTrips(request: Request, env: AuthEnv): Promise<Response> {
     .bind(auth.ownerId)
     .all<TripRow>();
 
-  if (result.results.length === 0) {
-    const trip = await createDefaultTrip(auth.db, auth.ownerId);
-    return json({ trips: [trip] });
-  }
-
   return json({ trips: result.results.map(rowToTripSummary) });
 }
 
@@ -96,50 +91,6 @@ async function createTrip(request: Request, env: AuthEnv): Promise<Response> {
     .run();
 
   return json({ trip: JSON.parse(payload) }, 201);
-}
-
-async function createDefaultTrip(db: D1Database, ownerId: string): Promise<TripSummary> {
-  const id = `trip_${crypto.randomUUID()}`;
-  const startDate = new Date().toISOString().slice(0, 10);
-  const draft = {
-    id,
-    title: "New routebook",
-    destination: "New destination",
-    startDate,
-    endDate: startDate,
-    status: "draft" as const,
-    days: [
-      {
-        id: `${id}-${startDate}`,
-        tripId: id,
-        date: startDate,
-        title: "Day 1",
-        sortOrder: 0,
-        items: []
-      }
-    ],
-    places: [],
-    tickets: [],
-    checklist: [{ id: `check_${crypto.randomUUID()}`, title: "Confirm passport and entry requirements", done: false }]
-  };
-  const payload = JSON.stringify(draft);
-
-  await db.prepare(
-    `INSERT INTO trips (id, owner_id, title, destination, status, payload, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
-  )
-    .bind(id, ownerId, draft.title, draft.destination, draft.status, payload)
-    .run();
-
-  return {
-    id,
-    title: draft.title,
-    destination: draft.destination,
-    status: draft.status,
-    startDate: draft.startDate,
-    endDate: draft.endDate,
-    updatedAt: new Date().toISOString()
-  };
 }
 
 function rowToTripSummary(row: TripRow): TripSummary {

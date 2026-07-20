@@ -255,39 +255,7 @@ export function RoutebookEditor() {
       }
 
       setUser(session.user);
-      setIsSyncing(true);
-      if (tripsPayload.trips[0]) {
-        setTrips(tripsPayload.trips);
-        await loadTrip(tripsPayload.trips[0].id);
-        setIsSyncing(false);
-        return;
-      }
-
-      const importedDraft = rehomeTripDraft(readLocalDraft());
-      const createResponse = await fetch("/api/trips", {
-        method: "POST",
-        credentials: "include",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(importedDraft)
-      });
-      if (!createResponse.ok) {
-        throw new Error("Could not create first account trip");
-      }
-      const createPayload = (await createResponse.json()) as { trip: TripDraft };
-      const createdTrip = hydrateDraft(createPayload.trip);
-      setDraft(createdTrip);
-      setSelectedDayId(createdTrip.days[0]?.id ?? initialDraft.days[0]!.id);
-      setTrips([
-        {
-          id: createdTrip.id,
-          title: createdTrip.title,
-          destination: createdTrip.destination,
-          status: createdTrip.status,
-          startDate: createdTrip.startDate,
-          endDate: createdTrip.endDate,
-          updatedAt: new Date().toISOString()
-        }
-      ]);
+      setTrips(tripsPayload.trips);
       setIsSaved(true);
       setIsSyncing(false);
     }
@@ -322,6 +290,7 @@ export function RoutebookEditor() {
   );
 
   const isAccountTripPersisted = Boolean(user && trips.some((trip) => trip.id === draft.id));
+  const showPlanHome = Boolean(user && !isAccountTripPersisted);
   const itemCount = draft.days.reduce((count, day) => count + day.items.length, 0);
   const doneCount = draft.checklist.filter((item) => item.done).length;
 
@@ -441,6 +410,40 @@ export function RoutebookEditor() {
     }
   }
 
+  async function importKyotoSample() {
+    if (!user) {
+      setDraft(initialDraft);
+      setSelectedDayId(initialDraft.days[0]!.id);
+      setIsSaved(false);
+      return;
+    }
+
+    const nextDraft = rehomeTripDraft(initialDraft);
+    setIsSyncing(true);
+    setSyncError(null);
+    try {
+      const response = await fetch("/api/trips", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(nextDraft)
+      });
+      if (!response.ok) {
+        throw new Error("Could not import sample trip");
+      }
+      const payload = (await response.json()) as { trip: TripDraft };
+      const hydrated = hydrateDraft(payload.trip);
+      setDraft(hydrated);
+      setSelectedDayId(hydrated.days[0]?.id ?? initialDraft.days[0]!.id);
+      setIsSaved(true);
+      await refreshTrips();
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : "Could not import sample trip");
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+
   async function saveDraft() {
     setSyncError(null);
     if (!user) {
@@ -529,19 +532,26 @@ export function RoutebookEditor() {
   return (
     <section id="editor" className="workspace">
       <aside className="rail" aria-label="Trip sections">
-        {modules.map((module) => (
-          <button
-            key={module.title}
-            className={activeModule === module.id ? "rail-item active" : "rail-item"}
-            type="button"
-            title={module.copy}
-            aria-pressed={activeModule === module.id}
-            onClick={() => setActiveModule(module.id)}
-          >
-            <module.icon size={18} />
-            <span>{module.title}</span>
+        {showPlanHome ? (
+          <button className="rail-item active" type="button" title="Account plans" aria-pressed="true">
+            <FolderOpen size={18} />
+            <span>Plans</span>
           </button>
-        ))}
+        ) : (
+          modules.map((module) => (
+            <button
+              key={module.title}
+              className={activeModule === module.id ? "rail-item active" : "rail-item"}
+              type="button"
+              title={module.copy}
+              aria-pressed={activeModule === module.id}
+              onClick={() => setActiveModule(module.id)}
+            >
+              <module.icon size={18} />
+              <span>{module.title}</span>
+            </button>
+          ))
+        )}
       </aside>
 
       <div className="panel itinerary-panel">
@@ -568,13 +578,35 @@ export function RoutebookEditor() {
                   <small>{trip.startDate && trip.endDate ? `${trip.startDate} - ${trip.endDate}` : trip.status}</small>
                 </button>
               ))}
-              {trips.length === 0 ? <div className="empty-trip-card">{isSyncing ? "Creating your first synced trip..." : "No synced trips yet."}</div> : null}
+              {trips.length === 0 ? <div className="empty-trip-card">{isSyncing ? "Syncing plans..." : "No plans yet. Create a plan to start."}</div> : null}
             </div>
           ) : (
             <div className="local-trip-note">Google 登录后，这里会显示当前账号自己的旅行列表；保存会写入 Cloudflare D1。</div>
           )}
         </div>
 
+        {showPlanHome ? (
+          <div className="plan-home">
+            <div>
+              <p className="eyebrow">Plan library</p>
+              <h3>{trips.length > 0 ? "Choose a plan to edit" : "Create your first plan"}</h3>
+              <p>
+                Your account opens to the plans list. Kyoto is only a reference sample and will not be saved unless you add it.
+              </p>
+            </div>
+            <div className="plan-home-actions">
+              <button className="save-button" type="button" onClick={createSyncedTrip}>
+                <Plus size={18} />
+                <span>Create plan</span>
+              </button>
+              <button className="sample-button" type="button" onClick={importKyotoSample}>
+                <Sparkles size={18} />
+                <span>Add Kyoto sample</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
         <div className="panel-heading editor-heading">
           <div className="title-fields">
             <label>
@@ -765,6 +797,8 @@ export function RoutebookEditor() {
             </button>
           </div>
         ) : null}
+          </>
+        )}
       </div>
 
       <div className="panel side-panel">
@@ -772,7 +806,9 @@ export function RoutebookEditor() {
           <Sparkles size={19} />
           <div>
             <strong>
-              {user
+              {showPlanHome
+                ? "Select or create a plan"
+                : user
                 ? isAccountTripPersisted && isSaved
                   ? "Account trip saved"
                   : "Unsaved account changes"
@@ -781,7 +817,9 @@ export function RoutebookEditor() {
                   : "Unsaved local changes"}
             </strong>
             <span>
-              {user
+              {showPlanHome
+                ? "Plans are stored separately under your signed-in account."
+                : user
                 ? isAccountTripPersisted
                   ? "This trip is stored under the signed-in account."
                   : "This trip will be added to the signed-in account on save."
@@ -789,18 +827,27 @@ export function RoutebookEditor() {
             </span>
           </div>
         </div>
-        <div className="map-card">
-          <div className="pin one" />
-          <div className="pin two" />
-          <div className="pin three" />
-          <span>{draft.destination} planning map</span>
-        </div>
-        <div className="quick-grid">
-          <div><strong>{draft.days.length}</strong><span>days</span></div>
-          <div><strong>{itemCount}</strong><span>items</span></div>
-          <div><strong>{draft.tickets.length}</strong><span>offline files</span></div>
-          <div><strong>{doneCount}/{draft.checklist.length}</strong><span>checks</span></div>
-        </div>
+        {showPlanHome ? (
+          <div className="plan-summary-card">
+            <strong>{trips.length}</strong>
+            <span>{trips.length === 1 ? "plan in this account" : "plans in this account"}</span>
+          </div>
+        ) : (
+          <>
+            <div className="map-card">
+              <div className="pin one" />
+              <div className="pin two" />
+              <div className="pin three" />
+              <span>{draft.destination} planning map</span>
+            </div>
+            <div className="quick-grid">
+              <div><strong>{draft.days.length}</strong><span>days</span></div>
+              <div><strong>{itemCount}</strong><span>items</span></div>
+              <div><strong>{draft.tickets.length}</strong><span>offline files</span></div>
+              <div><strong>{doneCount}/{draft.checklist.length}</strong><span>checks</span></div>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
