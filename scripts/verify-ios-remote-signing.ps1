@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 
 $remoteScript = @'
 set -e
-export PATH=/usr/local/opt/node@22/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
+export PATH=$HOME/.local/node/bin:/usr/local/opt/node@22/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 
 bundle_id="__BUNDLE_IDENTIFIER__"
 profiles_dir="$HOME/Library/MobileDevice/Provisioning Profiles"

@@ -52,7 +52,7 @@ finally {
 
 $remoteScript = @'
 set -e
-export PATH=/usr/local/opt/node@22/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
+export PATH=$HOME/.local/node/bin:/usr/local/opt/node@22/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 
 remote_dir="__REMOTE_DIR__"
 archive="__REMOTE_ARCHIVE__"

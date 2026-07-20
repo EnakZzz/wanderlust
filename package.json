@@ -26,7 +26,7 @@
     "verify:ios:signing": "powershell -ExecutionPolicy Bypass -File scripts/verify-ios-remote-signing.ps1",
     "verify:ios:ipa": "powershell -ExecutionPolicy Bypass -File scripts/verify-ios-ipa.ps1",
     "verify:store": "powershell -ExecutionPolicy Bypass -File scripts/verify-store-readiness.ps1",
-    "ios:remote:check": "ssh ios-build \"xcodebuild -version && sw_vers -productVersion\""
+    "ios:remote:check": "ssh ios-build \"hostname && sw_vers -productVersion && xcodebuild -version\""
   },
   "devDependencies": {
     "typescript": "^5.8.3"

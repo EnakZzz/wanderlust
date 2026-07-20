@@ -11,7 +11,7 @@ $remoteIpa = "/tmp/wanderlust-ios-export/WanderlustPlanner.ipa"
 
 $preflightScript = @'
 set -e
-export PATH=/usr/local/opt/node@22/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
+export PATH=$HOME/.local/node/bin:/usr/local/opt/node@22/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
@@ -33,9 +33,9 @@ if [ "$XCODE_MAJOR" -lt 16 ] || { [ "$XCODE_MAJOR" -eq 16 ] && [ "$XCODE_MINOR" 
   exit 12
 fi
 
-if [ "$XCODE_MAJOR" -lt 26 ]; then
-  echo "This build host has Xcode $XCODE_VERSION. App Store uploads after 2026-04-28 require Xcode 26 or later." >&2
-  echo "Remote host needs enough free disk space plus Apple Developer/fastlane authentication for Xcode 26 installation." >&2
+if [ "${IOS_REQUIRE_XCODE_26:-0}" = "1" ] && [ "$XCODE_MAJOR" -lt 26 ]; then
+  echo "This build host has Xcode $XCODE_VERSION. App Store upload mode requires Xcode 26 or later." >&2
+  echo "Run npm run prepare:ios:remote with IOS_XCODE_VERSION set when App Store upload signing is ready." >&2
   exit 13
 fi
 '@
@@ -60,7 +60,7 @@ if ($LASTEXITCODE -ne 0) {
 
 $remoteScript = @'
 set -e
-export PATH=/usr/local/opt/node@22/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+export PATH=$HOME/.local/node/bin:/usr/local/opt/node@22/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
@@ -82,9 +82,9 @@ if [ "$XCODE_MAJOR" -lt 16 ] || { [ "$XCODE_MAJOR" -eq 16 ] && [ "$XCODE_MINOR" 
   exit 12
 fi
 
-if [ "$XCODE_MAJOR" -lt 26 ]; then
-  echo "This build host has Xcode $XCODE_VERSION. App Store uploads after 2026-04-28 require Xcode 26 or later." >&2
-  echo "Remote host needs enough free disk space plus Apple Developer/fastlane authentication for Xcode 26 installation." >&2
+if [ "${IOS_REQUIRE_XCODE_26:-0}" = "1" ] && [ "$XCODE_MAJOR" -lt 26 ]; then
+  echo "This build host has Xcode $XCODE_VERSION. App Store upload mode requires Xcode 26 or later." >&2
+  echo "Run npm run prepare:ios:remote with IOS_XCODE_VERSION set when App Store upload signing is ready." >&2
   exit 13
 fi
 

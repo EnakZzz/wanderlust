@@ -40,7 +40,7 @@ See `AGENTS.md` for the full deployment workflow and required Cloudflare secrets
 
 ## iOS Build Host
 
-Remote host:
+Remote host alias:
 
 ```powershell
 ssh ios-build
@@ -64,13 +64,21 @@ Signing diagnostic command:
 npm run verify:ios:signing
 ```
 
-Current blockers:
+Current remote host:
 
-- `ios-build` has Xcode 15.4 as its newest usable Xcode. React Native 0.86 requires Xcode >= 16.1, and App Store uploads after 2026-04-28 require Xcode 26 or later.
-- The remote keychain has a valid `iPhone Distribution: Happy Elements Technology (Beijing) Limited` identity, but no provisioning profile currently matches `com.happyelements.wanderlust`.
+- `ios-build` points to `happyelement@10.160.102.177` on this machine.
+- Hostname: `LX-0101000065`
+- macOS: 15.0.1
+- Xcode: 16.2
+- Node 22 is installed under `~/.local/node` on the remote host.
+
+Current blockers for signed IPA / App Store packaging:
+
+- The remote keychain currently has no valid Apple/iPhone Distribution signing identity.
+- No provisioning profile currently matches `com.happyelements.wanderlust`.
 - No detectable Xcode account or App Store Connect API key is configured for automatic provisioning.
 
-Upgrade the remote build host to Xcode 26, then install a matching App Store provisioning profile or configure automatic provisioning credentials before expecting an IPA suitable for App Store submission.
+Install a valid distribution certificate plus matching provisioning profile, or configure Xcode/App Store Connect credentials for automatic provisioning before expecting a signed IPA suitable for submission.
 
 EAS fallback is configured in `apps/mobile/eas.json`, but it still requires an Expo account plus Apple/Google store credentials before it can produce signed store artifacts.
 

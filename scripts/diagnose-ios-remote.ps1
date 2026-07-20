@@ -4,7 +4,7 @@ $remote = if ($env:IOS_BUILD_HOST) { $env:IOS_BUILD_HOST } else { "ios-build" }
 
 $script = @'
 set -e
-export PATH=/usr/local/opt/node@22/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+export PATH=$HOME/.local/node/bin:/usr/local/opt/node@22/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 echo "host=$(hostname)"
 echo "macos=$(sw_vers -productVersion)"
 echo "xcode=$(xcodebuild -version | tr "\n" " ")"
