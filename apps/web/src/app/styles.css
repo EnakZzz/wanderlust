@@ -100,7 +100,7 @@ label span {
   color: #fff8ee;
 }
 
-.brand, .nav-actions, .hero-buttons, .rail-item, .panel-heading, .billing-band, .ticket-row, .save-button, .sample-button, .add-button, .sync-card, .auth-panel, .provider-button, .signed-in form, .new-trip-button {
+.brand, .nav-actions, .hero-buttons, .rail-item, .panel-heading, .billing-band, .ticket-row, .save-button, .sample-button, .add-button, .auth-panel, .provider-button, .signed-in form, .new-trip-button {
   display: flex;
   align-items: center;
 }
@@ -290,15 +290,16 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .new-trip-button {
   align-self: end;
-  min-height: 44px;
-  gap: 8px;
+  width: 44px;
+  height: 44px;
+  justify-content: center;
   border: 0;
   border-radius: 999px;
-  padding: 0 14px;
+  padding: 0;
   background: var(--ink);
   color: #fff8ee;
   cursor: pointer;
-  font-weight: 900;
+  flex: 0 0 auto;
 }
 .trip-card-grid {
   grid-column: 1 / -1;
@@ -641,28 +642,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   text-transform: uppercase;
 }
 
-.side-panel { display: grid; gap: 18px; }
-.sync-card {
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--surface);
-}
-.sync-card svg {
-  flex: 0 0 auto;
-  color: var(--accent);
-}
-.sync-card strong, .sync-card span {
-  display: block;
-}
-.sync-card strong {
-  margin-bottom: 2px;
-}
-.sync-card span {
-  color: var(--muted);
-  line-height: 1.35;
-}
+.side-panel { display: grid; align-content: start; gap: 18px; }
 .plan-summary-card {
   min-height: 220px;
   display: grid;
@@ -760,7 +740,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .rail-item { min-width: 64px; min-height: 50px; }
   .rail-item span { font-size: 9px; letter-spacing: 0.06em; }
   .trip-library, .trip-card-grid { grid-template-columns: 1fr; }
-  .new-trip-button { width: 100%; justify-content: center; }
+  .new-trip-button { justify-self: start; }
   .plan-home-actions { display: grid; }
   .editor-heading, .title-fields, .day-editor, .editable-item { grid-template-columns: 1fr; }
   .place-row, .map-editor, .ticket-row-editor, .check-row { grid-template-columns: 1fr; }

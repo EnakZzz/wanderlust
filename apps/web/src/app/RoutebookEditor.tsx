@@ -563,9 +563,8 @@ export function RoutebookEditor() {
             <p className="eyebrow">{user ? "Account trips" : "Local draft"}</p>
             <h2>{user ? "Your routebooks" : "Sign in to sync trips"}</h2>
           </div>
-          <button className="new-trip-button" type="button" onClick={createSyncedTrip}>
-            <FolderOpen size={18} />
-            <span>New trip</span>
+          <button className="new-trip-button" type="button" onClick={createSyncedTrip} title="New trip" aria-label="New trip">
+            <Plus size={20} />
           </button>
           {user ? (
             <div className="trip-card-grid">
@@ -805,31 +804,6 @@ export function RoutebookEditor() {
       </div>
 
       <div className="panel side-panel">
-        <div className="sync-card">
-          <Sparkles size={19} />
-          <div>
-            <strong>
-              {showPlanHome
-                ? "Select or create a plan"
-                : user
-                ? isAccountTripPersisted && isSaved
-                  ? "Account trip saved"
-                  : "Unsaved account changes"
-                : isSaved
-                  ? "Local draft saved"
-                  : "Unsaved local changes"}
-            </strong>
-            <span>
-              {showPlanHome
-                ? "Plans are stored separately under your signed-in account."
-                : user
-                ? isAccountTripPersisted
-                  ? "This trip is stored under the signed-in account."
-                  : "This trip will be added to the signed-in account on save."
-                : "Sign in with Google to separate and sync trips by account."}
-            </span>
-          </div>
-        </div>
         {showPlanHome ? (
           <div className="plan-summary-card">
             <strong>{trips.length}</strong>
