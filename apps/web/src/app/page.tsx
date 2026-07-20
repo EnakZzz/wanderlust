@@ -4,11 +4,8 @@ import {
   Share2,
   Ticket
 } from "lucide-react";
-import { buildMapsUrl } from "@wanderlust/domain";
 import { AuthPanel } from "./AuthPanel";
 import { RoutebookEditor } from "./RoutebookEditor";
-
-const navUrl = buildMapsUrl({ latitude: 34.9671, longitude: 135.7727, label: "Fushimi Inari" }, "google");
 
 export default function HomePage() {
   return (
@@ -18,7 +15,7 @@ export default function HomePage() {
         <nav className="topbar" aria-label="Primary">
           <div className="brand"><Plane size={18} /> Wanderlust</div>
           <div className="nav-actions">
-            <a href="#editor">Editor</a>
+            <a href="#editor">Plans</a>
             <a href="#mobile">Mobile</a>
             <a href="#billing">Pro</a>
           </div>
@@ -26,13 +23,13 @@ export default function HomePage() {
         </nav>
         <div className="hero-copy">
           <p className="eyebrow">Web planner + offline travel app</p>
-          <h1>Kyoto Autumn Routebook</h1>
+          <h1>Your travel plans, ready on the road</h1>
           <p>
-            Turn research into a structured routebook before departure, then use the exact plan offline from iOS and Android.
+            Build each trip as a routebook before departure, then carry the same plan, tickets, places, and checklists on mobile while traveling.
           </p>
           <div className="hero-buttons">
-            <a className="primary" href="#editor">Open web editor</a>
-            <a className="secondary" href={navUrl}>Preview navigation</a>
+            <a className="primary" href="#editor">View plans</a>
+            <a className="secondary" href="#mobile">See mobile mode</a>
           </div>
         </div>
       </section>
