@@ -1,0 +1,28 @@
+{
+  "name": "@wanderlust/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "deploy": "powershell -ExecutionPolicy Bypass -File ../../scripts/deploy-cloudflare-web.ps1",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@wanderlust/domain": "0.1.0",
+    "lucide-react": "^0.546.0",
+    "next": "^16.2.10",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260719.1",
+    "@types/node": "^22.19.2",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.1.18",
+    "wrangler": "^4.112.0"
+  }
+}

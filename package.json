@@ -1,0 +1,34 @@
+{
+  "name": "wanderlust",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run build -w @wanderlust/web",
+    "android": "npm run android -w @wanderlust/mobile",
+    "deploy:server": "powershell -ExecutionPolicy Bypass -File scripts/deploy-cloudflare-worker.ps1",
+    "deploy:web": "powershell -ExecutionPolicy Bypass -File scripts/deploy-cloudflare-web.ps1",
+    "migrate:server": "powershell -ExecutionPolicy Bypass -File scripts/migrate-cloudflare-d1.ps1",
+    "build:android:apk": "powershell -ExecutionPolicy Bypass -File scripts/build-android-apk.ps1",
+    "build:android:aab": "powershell -ExecutionPolicy Bypass -File scripts/build-android-aab.ps1",
+    "build:android:release": "powershell -ExecutionPolicy Bypass -File scripts/build-android-release-artifacts.ps1",
+    "build:ios:remote": "powershell -ExecutionPolicy Bypass -File scripts/build-ios-remote.ps1",
+    "diagnose:ios:remote": "powershell -ExecutionPolicy Bypass -File scripts/diagnose-ios-remote.ps1",
+    "prepare:ios:remote": "powershell -ExecutionPolicy Bypass -File scripts/prepare-ios-remote-xcode.ps1",
+    "sync:ios:remote": "powershell -ExecutionPolicy Bypass -File scripts/sync-ios-remote.ps1",
+    "verify:android:aab": "powershell -ExecutionPolicy Bypass -File scripts/verify-android-aab.ps1",
+    "verify:cloudflare": "powershell -ExecutionPolicy Bypass -File scripts/verify-cloudflare-deployment.ps1",
+    "verify:ios:signing": "powershell -ExecutionPolicy Bypass -File scripts/verify-ios-remote-signing.ps1",
+    "verify:ios:ipa": "powershell -ExecutionPolicy Bypass -File scripts/verify-ios-ipa.ps1",
+    "verify:store": "powershell -ExecutionPolicy Bypass -File scripts/verify-store-readiness.ps1",
+    "ios:remote:check": "ssh ios-build \"xcodebuild -version && sw_vers -productVersion\""
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

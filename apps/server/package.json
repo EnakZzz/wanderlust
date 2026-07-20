@@ -1,0 +1,21 @@
+{
+  "name": "@wanderlust/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/worker.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "@wanderlust/domain": "0.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260719.1",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.112.0"
+  }
+}

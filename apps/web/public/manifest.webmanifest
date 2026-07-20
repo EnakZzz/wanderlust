@@ -1,0 +1,9 @@
+{
+  "name": "Wanderlust Planner",
+  "short_name": "Wanderlust",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbf8f1",
+  "theme_color": "#946f47",
+  "icons": []
+}

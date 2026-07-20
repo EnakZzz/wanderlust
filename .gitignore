@@ -1,0 +1,38 @@
+node_modules/
+.wrangler/
+-
+
+# Web
+apps/web/.next/
+apps/web/out/
+
+# Expo / React Native
+apps/mobile/.expo/
+apps/mobile/dist/
+apps/mobile/web-build/
+apps/mobile/expo-env.d.ts
+apps/mobile/ios/
+apps/mobile/android/
+apps/mobile/*.tsbuildinfo
+
+# Build outputs
+*.apk
+*.aab
+*.ipa
+*.xcarchive
+
+# Environment
+.env
+.env.*
+!.env.example
+.deploy.local.ps1
+apps/web/*.tsbuildinfo
+
+# Local Cloudflare deployment config generated from .deploy.local.ps1
+apps/web/wrangler.toml
+apps/server/wrangler.jsonc
+
+# OS / tooling
+.DS_Store
+Thumbs.db
+*.log

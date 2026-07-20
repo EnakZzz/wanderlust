@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Wanderlust Planner",
+    "slug": "wanderlust-planner",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "wanderlust",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.happyelements.wanderlust",
+      "buildNumber": "1",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Wanderlust uses your location to help open navigation to saved trip places.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.happyelements.wanderlust",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#FBF8F1",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "apiBaseUrl": "https://wanderlust-web.pages.dev"
+    },
+    "plugins": [
+      "expo-apple-authentication"
+    ]
+  }
+}
