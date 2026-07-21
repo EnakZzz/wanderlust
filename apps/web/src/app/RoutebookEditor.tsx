@@ -259,6 +259,19 @@ function rehomeTripDraft(draft: TripDraft): TripDraft {
   });
 }
 
+function formatTripSummaryLine(trip: TripSummary): string {
+  const dates = trip.startDate && trip.endDate ? `${trip.startDate} - ${trip.endDate}` : "Dates not set";
+  const dayCount = trip.dayCount || 0;
+  const placeCount = trip.placeCount || 0;
+  const bookingCount = trip.bookingCount || 0;
+  return [
+    dates,
+    `${dayCount} ${dayCount === 1 ? "day" : "days"}`,
+    `${placeCount} ${placeCount === 1 ? "place" : "places"}`,
+    `${bookingCount} ${bookingCount === 1 ? "booking" : "bookings"}`
+  ].join(" · ");
+}
+
 function readLocalDraft(): TripDraft {
   const saved = window.localStorage.getItem(storageKey);
   if (!saved) return sampleTrip;
@@ -589,6 +602,7 @@ export function RoutebookEditor() {
   const [activeModule, setActiveModule] = useState<EditorModule>("itinerary");
   const [isSaved, setIsSaved] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [deletingTripId, setDeletingTripId] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [placeSearch, setPlaceSearch] = useState("");
   const [googleImportText, setGoogleImportText] = useState("");
@@ -799,6 +813,35 @@ export function RoutebookEditor() {
       setSyncError(error instanceof Error ? error.message : "Could not open trip");
     } finally {
       setIsSyncing(false);
+    }
+  }
+
+  async function deleteTrip(trip: TripSummary) {
+    if (!user || deletingTripId) return;
+    const confirmed = window.confirm(`Delete "${trip.title}"? This will remove the routebook and its attached files from your account.`);
+    if (!confirmed) return;
+
+    setDeletingTripId(trip.id);
+    setSyncError(null);
+    try {
+      const response = await fetch(`/api/trips/${encodeURIComponent(trip.id)}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      if (!response.ok) throw new Error("Could not delete trip");
+
+      const nextTrips = trips.filter((item) => item.id !== trip.id);
+      setTrips(nextTrips);
+      if (draft.id === trip.id) {
+        const blank = createBlankTripDraft();
+        setDraft(blank);
+        setSelectedDayId(blank.days[0]?.id ?? sampleTrip.days[0]!.id);
+        setIsSaved(true);
+      }
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : "Could not delete trip");
+    } finally {
+      setDeletingTripId(null);
     }
   }
 
@@ -1095,11 +1138,31 @@ export function RoutebookEditor() {
           {user ? (
             <div className="trip-card-grid">
               {trips.map((trip) => (
-                <button key={trip.id} className={trip.id === draft.id ? "trip-card active" : "trip-card"} type="button" onClick={() => loadTrip(trip.id)}>
-                  <strong>{trip.title}</strong>
-                  <span>{trip.destination}</span>
-                  <small>{trip.startDate && trip.endDate ? `${trip.startDate} - ${trip.endDate}` : trip.status}</small>
-                </button>
+                <article key={trip.id} className={trip.id === draft.id ? "trip-card active" : "trip-card"}>
+                  <button className="trip-card-open" type="button" onClick={() => loadTrip(trip.id)}>
+                    <span className="trip-card-icon" aria-hidden="true">
+                      <MapPin size={22} />
+                    </span>
+                    <span className="trip-card-copy">
+                      <strong>{trip.title}</strong>
+                      <span>{trip.destination}</span>
+                      <small>{formatTripSummaryLine(trip)}</small>
+                    </span>
+                  </button>
+                  <div className="trip-card-footer">
+                    <span>{trip.status}</span>
+                    <button
+                      className="trip-delete-button"
+                      type="button"
+                      onClick={() => deleteTrip(trip)}
+                      disabled={deletingTripId === trip.id}
+                      title="Delete routebook"
+                      aria-label={`Delete ${trip.title}`}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </article>
               ))}
               {trips.length === 0 ? <div className="empty-trip-card">{isSyncing ? "Syncing plans..." : "No plans yet. Create a plan to start."}</div> : null}
             </div>

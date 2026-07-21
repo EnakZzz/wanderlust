@@ -46,6 +46,9 @@ export type TripSummary = {
   status: "draft" | "active" | "archived";
   startDate?: string;
   endDate?: string;
+  dayCount: number;
+  placeCount: number;
+  bookingCount: number;
   updatedAt: string;
 };
 

@@ -235,11 +235,11 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .secondary { color: #fff8ee; backdrop-filter: blur(12px); }
 
 .workspace {
-  width: min(1180px, calc(100% - clamp(28px, 7vw, 96px)));
+  width: min(1520px, calc(100% - clamp(28px, 6vw, 112px)));
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-  gap: 22px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  gap: clamp(22px, 2vw, 34px);
   padding: clamp(32px, 6vw, 64px) 0;
 }
 .workspace > *, .panel {
@@ -315,49 +315,144 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .trip-card-grid {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(3, minmax(160px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
 }
 .trip-card, .empty-trip-card, .local-trip-note {
-  min-height: 106px;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--surface);
   color: var(--ink);
-  padding: 14px;
   text-align: left;
 }
 .trip-card {
-  cursor: pointer;
+  min-height: 156px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  overflow: hidden;
+  position: relative;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.trip-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 84% 18%, rgba(111, 123, 102, 0.18), transparent 30%),
+    linear-gradient(135deg, rgba(255, 248, 238, 0.72), rgba(255, 255, 255, 0));
+}
+.trip-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 14px 34px rgba(45, 45, 45, 0.07);
+  transform: translateY(-1px);
 }
 .trip-card.active {
   border-color: var(--accent);
   box-shadow: 0 8px 24px rgba(139, 115, 91, 0.12);
 }
-.trip-card strong, .trip-card span, .trip-card small {
+.trip-card-open {
+  position: relative;
+  z-index: 1;
+  min-height: 112px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 13px;
+  align-items: start;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 16px 16px 8px;
+  text-align: left;
+  cursor: pointer;
+}
+.trip-card-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  color: #fff8ee;
+  background:
+    linear-gradient(145deg, rgba(97, 121, 134, 0.96), rgba(139, 115, 91, 0.96)),
+    var(--blue);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22), 0 12px 26px rgba(97, 121, 134, 0.24);
+}
+.trip-card-copy {
+  min-width: 0;
+}
+.trip-card-copy strong, .trip-card-copy span, .trip-card-copy small {
   display: block;
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.trip-card strong {
+.trip-card-copy strong {
   font-family: "Playfair Display", Georgia, serif;
   font-style: italic;
   font-weight: 500;
-  font-size: 20px;
+  font-size: 24px;
+  line-height: 1.04;
 }
-.trip-card span {
-  margin-top: 6px;
+.trip-card-copy span {
+  margin-top: 7px;
   color: var(--muted);
   font-weight: 800;
 }
-.trip-card small {
-  margin-top: 10px;
+.trip-card-copy small {
+  margin-top: 12px;
   color: var(--blue);
+  font-size: 12px;
+  line-height: 1.35;
   font-weight: 900;
+}
+.trip-card-footer {
+  position: relative;
+  z-index: 1;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px 10px 16px;
+  border-top: 1px solid rgba(229, 226, 217, 0.82);
+}
+.trip-card-footer > span {
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: var(--paper-deep);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.trip-delete-button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.trip-delete-button:hover {
+  background: #fff1ed;
+  color: #8a3f36;
+}
+.trip-delete-button:disabled {
+  cursor: wait;
+  opacity: 0.45;
 }
 .empty-trip-card, .local-trip-note {
   grid-column: 1 / -1;
   min-height: auto;
+  padding: 14px;
   color: var(--muted);
   font-weight: 800;
 }
@@ -957,7 +1052,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 
 .mobile-band, .billing-band {
   margin: 0 auto clamp(28px, 5vw, 72px);
-  width: min(1180px, calc(100% - clamp(28px, 7vw, 96px)));
+  width: min(1520px, calc(100% - clamp(28px, 6vw, 112px)));
   border-radius: 22px;
   padding: clamp(24px, 5vw, 56px);
 }

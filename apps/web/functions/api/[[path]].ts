@@ -25,6 +25,9 @@ type TripSummary = {
   status: "draft" | "active" | "archived";
   startDate?: string;
   endDate?: string;
+  dayCount: number;
+  placeCount: number;
+  bookingCount: number;
   updatedAt: string;
 };
 
@@ -51,6 +54,10 @@ export const onRequest: PagesFunction<AuthEnv> = async ({ request, env, params }
 
   if (tripMatch && request.method === "PUT") {
     return updateTrip(request, env, decodeURIComponent(tripMatch[1]!));
+  }
+
+  if (tripMatch && request.method === "DELETE") {
+    return deleteTrip(request, env, decodeURIComponent(tripMatch[1]!));
   }
 
   const attachmentMatch = path.match(/^attachments\/(.+)$/);
@@ -102,7 +109,11 @@ async function createTrip(request: Request, env: AuthEnv): Promise<Response> {
 }
 
 function rowToTripSummary(row: TripRow): TripSummary {
-  const payload = JSON.parse(row.payload) as TripDraftPayload;
+  const payload = JSON.parse(row.payload) as TripDraftPayload & {
+    days?: unknown[];
+    places?: unknown[];
+    bookings?: unknown[];
+  };
   return {
     id: row.id,
     title: row.title,
@@ -110,6 +121,9 @@ function rowToTripSummary(row: TripRow): TripSummary {
     status: row.status,
     startDate: payload.startDate,
     endDate: payload.endDate,
+    dayCount: payload.days?.length ?? 0,
+    placeCount: payload.places?.length ?? 0,
+    bookingCount: payload.bookings?.length ?? 0,
     updatedAt: row.updated_at
   };
 }
@@ -150,6 +164,30 @@ async function updateTrip(request: Request, env: AuthEnv, id: string): Promise<R
     .run();
 
   return json({ trip: JSON.parse(payload) });
+}
+
+async function deleteTrip(request: Request, env: AuthEnv, id: string): Promise<Response> {
+  const auth = await requireTripAuth(request, env);
+  if (auth instanceof Response) return auth;
+
+  const row = await auth.db.prepare("SELECT payload FROM trips WHERE id = ? AND owner_id = ?").bind(id, auth.ownerId).first<{ payload: string }>();
+  if (!row) {
+    return json({ error: "trip_not_found" }, 404);
+  }
+
+  await auth.db.prepare("DELETE FROM trips WHERE id = ? AND owner_id = ?").bind(id, auth.ownerId).run();
+
+  if (env.ATTACHMENTS) {
+    const payload = JSON.parse(row.payload) as { attachments?: Array<{ storagePath?: string }> };
+    await Promise.all(
+      (payload.attachments ?? [])
+        .map((attachment) => attachment.storagePath)
+        .filter((storagePath): storagePath is string => Boolean(storagePath))
+        .map((storagePath) => env.ATTACHMENTS!.delete(buildOwnerAttachmentKey(auth.ownerId, storagePath)))
+    );
+  }
+
+  return new Response(null, { status: 204 });
 }
 
 async function requireTripAuth(request: Request, env: AuthEnv): Promise<{ ownerId: string; db: D1Database } | Response> {
