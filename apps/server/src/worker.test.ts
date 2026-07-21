@@ -81,7 +81,11 @@ const trip = {
   days: [],
   places: [],
   bookings: [],
-  attachments: []
+  attachments: [],
+  packingItems: [],
+  weather: [],
+  budgetMembers: [],
+  budgetItems: []
 };
 
 describe("wanderlust worker", () => {

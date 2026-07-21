@@ -191,7 +191,9 @@ export function normalizeAiTripDraft(input: AiTripDraftInput) {
 }
 
 function assertSafeReturnPath(returnTo: string): void {
-  if (!returnTo.startsWith("/") || returnTo.startsWith("//")) {
-    throw new Error("returnTo must be an app-relative path");
+  const isAppRelative = returnTo.startsWith("/") && !returnTo.startsWith("//");
+  const isMobileDeepLink = returnTo === "wanderlust://auth";
+  if (!isAppRelative && !isMobileDeepLink) {
+    throw new Error("returnTo must be an app-relative path or the Wanderlust mobile auth callback");
   }
 }

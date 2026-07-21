@@ -24,6 +24,22 @@ Android release APK output:
 apps/mobile/android/app/build/outputs/apk/release/app-release.apk
 ```
 
+## Android Release Signing
+
+Android Play upload signing uses local ignored files. On a new build machine:
+
+```powershell
+Copy-Item .android-signing.local.example.ps1 .android-signing.local.ps1
+```
+
+Fill the keystore path, store password, key alias, and key password. To generate a fresh local upload keystore on this machine:
+
+```powershell
+npm run create:android:keystore
+```
+
+The generated keystore is stored under `.local/android/` and the secret config is stored in `.android-signing.local.ps1`; both are ignored. `npm run build:android:apk`, `npm run build:android:aab`, and `npm run build:android:release` inject this signing config after `expo prebuild`, then `verify-android-apk.ps1` rejects debug-signed APKs.
+
 ## Cloudflare Deployment
 
 Deployment resource names and ids are local machine config. Copy `.deploy.local.example.ps1` to `.deploy.local.ps1`, fill Cloudflare values, and keep the local file uncommitted.
@@ -37,6 +53,14 @@ npm run deploy:web
 ```
 
 See `AGENTS.md` for the full deployment workflow and required Cloudflare secrets.
+
+OAuth status can be checked after deployment:
+
+```powershell
+npm run verify:auth
+```
+
+Google sign-in requires `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and `SESSION_SECRET` on Cloudflare Pages. Apple sign-in additionally requires `APPLE_OAUTH_CLIENT_ID` and `APPLE_OAUTH_CLIENT_SECRET`; the Apple secret must be a Sign in with Apple client-secret JWT generated from the Apple Developer private key, Team ID, Key ID, Service ID, and expiry.
 
 ## iOS Build Host
 
@@ -88,6 +112,12 @@ Current iOS build blocker:
 - Xcode 16.2 provides Swift 6.0.x, but `ExpoModulesJSI` currently resolves a Swift package that requires Swift tools 6.2.0.
 - Install/select Xcode 26 before expecting `npm run build:ios:remote` to produce an IPA.
 - `npm run prepare:ios:remote` can install Xcode 26 after `xcodes` is authenticated on the remote host or `FASTLANE_SESSION` is provided.
+
+Current Apple login blocker:
+
+- Cloudflare can expose Apple login as soon as `APPLE_OAUTH_CLIENT_ID` and `APPLE_OAUTH_CLIENT_SECRET` are configured for the Pages project.
+- Apple Developer must have a Sign in with Apple-enabled Service ID whose return URL is `https://wanderlust-web.pages.dev/auth/apple/callback`.
+- The native app bundle id remains `com.enakzzz.wanderlust`; the web OAuth Service ID should be a separate identifier such as `com.enakzzz.wanderlust.web`.
 
 If signing assets are rotated, install a valid distribution certificate plus matching provisioning profile, or configure Xcode/App Store Connect credentials for automatic provisioning before expecting a signed IPA suitable for submission.
 

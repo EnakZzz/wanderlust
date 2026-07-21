@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 $repo = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $mobile = Join-Path $repo "apps/mobile"
 $android = Join-Path $mobile "android"
+. (Join-Path $PSScriptRoot "android-signing.ps1")
 
 function Invoke-Checked {
   param(
@@ -45,6 +46,7 @@ try {
   Invoke-Checked "npm" @("run", "build", "-w", "@wanderlust/web")
   Stop-AndroidGradleDaemon
   Invoke-Checked "npm" @("run", "prebuild", "-w", "@wanderlust/mobile")
+  Enable-AndroidReleaseSigning -MobileDirectory $mobile
   $gradleProperties = Join-Path $mobile "android/gradle.properties"
   $content = Get-Content -LiteralPath $gradleProperties -Raw
   $content = $content -replace "org\.gradle\.jvmargs=.*", "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8"

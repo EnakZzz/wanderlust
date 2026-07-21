@@ -35,7 +35,10 @@
       "apiBaseUrl": "https://wanderlust-web.pages.dev"
     },
     "plugins": [
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "expo-file-system",
+      "expo-sharing",
+      "expo-secure-store"
     ]
   }
 }

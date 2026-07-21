@@ -10,12 +10,16 @@ $appJsonPath = Join-Path $repo "apps/mobile/app.json"
 $easJsonPath = Join-Path $repo "apps/mobile/eas.json"
 $serverWranglerPath = Join-Path $repo "apps/server/wrangler.jsonc"
 $readmePath = Join-Path $repo "README.md"
+$androidSigningExamplePath = Join-Path $repo ".android-signing.local.example.ps1"
 
 if (-not (Test-Path -LiteralPath $appJsonPath)) {
   throw "Missing Expo app.json"
 }
 if (-not (Test-Path -LiteralPath $easJsonPath)) {
   throw "Missing EAS config"
+}
+if (-not (Test-Path -LiteralPath $androidSigningExamplePath)) {
+  throw "Missing Android signing config example"
 }
 if (-not (Test-Path -LiteralPath $serverWranglerPath)) {
   throw "Missing Cloudflare Worker config"
@@ -42,6 +46,7 @@ if ($server.d1_databases[0].binding -ne "DB") { $failures.Add("Cloudflare D1 bin
 if ($server.r2_buckets[0].binding -ne "ATTACHMENTS") { $failures.Add("Cloudflare R2 binding ATTACHMENTS must be configured") }
 if (-not $eas.build.production.ios.image) { $failures.Add("EAS production iOS image must be configured") }
 if (-not $eas.build.production.android.buildType) { $failures.Add("EAS production Android build type must be configured") }
+if (-not (Test-Path -LiteralPath (Join-Path $repo ".android-signing.local.ps1"))) { $failures.Add("missing local Android release signing config; run npm run create:android:keystore") }
 if ($readme -notmatch "delete account") { $failures.Add("README must document the delete account requirement for review readiness") }
 if ($readme -notmatch "privacy policy") { $failures.Add("README must document the privacy policy requirement for review readiness") }
 

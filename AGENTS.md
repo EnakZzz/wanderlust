@@ -75,3 +75,14 @@ npx wrangler pages secret put SESSION_SECRET --project-name <PagesProjectName>
 ```
 
 Apple 登录后续接入时也按同样方式配置 Apple 相关 secret。
+
+```powershell
+npx wrangler pages secret put APPLE_OAUTH_CLIENT_ID --project-name <PagesProjectName>
+npx wrangler pages secret put APPLE_OAUTH_CLIENT_SECRET --project-name <PagesProjectName>
+```
+
+`APPLE_OAUTH_CLIENT_ID` 是 Apple Developer 的 Sign in with Apple Service ID，不是 iOS Bundle ID。`APPLE_OAUTH_CLIENT_SECRET` 是用 Apple private key 生成的 client-secret JWT。配置后运行：
+
+```powershell
+npm run verify:auth
+```

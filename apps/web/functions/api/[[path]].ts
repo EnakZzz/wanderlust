@@ -53,6 +53,14 @@ export const onRequest: PagesFunction<AuthEnv> = async ({ request, env, params }
     return updateTrip(request, env, decodeURIComponent(tripMatch[1]!));
   }
 
+  const attachmentMatch = path.match(/^attachments\/(.+)$/);
+  if (attachmentMatch) {
+    const key = decodeURIComponent(attachmentMatch[1]!);
+    if (request.method === "PUT") return putAttachment(request, env, key);
+    if (request.method === "GET") return getAttachment(request, env, key);
+    if (request.method === "DELETE") return deleteAttachment(request, env, key);
+  }
+
   return json({ error: "not_found" }, 404);
 };
 
@@ -154,4 +162,59 @@ async function requireTripAuth(request: Request, env: AuthEnv): Promise<{ ownerI
   }
 
   return { ownerId: getUserStorageId(user), db: env.DB };
+}
+
+async function putAttachment(request: Request, env: AuthEnv, key: string): Promise<Response> {
+  const auth = await requireStorageAuth(request, env);
+  if (auth instanceof Response) return auth;
+
+  const safeKey = buildOwnerAttachmentKey(auth.ownerId, key);
+  const body = await request.arrayBuffer();
+  await auth.bucket.put(safeKey, body, {
+    httpMetadata: { contentType: request.headers.get("content-type") ?? "application/octet-stream" }
+  });
+
+  return json({ key: safeKey, size: body.byteLength }, 201);
+}
+
+async function getAttachment(request: Request, env: AuthEnv, key: string): Promise<Response> {
+  const auth = await requireStorageAuth(request, env);
+  if (auth instanceof Response) return auth;
+
+  const safeKey = buildOwnerAttachmentKey(auth.ownerId, key);
+  const object = await auth.bucket.get(safeKey);
+  if (!object) {
+    return json({ error: "attachment_not_found" }, 404);
+  }
+
+  const headers = new Headers({ "cache-control": "private, max-age=300" });
+  object.writeHttpMetadata(headers);
+  headers.set("etag", object.httpEtag);
+  return new Response(object.body, { headers });
+}
+
+async function deleteAttachment(request: Request, env: AuthEnv, key: string): Promise<Response> {
+  const auth = await requireStorageAuth(request, env);
+  if (auth instanceof Response) return auth;
+
+  await auth.bucket.delete(buildOwnerAttachmentKey(auth.ownerId, key));
+  return new Response(null, { status: 204 });
+}
+
+async function requireStorageAuth(request: Request, env: AuthEnv): Promise<{ ownerId: string; bucket: R2Bucket } | Response> {
+  const user = await getSessionUser(request, env);
+  if (!user) {
+    return json({ error: "unauthorized" }, 401);
+  }
+  if (!env.ATTACHMENTS) {
+    return json({ error: "attachments_not_configured" }, 503);
+  }
+
+  return { ownerId: getUserStorageId(user), bucket: env.ATTACHMENTS };
+}
+
+function buildOwnerAttachmentKey(ownerId: string, key: string): string {
+  const ownerSegment = ownerId.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const cleanKey = key.replace(/^\/+/, "").replace(/\.\./g, "_");
+  return `users/${ownerSegment}/${cleanKey}`;
 }

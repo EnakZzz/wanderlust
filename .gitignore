@@ -26,6 +26,8 @@ apps/mobile/*.tsbuildinfo
 .env.*
 !.env.example
 .deploy.local.ps1
+.android-signing.local.ps1
+.local/
 apps/web/*.tsbuildinfo
 
 # Local Cloudflare deployment config generated from .deploy.local.ps1

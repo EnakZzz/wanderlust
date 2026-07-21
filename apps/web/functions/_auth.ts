@@ -2,6 +2,7 @@ import { buildOAuthAuthorizationUrl, getOAuthProviderStatus, type OAuthProvider 
 
 export type AuthEnv = {
   DB?: D1Database;
+  ATTACHMENTS?: R2Bucket;
   APP_PUBLIC_URL?: string;
   GOOGLE_OAUTH_CLIENT_ID?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
@@ -67,7 +68,8 @@ export async function completeOAuth(request: Request, env: AuthEnv, provider: OA
   await upsertUser(env, user);
   const session = await signSession(user, env.SESSION_SECRET);
   const returnTo = base64UrlDecode(stateParts[1]);
-  const headers = new Headers({ location: returnTo });
+  const location = buildOAuthReturnLocation(returnTo, session);
+  const headers = new Headers({ location });
   headers.append("set-cookie", serializeCookie(sessionCookie, session, 60 * 60 * 24 * 30, "/"));
   headers.append("set-cookie", expireCookie(oauthStateCookie, "/auth"));
   return new Response(null, { status: 302, headers });
@@ -79,7 +81,7 @@ export async function readSession(request: Request, env: AuthEnv): Promise<Respo
 }
 
 export async function getSessionUser(request: Request, env: AuthEnv): Promise<OAuthUser | null> {
-  const token = readCookie(request.headers.get("cookie"), sessionCookie);
+  const token = readBearerToken(request.headers.get("authorization")) ?? readCookie(request.headers.get("cookie"), sessionCookie);
   if (!token || !env.SESSION_SECRET) {
     return null;
   }
@@ -98,8 +100,8 @@ export function json(body: unknown, status = 200): Response {
     status,
     headers: {
       "access-control-allow-origin": "*",
-      "access-control-allow-methods": "GET,POST,OPTIONS",
-      "access-control-allow-headers": "content-type",
+      "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
+      "access-control-allow-headers": "content-type,authorization",
       "cache-control": "no-store"
     }
   });
@@ -281,6 +283,21 @@ function readCookie(cookieHeader: string | null, name: string): string | undefin
     .map((part) => part.trim())
     .find((part) => part.startsWith(`${name}=`))
     ?.slice(name.length + 1);
+}
+
+function readBearerToken(authorizationHeader: string | null): string | undefined {
+  const [scheme, token] = authorizationHeader?.split(" ") ?? [];
+  return scheme?.toLowerCase() === "bearer" && token ? token : undefined;
+}
+
+function buildOAuthReturnLocation(returnTo: string, session: string): string {
+  if (returnTo === "wanderlust://auth") {
+    const url = new URL(returnTo);
+    url.searchParams.set("session", session);
+    return url.toString();
+  }
+
+  return returnTo;
 }
 
 function serializeCookie(name: string, value: string, maxAge: number, path: string): string {

@@ -14,6 +14,8 @@ export const ItineraryItemSchema = z.object({
   id: z.string().min(1),
   dayId: z.string().min(1),
   type: ItineraryItemTypeSchema,
+  placeId: z.string().optional(),
+  bookingId: z.string().optional(),
   title: z.string().min(1),
   startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
@@ -43,29 +45,119 @@ export const PlaceSchema = z.object({
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
   address: z.string().optional(),
+  notes: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+  website: z.string().url().optional(),
+  phone: z.string().optional(),
   imageUrl: z.string().url().optional(),
   googlePlaceId: z.string().optional(),
+  osmId: z.string().optional(),
   isFavorite: z.boolean().default(false)
 });
 
 export const BookingSchema = z.object({
   id: z.string().min(1),
   tripId: z.string().min(1),
-  type: z.enum(["flight", "hotel", "train", "ticket", "car", "other"]),
+  dayId: z.string().optional(),
+  placeId: z.string().optional(),
+  type: z.enum(["flight", "hotel", "train", "restaurant", "ticket", "car", "other"]),
   title: z.string().min(1),
   confirmationCode: z.string().optional(),
   startsAt: z.string().optional(),
   endsAt: z.string().optional(),
-  attachmentIds: z.array(z.string()).default([])
+  address: z.string().optional(),
+  provider: z.string().optional(),
+  status: z.enum(["todo", "confirmed", "checked_in", "cancelled"]).default("todo"),
+  notes: z.string().optional(),
+  attachmentIds: z.array(z.string()).default([]),
+  segments: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        mode: z.enum(["flight", "train", "bus", "ferry", "car", "other"]),
+        carrier: z.string().optional(),
+        serviceNumber: z.string().optional(),
+        departureCode: z.string().optional(),
+        departureName: z.string().optional(),
+        departureAt: z.string().optional(),
+        arrivalCode: z.string().optional(),
+        arrivalName: z.string().optional(),
+        arrivalAt: z.string().optional(),
+        seat: z.string().optional(),
+        terminal: z.string().optional(),
+        gate: z.string().optional()
+      })
+    )
+    .default([])
 });
 
 export const AttachmentSchema = z.object({
   id: z.string().min(1),
   tripId: z.string().min(1),
   type: z.enum(["image", "pdf", "ticket", "receipt", "document"]),
+  category: z.enum(["passport", "visa", "hotel", "ticket", "transport", "insurance", "receipt", "other"]).default("other"),
+  linkedType: z.enum(["trip", "place", "booking"]).default("trip"),
+  linkedId: z.string().optional(),
   storagePath: z.string().min(1),
   localUri: z.string().optional(),
   title: z.string().optional()
+});
+
+export const BudgetMemberSchema = z.object({
+  id: z.string().min(1),
+  tripId: z.string().min(1),
+  name: z.string().min(1)
+});
+
+export const BudgetItemSchema = z.object({
+  id: z.string().min(1),
+  tripId: z.string().min(1),
+  title: z.string().min(1),
+  category: z.enum(["accommodation", "transport", "food", "tickets", "shopping", "other"]).default("other"),
+  amount: z.number().nonnegative(),
+  currency: z.string().min(1).default("USD"),
+  paidByMemberIds: z.array(z.string()).default([]),
+  splitWithMemberIds: z.array(z.string()).default([]),
+  bookingId: z.string().optional(),
+  placeId: z.string().optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  notes: z.string().optional()
+});
+
+export const PackingItemSchema = z.object({
+  id: z.string().min(1),
+  tripId: z.string().min(1),
+  title: z.string().min(1),
+  category: z.enum(["documents", "clothing", "electronics", "health", "money", "toiletries", "other"]).default("other"),
+  assignedTo: z.string().optional(),
+  quantity: z.number().int().positive().default(1),
+  packed: z.boolean().default(false),
+  notes: z.string().optional()
+});
+
+export const WeatherForecastSchema = z.object({
+  dayId: z.string().min(1),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  locationName: z.string().optional(),
+  temperatureMinC: z.number().optional(),
+  temperatureMaxC: z.number().optional(),
+  precipitationProbability: z.number().min(0).max(100).optional(),
+  summary: z.string().optional(),
+  fetchedAt: z.string().optional()
+});
+
+export const OfflineBundleSchema = z.object({
+  tripId: z.string().min(1),
+  version: z.number().int().positive(),
+  generatedAt: z.string(),
+  includes: z.object({
+    itinerary: z.boolean(),
+    places: z.boolean(),
+    bookings: z.boolean(),
+    attachments: z.boolean(),
+    packing: z.boolean(),
+    weather: z.boolean()
+  })
 });
 
 export const TripSchema = z.object({
@@ -81,7 +173,12 @@ export const TripSchema = z.object({
   days: z.array(TripDaySchema),
   places: z.array(PlaceSchema).default([]),
   bookings: z.array(BookingSchema).default([]),
-  attachments: z.array(AttachmentSchema).default([])
+  attachments: z.array(AttachmentSchema).default([]),
+  packingItems: z.array(PackingItemSchema).default([]),
+  weather: z.array(WeatherForecastSchema).default([]),
+  budgetMembers: z.array(BudgetMemberSchema).default([]),
+  budgetItems: z.array(BudgetItemSchema).default([]),
+  offlineBundle: OfflineBundleSchema.optional()
 });
 
 export const EntitlementSchema = z.object({
@@ -115,16 +212,17 @@ export type TripDay = {
   items: ItineraryItem[];
 };
 
-export type ItineraryItem = {
-  id: string;
-  dayId: string;
-  type: string;
-  title: string;
-  startTime?: string;
-  endTime?: string;
-  sortOrder: number;
-  notes?: string;
-};
+export type ItineraryItem = z.input<typeof ItineraryItemSchema>;
+
+export type Place = z.input<typeof PlaceSchema>;
+export type Booking = z.input<typeof BookingSchema>;
+export type Attachment = z.input<typeof AttachmentSchema>;
+export type BudgetMember = z.input<typeof BudgetMemberSchema>;
+export type BudgetItem = z.input<typeof BudgetItemSchema>;
+export type PackingItem = z.input<typeof PackingItemSchema>;
+export type WeatherForecast = z.input<typeof WeatherForecastSchema>;
+export type OfflineBundle = z.input<typeof OfflineBundleSchema>;
+export type Trip = z.input<typeof TripSchema>;
 
 export type NavigationTarget = {
   latitude: number;
