@@ -2,6 +2,9 @@ $ErrorActionPreference = "Stop"
 
 $remote = if ($env:IOS_BUILD_HOST) { $env:IOS_BUILD_HOST } else { "ios-build" }
 $remoteDir = if ($env:IOS_BUILD_DIR) { $env:IOS_BUILD_DIR } else { "~/wanderlust-trip-planner" }
+$teamId = if ($env:IOS_DEVELOPMENT_TEAM) { $env:IOS_DEVELOPMENT_TEAM } else { "VKQ556327V" }
+$bundleIdentifier = if ($env:IOS_BUNDLE_IDENTIFIER) { $env:IOS_BUNDLE_IDENTIFIER } else { "com.enakzzz.wanderlust" }
+$profileSpecifier = if ($env:IOS_PROVISIONING_PROFILE_SPECIFIER) { $env:IOS_PROVISIONING_PROFILE_SPECIFIER } else { "Wanderlust Planner App Store" }
 $localArtifactDir = if ($env:IOS_ARTIFACT_DIR) {
   $env:IOS_ARTIFACT_DIR
 } else {
@@ -95,7 +98,7 @@ npm run typecheck --workspaces --if-present
 npm run prebuild -w @wanderlust/mobile -- --platform ios
 cd apps/mobile/ios
 pod install --repo-update
-xcodebuild -workspace WanderlustPlanner.xcworkspace -scheme WanderlustPlanner -configuration Release -sdk iphoneos -archivePath build/WanderlustPlanner.xcarchive archive
+xcodebuild -workspace WanderlustPlanner.xcworkspace -scheme WanderlustPlanner -configuration Release -sdk iphoneos -destination "generic/platform=iOS" -archivePath build/WanderlustPlanner.xcarchive archive DEVELOPMENT_TEAM="__TEAM_ID__" PRODUCT_BUNDLE_IDENTIFIER="__BUNDLE_IDENTIFIER__" CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="__PROFILE_SPECIFIER__"
 rm -rf /tmp/wanderlust-ios-export
 mkdir -p /tmp/wanderlust-ios-export
 cat > /tmp/wanderlust-export-options.plist <<'PLIST'
@@ -106,7 +109,14 @@ cat > /tmp/wanderlust-export-options.plist <<'PLIST'
   <key>method</key>
   <string>app-store-connect</string>
   <key>signingStyle</key>
-  <string>automatic</string>
+  <string>manual</string>
+  <key>teamID</key>
+  <string>__TEAM_ID__</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>__BUNDLE_IDENTIFIER__</key>
+    <string>__PROFILE_SPECIFIER__</string>
+  </dict>
   <key>stripSwiftSymbols</key>
   <true/>
   <key>uploadBitcode</key>
@@ -121,6 +131,9 @@ test -f /tmp/wanderlust-ios-export/WanderlustPlanner.ipa
 '@
 
 $remoteScript = $remoteScript.Replace("__REMOTE_DIR__", $remoteDir)
+$remoteScript = $remoteScript.Replace("__TEAM_ID__", $teamId)
+$remoteScript = $remoteScript.Replace("__BUNDLE_IDENTIFIER__", $bundleIdentifier)
+$remoteScript = $remoteScript.Replace("__PROFILE_SPECIFIER__", $profileSpecifier)
 $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($remoteScript))
 
 ssh $remote "printf '%s' '$encoded' | base64 --decode | zsh"

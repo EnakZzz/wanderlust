@@ -1,6 +1,6 @@
 param(
   [string]$Remote = $(if ($env:IOS_BUILD_HOST) { $env:IOS_BUILD_HOST } else { "ios-build" }),
-  [string]$BundleIdentifier = $(if ($env:IOS_BUNDLE_IDENTIFIER) { $env:IOS_BUNDLE_IDENTIFIER } else { "com.happyelements.wanderlust" })
+  [string]$BundleIdentifier = $(if ($env:IOS_BUNDLE_IDENTIFIER) { $env:IOS_BUNDLE_IDENTIFIER } else { "com.enakzzz.wanderlust" })
 )
 
 $ErrorActionPreference = "Stop"

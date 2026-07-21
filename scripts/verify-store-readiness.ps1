@@ -30,8 +30,8 @@ $failures = New-Object System.Collections.Generic.List[string]
 
 if ($app.name -ne "Wanderlust Planner") { $failures.Add("expo.name must be Wanderlust Planner") }
 if ($app.slug -ne "wanderlust-planner") { $failures.Add("expo.slug must be wanderlust-planner") }
-if ($app.ios.bundleIdentifier -ne "com.happyelements.wanderlust") { $failures.Add("ios.bundleIdentifier mismatch") }
-if ($app.android.package -ne "com.happyelements.wanderlust") { $failures.Add("android.package mismatch") }
+if ($app.ios.bundleIdentifier -ne "com.enakzzz.wanderlust") { $failures.Add("ios.bundleIdentifier mismatch") }
+if ($app.android.package -ne "com.enakzzz.wanderlust") { $failures.Add("android.package mismatch") }
 if (-not $app.ios.infoPlist.NSLocationWhenInUseUsageDescription) { $failures.Add("missing NSLocationWhenInUseUsageDescription") }
 if ($app.ios.infoPlist.ITSAppUsesNonExemptEncryption -ne $false) { $failures.Add("ITSAppUsesNonExemptEncryption must be false unless encryption changes") }
 if (-not ($app.ios.usesAppleSignIn -eq $true)) { $failures.Add("ios.usesAppleSignIn must be true for Apple/Google/email auth") }

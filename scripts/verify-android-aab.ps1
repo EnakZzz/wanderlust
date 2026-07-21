@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $repo = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $aab = Join-Path $repo "apps/mobile/android/app/build/outputs/bundle/release/app-release.aab"
-$expectedPackage = "com.happyelements.wanderlust"
+$expectedPackage = "com.enakzzz.wanderlust"
 $expectedVersionCode = "1"
 $expectedVersionName = "0.1.0"
 $bundletoolVersion = "1.18.1"

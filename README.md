@@ -69,16 +69,27 @@ Current remote host:
 - `ios-build` points to `happyelement@10.160.102.177` on this machine.
 - Hostname: `LX-0101000065`
 - macOS: 15.0.1
-- Xcode: 16.2
+- Current selected Xcode: 16.2
 - Node 22 is installed under `~/.local/node` on the remote host.
+- Homebrew CocoaPods 1.17.0 is installed under `/opt/homebrew/bin/pod`.
+- Homebrew xcodes 2.0.3 is installed under `/opt/homebrew/bin/xcodes`.
+- Apple Developer Team ID: `VKQ556327V`
+- Bundle ID: `com.enakzzz.wanderlust`
+- App Store Connect App ID: `6792964279`
 
-Current blockers for signed IPA / App Store packaging:
+Current iOS signing state:
 
-- The remote keychain currently has no valid Apple/iPhone Distribution signing identity.
-- No provisioning profile currently matches `com.happyelements.wanderlust`.
-- No detectable Xcode account or App Store Connect API key is configured for automatic provisioning.
+- The remote keychain has a valid `Apple Distribution: QI ZUO (VKQ556327V)` identity.
+- The remote host has a matching `Wanderlust Planner App Store` provisioning profile for `com.enakzzz.wanderlust`.
+- `xcodeAccountHint` can still be false in SSH diagnostics, but manual distribution signing assets are installed and `npm run verify:ios:signing` is expected to pass.
 
-Install a valid distribution certificate plus matching provisioning profile, or configure Xcode/App Store Connect credentials for automatic provisioning before expecting a signed IPA suitable for submission.
+Current iOS build blocker:
+
+- Xcode 16.2 provides Swift 6.0.x, but `ExpoModulesJSI` currently resolves a Swift package that requires Swift tools 6.2.0.
+- Install/select Xcode 26 before expecting `npm run build:ios:remote` to produce an IPA.
+- `npm run prepare:ios:remote` can install Xcode 26 after `xcodes` is authenticated on the remote host or `FASTLANE_SESSION` is provided.
+
+If signing assets are rotated, install a valid distribution certificate plus matching provisioning profile, or configure Xcode/App Store Connect credentials for automatic provisioning before expecting a signed IPA suitable for submission.
 
 EAS fallback is configured in `apps/mobile/eas.json`, but it still requires an Expo account plus Apple/Google store credentials before it can produce signed store artifacts.
 

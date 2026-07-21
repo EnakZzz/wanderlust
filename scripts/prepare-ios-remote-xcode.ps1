@@ -16,13 +16,18 @@ required_version="__XCODE_VERSION__"
 minimum_free_gib="__MINIMUM_FREE_GIB__"
 install_requested="__INSTALL_REQUESTED__"
 select_requested="__SELECT_REQUESTED__"
-xcodes_bin="$HOME/tools/xcodes/xcodes"
+if command -v xcodes >/dev/null 2>&1; then
+  xcodes_bin="$(command -v xcodes)"
+else
+  xcodes_bin="$HOME/tools/xcodes/xcodes"
+fi
 target_app="/Applications/Xcode_${required_version}.app"
 
 echo "host=$(hostname)"
 echo "macos=$(sw_vers -productVersion)"
 echo "selectedDeveloperDir=$(xcode-select -p 2>/dev/null || true)"
 echo "selectedXcode=$(xcodebuild -version 2>/dev/null | tr '\n' ' ')"
+echo "xcodesBin=$xcodes_bin"
 echo "disk=$(df -g /Applications | tail -1)"
 
 if [ ! -x "$xcodes_bin" ]; then

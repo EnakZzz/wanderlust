@@ -7,7 +7,7 @@ $ipa = if ($env:IOS_IPA_PATH) {
   Join-Path $repo "artifacts/ios/WanderlustPlanner.ipa"
 }
 
-$expectedBundleId = "com.happyelements.wanderlust"
+$expectedBundleId = "com.enakzzz.wanderlust"
 $expectedVersion = "0.1.0"
 $expectedBuild = "1"
 

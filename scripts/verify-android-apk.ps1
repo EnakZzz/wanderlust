@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $repo = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $apk = Join-Path $repo "apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
-$expectedPackage = "com.happyelements.wanderlust"
+$expectedPackage = "com.enakzzz.wanderlust"
 $expectedVersionCode = "1"
 $expectedVersionName = "0.1.0"
 $aapt = Join-Path $env:LOCALAPPDATA "Android/Sdk/build-tools/36.0.0/aapt2.exe"
