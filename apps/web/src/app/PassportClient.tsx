@@ -1,0 +1,192 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Compass, Flag, MapPinned, Plus, Route } from "lucide-react";
+import type { SessionUser, TripSummary } from "./routebook/types";
+
+type PassportState = {
+  user: SessionUser | null;
+  trips: TripSummary[];
+  loaded: boolean;
+  error?: string;
+};
+
+type Footprint = {
+  city: string;
+  country: string;
+  trip: TripSummary;
+};
+
+const worldCountryCount = 195;
+
+async function readSession(): Promise<SessionUser | null> {
+  const response = await fetch("/auth/session", { credentials: "include" });
+  if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return null;
+  const session = (await response.json()) as { user?: SessionUser | null };
+  return session.user ?? null;
+}
+
+function parseDestination(destination: string): { city: string; country: string } {
+  const parts = destination.split(",").map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    return {
+      city: parts[0]!,
+      country: parts[parts.length - 1]!
+    };
+  }
+
+  return {
+    city: destination.trim() || "Destination not set",
+    country: "未分类"
+  };
+}
+
+function tripEditorHref(tripId: string): string {
+  return `/?tripId=${encodeURIComponent(tripId)}#editor`;
+}
+
+export function PassportClient() {
+  const [state, setState] = useState<PassportState>({ user: null, trips: [], loaded: false });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPassport() {
+      const user = await readSession();
+      if (!user) {
+        if (!cancelled) setState({ user: null, trips: [], loaded: true });
+        return;
+      }
+
+      const tripsResponse = await fetch("/api/trips", { credentials: "include" });
+      if (!tripsResponse.ok || !tripsResponse.headers.get("content-type")?.includes("application/json")) {
+        throw new Error("API Worker 运行后才能同步旅行足迹。");
+      }
+      const tripsPayload = (await tripsResponse.json()) as { trips: TripSummary[] };
+      if (!cancelled) setState({ user, trips: tripsPayload.trips, loaded: true });
+    }
+
+    loadPassport().catch((error) => {
+      if (!cancelled) {
+        setState({
+          user: null,
+          trips: [],
+          loaded: true,
+          error: error instanceof Error ? error.message : "无法加载旅行足迹"
+        });
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const footprint = useMemo<Footprint[]>(() => {
+    return state.trips.map((trip) => {
+      const parsed = parseDestination(trip.destination);
+      return { ...parsed, trip };
+    });
+  }, [state.trips]);
+
+  const countries = useMemo(() => Array.from(new Set(footprint.map((item) => item.country))).filter((country) => country !== "未分类"), [footprint]);
+  const cities = useMemo(() => Array.from(new Set(footprint.map((item) => item.city))).filter((city) => city !== "Destination not set"), [footprint]);
+  const exploredPercent = Math.round((countries.length / worldCountryCount) * 1000) / 10;
+  const nextMilestone = exploredPercent < 5 ? 5 : Math.ceil((exploredPercent + 0.1) / 5) * 5;
+  const milestoneRemaining = Math.max(0, Math.ceil((nextMilestone / 100) * worldCountryCount) - countries.length);
+  const recentFootprint = footprint.slice(0, 6);
+
+  return (
+    <section className="passport-shell">
+      <div className="passport-hero">
+        <div>
+          <p className="eyebrow">旅行足迹</p>
+          <h1>{state.user ? "你的路书正在变成旅行足迹。" : "记录那些从路书变成记忆的地方。"}</h1>
+          <p>
+            旅行足迹会把保存过的路书整理成国家覆盖、城市记录和下一阶段目标。
+            这样每一次旅行都不会只是孤立的一份计划。
+          </p>
+        </div>
+        <div className="passport-hero-actions">
+          <a className="save-button" href="/journeys">
+            <Route size={18} />
+            <span>打开路书</span>
+          </a>
+          <a className="sample-button" href="/search">
+            <Plus size={18} />
+            <span>添加目的地</span>
+          </a>
+        </div>
+      </div>
+
+      {state.error ? <div className="sync-error">{state.error}</div> : null}
+
+      <div className="passport-grid">
+        <section className="passport-score-card">
+          <span>已探索世界</span>
+          <strong>{state.loaded ? `${exploredPercent.toFixed(1)}%` : "--"}</strong>
+          <small>{state.trips.length} 本路书记录了 {countries.length} 个国家/地区</small>
+        </section>
+
+        <section className="passport-stat-card">
+          <Flag size={20} />
+          <strong>{state.loaded ? countries.length : "--"}</strong>
+          <span>国家/地区</span>
+        </section>
+
+        <section className="passport-stat-card">
+          <MapPinned size={20} />
+          <strong>{state.loaded ? cities.length : "--"}</strong>
+          <span>城市</span>
+        </section>
+
+        <section className="passport-stat-card">
+          <Compass size={20} />
+          <strong>{state.loaded ? milestoneRemaining : "--"}</strong>
+          <span>距离 {nextMilestone}% 还差的国家/地区</span>
+        </section>
+      </div>
+
+      <div className="passport-main-grid">
+        <section className="passport-section">
+          <div className="passport-section-heading">
+            <div>
+              <p className="eyebrow">足迹</p>
+              <h2>{recentFootprint.length ? "最近规划过的地方" : "旅行足迹正在等待第一本路书。"}</h2>
+            </div>
+          </div>
+          <div className="passport-footprint-list">
+            {recentFootprint.map((item) => (
+              <a key={item.trip.id} href={tripEditorHref(item.trip.id)}>
+                <span>{item.country}</span>
+                <strong>{item.city}</strong>
+                <small>{item.trip.title} · {item.trip.dayCount} 天 · {item.trip.placeCount} 个地点</small>
+              </a>
+            ))}
+            {state.loaded && recentFootprint.length === 0 ? (
+              <div className="passport-empty">
+                <MapPinned size={22} />
+                <strong>还没有记录国家/地区。</strong>
+                <span>创建一本目的地类似“京都，日本”的路书后，旅行足迹会自动开始归类。</span>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <aside className="passport-section passport-next-panel">
+          <p className="eyebrow">下一阶段</p>
+          <strong>探索 {nextMilestone}%</strong>
+          <span>
+            {countries.length
+              ? `再记录 ${milestoneRemaining} 个国家/地区即可达到下一个足迹阶段。`
+              : "先创建一个真实目的地路书来激活足迹阶段。"}
+          </span>
+          <a className="sample-button" href="/search">
+            <Plus size={17} />
+            <span>寻找下一个目的地</span>
+          </a>
+        </aside>
+      </div>
+    </section>
+  );
+}

@@ -16,6 +16,7 @@ export type TripDraft = {
   ownerId: string;
   title: string;
   destination: string;
+  destinationMeta?: DestinationMeta;
   startDate: string;
   endDate: string;
   timezone: string;
@@ -29,6 +30,17 @@ export type TripDraft = {
   budgetMembers: BudgetMember[];
   budgetItems: BudgetItem[];
   offlineBundle?: OfflineBundle;
+};
+
+export type DestinationMeta = {
+  name: string;
+  fullName: string;
+  countryCode?: string;
+  latitude: number;
+  longitude: number;
+  timezone?: string;
+  provider: "google" | "fallback";
+  providerPlaceId?: string;
 };
 
 export type SessionUser = {
@@ -52,7 +64,19 @@ export type TripSummary = {
   updatedAt: string;
 };
 
-export type EditorModule = "itinerary" | "places" | "map" | "bookings" | "files" | "packing" | "budget";
+export type RoutebookShare = {
+  id: string;
+  tripId: string;
+  token: string;
+  visibility: "public" | "private";
+  allowCopy: boolean;
+  revokedAt: string | null;
+  expiresAt: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type EditorModule = "itinerary" | "places" | "map" | "bookings" | "files" | "packing" | "budget" | "ai";
 
 export type DragPayload =
   | { kind: "place"; placeId: string }

@@ -5,6 +5,8 @@ $remoteDir = if ($env:IOS_BUILD_DIR) { $env:IOS_BUILD_DIR } else { "~/wanderlust
 $teamId = if ($env:IOS_DEVELOPMENT_TEAM) { $env:IOS_DEVELOPMENT_TEAM } else { "VKQ556327V" }
 $bundleIdentifier = if ($env:IOS_BUNDLE_IDENTIFIER) { $env:IOS_BUNDLE_IDENTIFIER } else { "com.enakzzz.wanderlust" }
 $profileSpecifier = if ($env:IOS_PROVISIONING_PROFILE_SPECIFIER) { $env:IOS_PROVISIONING_PROFILE_SPECIFIER } else { "Wanderlust Planner App Store" }
+$keychainPassword = if ($env:IOS_KEYCHAIN_PASSWORD) { $env:IOS_KEYCHAIN_PASSWORD } else { "" }
+$codeSignKeyLabel = if ($env:IOS_CODE_SIGN_KEY_LABEL) { $env:IOS_CODE_SIGN_KEY_LABEL } else { "Apple Distribution: QI ZUO" }
 $localArtifactDir = if ($env:IOS_ARTIFACT_DIR) {
   $env:IOS_ARTIFACT_DIR
 } else {
@@ -98,6 +100,14 @@ npm run typecheck --workspaces --if-present
 npm run prebuild -w @wanderlust/mobile -- --platform ios
 cd apps/mobile/ios
 pod install --repo-update
+if [ -n "__KEYCHAIN_PASSWORD_B64__" ]; then
+  KEYCHAIN_PASSWORD=$(printf '%s' "__KEYCHAIN_PASSWORD_B64__" | base64 --decode)
+  LOGIN_KEYCHAIN="$HOME/Library/Keychains/login.keychain-db"
+  security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$LOGIN_KEYCHAIN"
+  security set-keychain-settings -lut 21600 "$LOGIN_KEYCHAIN"
+  security set-key-partition-list -S apple-tool:,apple:,codesign: -s -t private -l "__CODE_SIGN_KEY_LABEL__" -k "$KEYCHAIN_PASSWORD" "$LOGIN_KEYCHAIN" >/dev/null
+  unset KEYCHAIN_PASSWORD
+fi
 xcodebuild -workspace WanderlustPlanner.xcworkspace -scheme WanderlustPlanner -configuration Release -sdk iphoneos -destination "generic/platform=iOS" -archivePath build/WanderlustPlanner.xcarchive archive DEVELOPMENT_TEAM="__TEAM_ID__" PRODUCT_BUNDLE_IDENTIFIER="__BUNDLE_IDENTIFIER__" CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="__PROFILE_SPECIFIER__"
 rm -rf /tmp/wanderlust-ios-export
 mkdir -p /tmp/wanderlust-ios-export
@@ -126,14 +136,22 @@ cat > /tmp/wanderlust-export-options.plist <<'PLIST'
 </dict>
 </plist>
 PLIST
+if [ -n "__KEYCHAIN_PASSWORD_B64__" ]; then
+  KEYCHAIN_PASSWORD=$(printf '%s' "__KEYCHAIN_PASSWORD_B64__" | base64 --decode)
+  security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$HOME/Library/Keychains/login.keychain-db"
+  unset KEYCHAIN_PASSWORD
+fi
 xcodebuild -exportArchive -archivePath build/WanderlustPlanner.xcarchive -exportPath /tmp/wanderlust-ios-export -exportOptionsPlist /tmp/wanderlust-export-options.plist
 test -f /tmp/wanderlust-ios-export/WanderlustPlanner.ipa
 '@
 
+$keychainPasswordB64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($keychainPassword))
 $remoteScript = $remoteScript.Replace("__REMOTE_DIR__", $remoteDir)
 $remoteScript = $remoteScript.Replace("__TEAM_ID__", $teamId)
 $remoteScript = $remoteScript.Replace("__BUNDLE_IDENTIFIER__", $bundleIdentifier)
 $remoteScript = $remoteScript.Replace("__PROFILE_SPECIFIER__", $profileSpecifier)
+$remoteScript = $remoteScript.Replace("__KEYCHAIN_PASSWORD_B64__", $keychainPasswordB64)
+$remoteScript = $remoteScript.Replace("__CODE_SIGN_KEY_LABEL__", $codeSignKeyLabel)
 $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($remoteScript))
 
 ssh $remote "printf '%s' '$encoded' | base64 --decode | zsh"

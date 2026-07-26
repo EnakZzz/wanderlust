@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Wanderlust Planner",
-    "slug": "wanderlust-planner",
+    "name": "随身路书",
+    "slug": "pocket-routebook",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +13,7 @@
       "buildNumber": "1",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Wanderlust uses your location to help open navigation to saved trip places.",
+        "NSLocationWhenInUseUsageDescription": "随身路书会使用你的位置，帮助打开已保存地点的导航。",
         "ITSAppUsesNonExemptEncryption": false
       }
     },

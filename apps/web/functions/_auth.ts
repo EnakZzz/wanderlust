@@ -1,9 +1,14 @@
-import { buildOAuthAuthorizationUrl, getOAuthProviderStatus, type OAuthProvider } from "@wanderlust/api";
+import { buildOAuthAuthorizationUrl, getOAuthProviderStatus, resolveAgentApiToken, type OAuthProvider } from "@wanderlust/api";
 
 export type AuthEnv = {
   DB?: D1Database;
   ATTACHMENTS?: R2Bucket;
+  AI?: Ai;
   APP_PUBLIC_URL?: string;
+  WORKERS_AI_TEXT_MODEL?: string;
+  WORKERS_AI_VISION_MODEL?: string;
+  AGENT_API_TOKENS?: string;
+  GOOGLE_MAPS_API_KEY?: string;
   GOOGLE_OAUTH_CLIENT_ID?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   APPLE_OAUTH_CLIENT_ID?: string;
@@ -17,6 +22,11 @@ export type OAuthUser = {
   email?: string;
   name?: string;
   avatarUrl?: string;
+};
+
+export type SessionUser = OAuthUser & {
+  ownerId?: string;
+  isAgent?: boolean;
 };
 
 const oauthStateCookie = "wl_oauth_state";
@@ -80,13 +90,32 @@ export async function readSession(request: Request, env: AuthEnv): Promise<Respo
   return json({ user });
 }
 
-export async function getSessionUser(request: Request, env: AuthEnv): Promise<OAuthUser | null> {
-  const token = readBearerToken(request.headers.get("authorization")) ?? readCookie(request.headers.get("cookie"), sessionCookie);
-  if (!token || !env.SESSION_SECRET) {
-    return null;
+export async function getSessionUser(request: Request, env: AuthEnv): Promise<SessionUser | null> {
+  const bearerToken = readBearerToken(request.headers.get("authorization"));
+  const sessionToken = bearerToken ?? readCookie(request.headers.get("cookie"), sessionCookie);
+  if (sessionToken && env.SESSION_SECRET) {
+    const user = await verifySession(sessionToken, env.SESSION_SECRET);
+    if (user) return user;
   }
 
-  return verifySession(token, env.SESSION_SECRET);
+  const agentToken = resolveAgentApiTokenSafely(bearerToken, env.AGENT_API_TOKENS);
+  if (!agentToken) return null;
+  return {
+    id: agentToken.ownerId,
+    provider: "google",
+    ownerId: agentToken.ownerId,
+    name: agentToken.name,
+    email: agentToken.email,
+    isAgent: true
+  };
+}
+
+function resolveAgentApiTokenSafely(bearerToken: string | undefined, config: string | undefined) {
+  try {
+    return resolveAgentApiToken(bearerToken, config);
+  } catch {
+    return undefined;
+  }
 }
 
 export function logout(): Response {
@@ -115,7 +144,8 @@ function getClientSecret(env: AuthEnv, provider: OAuthProvider): string | undefi
   return provider === "google" ? env.GOOGLE_OAUTH_CLIENT_SECRET : env.APPLE_OAUTH_CLIENT_SECRET;
 }
 
-export function getUserStorageId(user: OAuthUser): string {
+export function getUserStorageId(user: SessionUser): string {
+  if (user.ownerId) return user.ownerId;
   return `${user.provider}:${user.id}`;
 }
 

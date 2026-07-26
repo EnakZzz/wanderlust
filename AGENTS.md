@@ -30,6 +30,15 @@ Copy-Item .deploy.local.example.ps1 .deploy.local.ps1
 
 `apps/web/wrangler.toml` 和 `apps/server/wrangler.jsonc` 是由脚本根据 `.deploy.local.ps1` 生成的本地文件，也已忽略。不要手工把真实部署参数写回可提交文件。
 
+Web 的 AI 功能使用 Cloudflare Pages Functions 的 Workers AI binding，`scripts/deploy-config.ps1` 会在 `apps/web/wrangler.toml` 中生成：
+
+```toml
+[ai]
+binding = "AI"
+```
+
+默认文本模型在代码中配置，临时切换模型时用 Cloudflare Pages 环境变量 `WORKERS_AI_TEXT_MODEL`，不要把模型实验参数硬编码进部署脚本。
+
 ## Cloudflare Deploy
 
 部署前先确认 Wrangler 已登录：
@@ -49,6 +58,17 @@ npm run migrate:server
 ```powershell
 npm run deploy:web
 ```
+
+正式发布一律部署到主域名 `https://wanderlust-web.pages.dev/`。如果当前 git 分支不是 Cloudflare Pages 的生产分支，不能只运行默认预览部署；需要显式使用生产分支发布：
+
+```powershell
+Push-Location apps/web
+npm run build
+npx wrangler pages deploy out --project-name wanderlust-web --branch main
+Pop-Location
+```
+
+发布后用 `Invoke-WebRequest https://wanderlust-web.pages.dev/` 或浏览器确认主域名已返回最新页面，不以 `*.wanderlust-web.pages.dev` 的预览/alias 地址作为正式发布完成标准。
 
 如果需要部署独立 Worker：
 
@@ -71,6 +91,7 @@ OAuth 和 session 这类 secret 不写入仓库，也不写入 `.deploy.local.ex
 ```powershell
 npx wrangler pages secret put GOOGLE_OAUTH_CLIENT_ID --project-name <PagesProjectName>
 npx wrangler pages secret put GOOGLE_OAUTH_CLIENT_SECRET --project-name <PagesProjectName>
+npx wrangler pages secret put GOOGLE_MAPS_API_KEY --project-name <PagesProjectName>
 npx wrangler pages secret put SESSION_SECRET --project-name <PagesProjectName>
 ```
 
@@ -85,4 +106,114 @@ npx wrangler pages secret put APPLE_OAUTH_CLIENT_SECRET --project-name <PagesPro
 
 ```powershell
 npm run verify:auth
+```
+
+## Local Agent API
+
+本地 Codex/agent 可以用主域名 API 直接读写路书，不需要浏览器 Cookie。正式接口一律走：
+
+```text
+https://wanderlust-web.pages.dev/
+```
+
+Cloudflare Pages secret 使用 `AGENT_API_TOKENS`，值是 JSON 数组，不提交到仓库：
+
+```json
+[
+  {
+    "token": "wl_agent_xxx",
+    "ownerId": "google:103988743076222203305",
+    "name": "Local Codex"
+  }
+]
+```
+
+`ownerId` 决定写入哪个账号空间。要写入当前 Google 账号，使用 D1 `users.id` 的值，例如 `google:103988743076222203305`；要让 agent 写入独立空间，可使用类似 `agent:codex` 的 ownerId。
+
+本机 token 放在 `.local/agent-api.local.ps1`，该目录已忽略，不提交。格式：
+
+```powershell
+$AgentApi = @{
+  BaseUrl = "https://wanderlust-web.pages.dev"
+  Token = "wl_agent_xxx"
+  OwnerId = "google:103988743076222203305"
+}
+```
+
+本地 agent 操作网站接口的标准流程：
+
+1. 先加载本地 token 配置：
+
+```powershell
+. .\.local\agent-api.local.ps1
+```
+
+2. 优先使用脚本调用接口。脚本会自动读取 `.local/agent-api.local.ps1` 并添加 `Authorization: Bearer <token>`：
+
+```powershell
+.\scripts\invoke-agent-api.ps1 -Method GET -Path /api/trips
+.\scripts\invoke-agent-api.ps1 -Method POST -Path /api/ai/import -BodyFile .\artifacts\ai-import.json
+.\scripts\invoke-agent-api.ps1 -Method PUT -Path /api/trips/<tripId> -BodyFile .\artifacts\trip.json
+```
+
+3. 直接调用 HTTP API 时，必须带 Bearer token：
+
+```powershell
+. .\.local\agent-api.local.ps1
+$headers = @{ Authorization = "Bearer $($AgentApi.Token)" }
+Invoke-WebRequest "$($AgentApi.BaseUrl)/api/trips" -Headers $headers -UseBasicParsing
+```
+
+常用接口：
+
+```powershell
+# 读取当前账号路书列表
+.\scripts\invoke-agent-api.ps1 -Method GET -Path /api/trips
+
+# 读取单个路书
+.\scripts\invoke-agent-api.ps1 -Method GET -Path /api/trips/<tripId>
+
+# 创建路书，Body 必须是完整 Trip JSON 或兼容草稿字段
+.\scripts\invoke-agent-api.ps1 -Method POST -Path /api/trips -BodyFile .\artifacts\trip.json
+
+# 更新路书
+.\scripts\invoke-agent-api.ps1 -Method PUT -Path /api/trips/<tripId> -BodyFile .\artifacts\trip.json
+
+# 删除路书
+.\scripts\invoke-agent-api.ps1 -Method DELETE -Path /api/trips/<tripId>
+
+# 把文本材料转换成 AI 路书草稿
+.\scripts\invoke-agent-api.ps1 -Method POST -Path /api/ai/import -BodyFile .\artifacts\ai-import.json
+
+# 把截图 data URL 识别成可导入文本
+.\scripts\invoke-agent-api.ps1 -Method POST -Path /api/ai/ocr -BodyFile .\artifacts\ai-ocr.json
+```
+
+`/api/ai/import` 的请求示例：
+
+```json
+{
+  "trip": {
+    "title": "埃及红海路书",
+    "destination": "埃及：开罗 / 沙姆沙伊赫",
+    "startDate": "2026-10-01",
+    "endDate": "2026-10-09",
+    "timezone": "Africa/Cairo"
+  },
+  "text": "粘贴订单、邮件、截图 OCR 后的行程文本"
+}
+```
+
+`/api/ai/ocr` 的请求示例：
+
+```json
+{
+  "images": [
+    {
+      "name": "flight.png",
+      "type": "image/png",
+      "dataUrl": "data:image/png;base64,..."
+    }
+  ]
+}
 ```

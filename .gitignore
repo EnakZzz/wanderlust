@@ -16,6 +16,7 @@ apps/mobile/android/
 apps/mobile/*.tsbuildinfo
 
 # Build outputs
+artifacts/
 *.apk
 *.aab
 *.ipa

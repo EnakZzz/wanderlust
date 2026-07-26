@@ -1,15 +1,15 @@
-# Wanderlust Planner
+# 随身路书
 
-Web-first trip planning with an Expo mobile app for offline routebook use.
+离线优先的旅行路书，配有网页规划器和 Expo 移动端，适合路上使用。
 
-## Apps
+## 应用
 
-- `apps/web`: Next.js editor/PWA shell.
-- `apps/mobile`: Expo React Native iOS/Android app shell.
-- `apps/server`: Cloudflare Workers API with D1 routebook storage and R2 attachment storage.
-- `packages/domain`: shared trip schemas, sorting, date, and navigation helpers.
+- `apps/web`: Next.js 编辑器 / PWA 外壳。
+- `apps/mobile`: Expo React Native iOS / Android 应用外壳。
+- `apps/server`: Cloudflare Workers API，使用 D1 存路书，R2 存附件。
+- `packages/domain`: 共享的行程 schema、排序、日期和导航工具。
 
-## Verification
+## 验证
 
 ```powershell
 npm test
@@ -18,33 +18,33 @@ npm run build -w @wanderlust/web
 npm run build:android:apk
 ```
 
-Android release APK output:
+Android 发布 APK 输出：
 
 ```text
 apps/mobile/android/app/build/outputs/apk/release/app-release.apk
 ```
 
-## Android Release Signing
+## Android 发布签名
 
-Android Play upload signing uses local ignored files. On a new build machine:
+Android Play upload signing uses local ignored files. 在新构建机器上：
 
 ```powershell
 Copy-Item .android-signing.local.example.ps1 .android-signing.local.ps1
 ```
 
-Fill the keystore path, store password, key alias, and key password. To generate a fresh local upload keystore on this machine:
+填写 keystore 路径、store password、key alias 和 key password。要在这台机器上生成新的本地上传 keystore：
 
 ```powershell
 npm run create:android:keystore
 ```
 
-The generated keystore is stored under `.local/android/` and the secret config is stored in `.android-signing.local.ps1`; both are ignored. `npm run build:android:apk`, `npm run build:android:aab`, and `npm run build:android:release` inject this signing config after `expo prebuild`, then `verify-android-apk.ps1` rejects debug-signed APKs.
+生成的 keystore 存在 `.local/android/` 下，密钥配置存在 `.android-signing.local.ps1`；两者都已忽略。`npm run build:android:apk`、`npm run build:android:aab` 和 `npm run build:android:release` 会在 `expo prebuild` 后注入这个签名配置，然后 `verify-android-apk.ps1` 会拒绝调试签名的 APK。
 
-## Cloudflare Deployment
+## Cloudflare 部署
 
-Deployment resource names and ids are local machine config. Copy `.deploy.local.example.ps1` to `.deploy.local.ps1`, fill Cloudflare values, and keep the local file uncommitted.
+部署资源名和 ID 都是本机配置。把 `.deploy.local.example.ps1` 复制为 `.deploy.local.ps1`，填写 Cloudflare 值，并保持本地文件不提交。
 
-Deploy commands:
+部署命令：
 
 ```powershell
 npm run migrate:server
@@ -52,43 +52,43 @@ npm run deploy:server
 npm run deploy:web
 ```
 
-See `AGENTS.md` for the full deployment workflow and required Cloudflare secrets.
+完整部署流程和所需 Cloudflare 密钥请见 `AGENTS.md`。
 
-OAuth status can be checked after deployment:
+部署后可检查 OAuth 状态：
 
 ```powershell
 npm run verify:auth
 ```
 
-Google sign-in requires `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and `SESSION_SECRET` on Cloudflare Pages. Apple sign-in additionally requires `APPLE_OAUTH_CLIENT_ID` and `APPLE_OAUTH_CLIENT_SECRET`; the Apple secret must be a Sign in with Apple client-secret JWT generated from the Apple Developer private key, Team ID, Key ID, Service ID, and expiry.
+Google 登录需要在 Cloudflare Pages 上配置 `GOOGLE_OAUTH_CLIENT_ID`、`GOOGLE_OAUTH_CLIENT_SECRET` 和 `SESSION_SECRET`。Apple 登录还需要 `APPLE_OAUTH_CLIENT_ID` 和 `APPLE_OAUTH_CLIENT_SECRET`；Apple secret 必须是用 Apple Developer private key、Team ID、Key ID、Service ID 和过期时间生成的 Sign in with Apple client-secret JWT。
 
-## iOS Build Host
+## iOS 构建主机
 
-Remote host alias:
+远程主机别名：
 
 ```powershell
 ssh ios-build
 ```
 
-The iOS build script is:
+iOS 构建脚本：
 
 ```powershell
 npm run build:ios:remote
 ```
 
-Diagnostic command:
+诊断命令：
 
 ```powershell
 npm run diagnose:ios:remote
 ```
 
-Signing diagnostic command:
+签名诊断命令：
 
 ```powershell
 npm run verify:ios:signing
 ```
 
-Current remote host:
+当前远程主机：
 
 - `ios-build` points to `happyelement@10.160.102.177` on this machine.
 - Hostname: `LX-0101000065`
@@ -101,19 +101,19 @@ Current remote host:
 - Bundle ID: `com.enakzzz.wanderlust`
 - App Store Connect App ID: `6792964279`
 
-Current iOS signing state:
+当前 iOS 签名状态：
 
 - The remote keychain has a valid `Apple Distribution: QI ZUO (VKQ556327V)` identity.
 - The remote host has a matching `Wanderlust Planner App Store` provisioning profile for `com.enakzzz.wanderlust`.
 - `xcodeAccountHint` can still be false in SSH diagnostics, but manual distribution signing assets are installed and `npm run verify:ios:signing` is expected to pass.
 
-Current iOS build blocker:
+当前 iOS 构建阻塞：
 
 - Xcode 16.2 provides Swift 6.0.x, but `ExpoModulesJSI` currently resolves a Swift package that requires Swift tools 6.2.0.
 - Install/select Xcode 26 before expecting `npm run build:ios:remote` to produce an IPA.
 - `npm run prepare:ios:remote` can install Xcode 26 after `xcodes` is authenticated on the remote host or `FASTLANE_SESSION` is provided.
 
-Current Apple login blocker:
+当前 Apple 登录阻塞：
 
 - Cloudflare can expose Apple login as soon as `APPLE_OAUTH_CLIENT_ID` and `APPLE_OAUTH_CLIENT_SECRET` are configured for the Pages project.
 - Apple Developer must have a Sign in with Apple-enabled Service ID whose return URL is `https://wanderlust-web.pages.dev/auth/apple/callback`.
@@ -123,9 +123,9 @@ If signing assets are rotated, install a valid distribution certificate plus mat
 
 EAS fallback is configured in `apps/mobile/eas.json`, but it still requires an Expo account plus Apple/Google store credentials before it can produce signed store artifacts.
 
-## Store Review Readiness
+## 商店审核准备
 
-- Authentication plan: Apple, Google, and email sign-in. iOS has `usesAppleSignIn` and `expo-apple-authentication` configured.
-- Privacy policy requirement: publish a privacy policy URL before App Store / Google Play submission and include data use for account identity, trip content, attachments, location-assisted navigation, AI prompts, billing entitlement status, and diagnostics.
-- Delete account requirement: expose an in-app delete account action before submission. The action must remove or anonymize the user profile, revoke shares, remove collaborators, delete private attachments, and cancel local offline copies.
-- User-generated content controls: private/public share links can be revoked and can expire; public discovery is intentionally out of scope for the first store build.
+- 认证方案：Apple、Google 和邮箱登录。iOS 已配置 `usesAppleSignIn` 和 `expo-apple-authentication`。
+- 隐私政策要求：在提交 App Store / Google Play 前发布隐私政策 URL，并说明账户身份、行程内容、附件、基于定位的导航、AI 提示、计费权益状态和诊断信息的数据用途。
+- 删除账号要求：在提交前提供应用内删除账号操作。该操作必须删除或匿名化用户资料、撤销分享、移除协作者、删除私有附件，并清除本地离线副本。
+- 用户生成内容控制：私有/公开分享链接都可撤销并可过期；公开发现功能在首个商店版本中有意不做。

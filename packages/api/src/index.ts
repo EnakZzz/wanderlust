@@ -20,6 +20,13 @@ const HealthResponseSchema = z.object({
   service: z.literal("wanderlust-api")
 });
 
+const AgentApiTokenSchema = z.object({
+  token: z.string().min(16),
+  ownerId: z.string().regex(/^[a-z][a-z0-9_-]*:.+$/),
+  name: z.string().min(1).optional(),
+  email: z.string().email().optional()
+});
+
 export type ServerConfig = Omit<z.infer<typeof ServerConfigInputSchema>, "NEXT_PUBLIC_SUPABASE_URL" | "APP_PUBLIC_URL"> & {
   NEXT_PUBLIC_SUPABASE_URL: URL;
   APP_PUBLIC_URL: URL;
@@ -30,6 +37,7 @@ export type ClientRuntimeConfig = {
 };
 
 export type HealthResponse = z.infer<typeof HealthResponseSchema>;
+export type AgentApiToken = z.infer<typeof AgentApiTokenSchema>;
 export type OAuthProvider = "google" | "apple";
 export type OAuthProviderStatus = Record<OAuthProvider, { configured: boolean }>;
 export type OAuthAuthorizationInput = {
@@ -40,7 +48,7 @@ export type OAuthAuthorizationInput = {
   returnTo: string;
 };
 
-const AiDraftItemSchema = z.object({
+export const AiDraftItemSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   type: z.enum(["place", "food", "hotel", "transport", "activity", "note", "booking"]),
   title: z.string().min(1),
@@ -50,10 +58,11 @@ const AiDraftItemSchema = z.object({
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
   googlePlaceId: z.string().optional(),
+  reason: z.string().optional(),
   notes: z.string().optional()
 });
 
-const AiTripDraftSchema = z.object({
+export const AiTripDraftSchema = z.object({
   title: z.string().min(1),
   destination: z.string().min(1),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -63,12 +72,28 @@ const AiTripDraftSchema = z.object({
 });
 
 export type AiTripDraftInput = z.input<typeof AiTripDraftSchema>;
+export type AiTripDraft = z.infer<typeof AiTripDraftSchema>;
+export type AiOcrImageInput = {
+  name?: string;
+  type?: string;
+  dataUrl?: string;
+};
+export type NormalizedAiOcrImage = {
+  name: string;
+  type: string;
+  dataUrl: string;
+  byteLength: number;
+};
+
+const supportedAiOcrImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const maxAiOcrImageCount = 4;
+const maxAiOcrImageBytes = 4 * 1024 * 1024;
 
 export function parseServerConfig(input: unknown): ServerConfig {
   const result = ServerConfigInputSchema.safeParse(input);
   if (!result.success) {
     const fields = result.error.issues.map((issue) => issue.path.join(".")).filter(Boolean).join(", ");
-    throw new Error(`Missing or invalid server config: ${fields}`);
+    throw new Error(`服务器配置缺失或无效：${fields}`);
   }
 
   return {
@@ -82,7 +107,7 @@ export function parseClientRuntimeConfig(input: unknown): ClientRuntimeConfig {
   const result = ClientRuntimeConfigInputSchema.safeParse(input);
   if (!result.success) {
     const fields = result.error.issues.map((issue) => issue.path.join(".")).filter(Boolean).join(", ");
-    throw new Error(`Missing or invalid client runtime config: ${fields}`);
+    throw new Error(`客户端运行时配置缺失或无效：${fields}`);
   }
 
   return {
@@ -97,10 +122,34 @@ export function buildApiUrl(config: ClientRuntimeConfig, path: `/${string}`): st
 export function parseHealthResponse(input: unknown): HealthResponse {
   const result = HealthResponseSchema.safeParse(input);
   if (!result.success) {
-    throw new Error("Invalid health response");
+    throw new Error("无效的健康检查响应");
   }
 
   return result.data;
+}
+
+export function parseAgentApiTokens(input: string | undefined): AgentApiToken[] {
+  if (!input?.trim()) return [];
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(input);
+  } catch {
+    throw new Error("AGENT_API_TOKENS 配置无效：必须是 JSON 数组");
+  }
+
+  const result = z.array(AgentApiTokenSchema).safeParse(parsed);
+  if (!result.success) {
+    const fields = result.error.issues.map((issue) => issue.path.join(".")).filter(Boolean).join(", ");
+    throw new Error(`AGENT_API_TOKENS 配置无效：${fields}`);
+  }
+
+  return result.data;
+}
+
+export function resolveAgentApiToken(token: string | undefined, config: string | undefined): AgentApiToken | undefined {
+  if (!token) return undefined;
+  return parseAgentApiTokens(config).find((entry) => entry.token === token);
 }
 
 export function getOAuthProviderStatus(input: Record<string, string | undefined>): OAuthProviderStatus {
@@ -138,7 +187,7 @@ export function normalizeAiTripDraft(input: AiTripDraftInput) {
   draft.items.forEach((item, index) => {
     const day = daysByDate.get(item.date);
     if (!day) {
-      throw new Error("AI draft item date is outside the trip range");
+      throw new Error("AI 草稿条目的日期超出行程范围");
     }
 
     const itineraryItem: ItineraryItem = {
@@ -151,6 +200,11 @@ export function normalizeAiTripDraft(input: AiTripDraftInput) {
 
     if (item.startTime) itineraryItem.startTime = item.startTime;
     if (item.endTime) itineraryItem.endTime = item.endTime;
+    if (item.locationName) itineraryItem.locationName = item.locationName;
+    if (typeof item.latitude === "number") itineraryItem.latitude = item.latitude;
+    if (typeof item.longitude === "number") itineraryItem.longitude = item.longitude;
+    if (item.googlePlaceId) itineraryItem.googlePlaceId = item.googlePlaceId;
+    if (item.reason) itineraryItem.reason = item.reason;
     if (item.notes) itineraryItem.notes = item.notes;
 
     day.items.push(itineraryItem);
@@ -190,10 +244,53 @@ export function normalizeAiTripDraft(input: AiTripDraftInput) {
   return { trip };
 }
 
+export function parseAiTripDraft(input: unknown): AiTripDraft {
+  return AiTripDraftSchema.parse(input);
+}
+
+export function normalizeAiOcrImages(input: unknown): NormalizedAiOcrImage[] {
+  if (!Array.isArray(input)) {
+    throw new Error("请上传行程截图");
+  }
+  if (input.length === 0) {
+    throw new Error("请上传行程截图");
+  }
+  if (input.length > maxAiOcrImageCount) {
+    throw new Error(`一次最多识别 ${maxAiOcrImageCount} 张截图`);
+  }
+
+  return input.map((image, index) => {
+    const candidate = image as AiOcrImageInput;
+    const name = typeof candidate.name === "string" && candidate.name.trim() ? candidate.name.trim().slice(0, 120) : `截图 ${index + 1}`;
+    const type = typeof candidate.type === "string" ? candidate.type.trim().toLowerCase() : "";
+    const dataUrl = typeof candidate.dataUrl === "string" ? candidate.dataUrl.trim() : "";
+    if (!supportedAiOcrImageTypes.has(type)) {
+      throw new Error("仅支持 JPG、PNG 或 WebP 截图");
+    }
+
+    const expectedPrefix = `data:${type};base64,`;
+    if (!dataUrl.startsWith(expectedPrefix)) {
+      throw new Error("截图数据格式无效");
+    }
+
+    const base64 = dataUrl.slice(expectedPrefix.length);
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) {
+      throw new Error("截图数据格式无效");
+    }
+
+    const byteLength = Math.floor((base64.length * 3) / 4) - (base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0);
+    if (byteLength <= 0 || byteLength > maxAiOcrImageBytes) {
+      throw new Error("单张截图不能超过 4MB");
+    }
+
+    return { name, type, dataUrl, byteLength };
+  });
+}
+
 function assertSafeReturnPath(returnTo: string): void {
   const isAppRelative = returnTo.startsWith("/") && !returnTo.startsWith("//");
   const isMobileDeepLink = returnTo === "wanderlust://auth";
   if (!isAppRelative && !isMobileDeepLink) {
-    throw new Error("returnTo must be an app-relative path or the Wanderlust mobile auth callback");
+    throw new Error("returnTo 必须是应用内相对路径或 Wanderlust 移动端登录回调地址");
   }
 }

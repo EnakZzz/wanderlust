@@ -1,6 +1,6 @@
 {
-  "name": "Wanderlust Planner",
-  "short_name": "Wanderlust",
+  "name": "随身路书",
+  "short_name": "路书",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fbf8f1",

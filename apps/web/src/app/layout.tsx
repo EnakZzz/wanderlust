@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
+import { productBrand } from "@wanderlust/domain";
 import "./styles.css";
 
 export const metadata: Metadata = {
-  title: "Wanderlust Planner",
-  description: "Plan trips on the web. Carry them offline on your phone.",
+  title: productBrand.name,
+  description: productBrand.description,
   manifest: "/manifest.webmanifest"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="zh-CN">
       <body>{children}</body>
     </html>
   );

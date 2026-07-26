@@ -57,6 +57,9 @@ pages_build_output_dir = "out"
 binding = "DB"
 database_name = "$($Config.D1DatabaseName)"
 database_id = "$($Config.D1DatabaseId)"
+
+[ai]
+binding = "AI"
 "@ | Set-Content -LiteralPath $webWrangler -NoNewline
 
   @{

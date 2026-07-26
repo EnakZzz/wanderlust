@@ -1,12 +1,26 @@
+import { normalizeAiOcrImages, normalizeAiTripDraft, parseAiTripDraft } from "@wanderlust/api";
+import { canViewShare } from "@wanderlust/domain";
 import { getSessionUser, getUserStorageId, json, type AuthEnv } from "../_auth";
 
 type TripDraftPayload = {
   id?: string;
   title?: string;
   destination?: string;
+  destinationMeta?: DestinationCandidate;
   startDate?: string;
   endDate?: string;
   status?: "draft" | "active" | "archived";
+};
+
+type DestinationCandidate = {
+  name: string;
+  fullName: string;
+  countryCode?: string;
+  latitude: number;
+  longitude: number;
+  timezone?: string;
+  provider: "google" | "fallback";
+  providerPlaceId?: string;
 };
 
 type TripRow = {
@@ -31,6 +45,118 @@ type TripSummary = {
   updatedAt: string;
 };
 
+type ShareRow = {
+  id: string;
+  trip_id: string;
+  owner_id: string;
+  token: string;
+  visibility: "public" | "private";
+  allow_copy: number;
+  revoked_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type ShareTripRow = ShareRow & {
+  payload: string;
+};
+
+type AiRoutebookRequest = {
+  trip?: Partial<TripDraftPayload> & {
+    timezone?: string;
+    days?: Array<{ date?: string; title?: string; items?: Array<{ title?: string; startTime?: string; locationName?: string; reason?: string; notes?: string }> }>;
+    places?: Array<{ name?: string; category?: string; address?: string; notes?: string }>;
+    bookings?: Array<{ title?: string; type?: string; startsAt?: string; endsAt?: string; notes?: string }>;
+  };
+  prompt?: string;
+  text?: string;
+};
+
+type AiTextResult = string | { response?: unknown; result?: { response?: unknown }; choices?: Array<{ message?: { content?: unknown } }> };
+type AiOcrRequest = {
+  images?: unknown;
+};
+type AiVisionResult =
+  | string
+  | {
+      response?: unknown;
+      answer?: unknown;
+      description?: unknown;
+      result?: { response?: unknown; answer?: unknown; description?: unknown };
+      choices?: Array<{ message?: { content?: unknown } }>;
+    };
+
+type GoogleGeocodeResponse = {
+  status: string;
+  results?: Array<{
+    place_id?: string;
+    formatted_address?: string;
+    address_components?: Array<{
+      long_name: string;
+      short_name: string;
+      types: string[];
+    }>;
+    geometry?: {
+      location?: {
+        lat: number;
+        lng: number;
+      };
+    };
+  }>;
+};
+
+type GoogleTimezoneResponse = {
+  status: string;
+  timeZoneId?: string;
+};
+
+const defaultWorkersAiTextModel = "@cf/meta/llama-3.1-8b-instruct-fast";
+const defaultWorkersAiVisionModel = "@cf/moondream/moondream3.1-9B-A2B";
+const fallbackDestinations: DestinationCandidate[] = [
+  { name: "Tokyo", fullName: "Tokyo, Japan", countryCode: "JP", latitude: 35.6762, longitude: 139.6503, timezone: "Asia/Tokyo", provider: "fallback" },
+  { name: "Osaka", fullName: "Osaka, Japan", countryCode: "JP", latitude: 34.6937, longitude: 135.5023, timezone: "Asia/Tokyo", provider: "fallback" },
+  { name: "Kyoto", fullName: "Kyoto, Japan", countryCode: "JP", latitude: 35.0116, longitude: 135.7681, timezone: "Asia/Tokyo", provider: "fallback" },
+  { name: "Seoul", fullName: "Seoul, South Korea", countryCode: "KR", latitude: 37.5665, longitude: 126.978, timezone: "Asia/Seoul", provider: "fallback" },
+  { name: "Bangkok", fullName: "Bangkok, Thailand", countryCode: "TH", latitude: 13.7563, longitude: 100.5018, timezone: "Asia/Bangkok", provider: "fallback" },
+  { name: "Singapore", fullName: "Singapore", countryCode: "SG", latitude: 1.3521, longitude: 103.8198, timezone: "Asia/Singapore", provider: "fallback" },
+  { name: "Paris", fullName: "Paris, France", countryCode: "FR", latitude: 48.8566, longitude: 2.3522, timezone: "Europe/Paris", provider: "fallback" },
+  { name: "London", fullName: "London, United Kingdom", countryCode: "GB", latitude: 51.5072, longitude: -0.1276, timezone: "Europe/London", provider: "fallback" },
+  { name: "New York", fullName: "New York, NY, USA", countryCode: "US", latitude: 40.7128, longitude: -74.006, timezone: "America/New_York", provider: "fallback" },
+  { name: "Los Angeles", fullName: "Los Angeles, CA, USA", countryCode: "US", latitude: 34.0522, longitude: -118.2437, timezone: "America/Los_Angeles", provider: "fallback" }
+];
+const aiTripDraftJsonSchema = {
+  type: "object",
+  properties: {
+    title: { type: "string" },
+    destination: { type: "string" },
+    startDate: { type: "string" },
+    endDate: { type: "string" },
+    timezone: { type: "string" },
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          date: { type: "string" },
+          type: { type: "string", enum: ["place", "food", "hotel", "transport", "activity", "note", "booking"] },
+          title: { type: "string" },
+          startTime: { type: "string" },
+          endTime: { type: "string" },
+          locationName: { type: "string" },
+          latitude: { type: "number" },
+          longitude: { type: "number" },
+          googlePlaceId: { type: "string" },
+          reason: { type: "string" },
+          notes: { type: "string" }
+        },
+        required: ["date", "type", "title"]
+      }
+    }
+  },
+  required: ["title", "destination", "startDate", "endDate", "timezone", "items"]
+};
+
 export const onRequest: PagesFunction<AuthEnv> = async ({ request, env, params }) => {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204 });
@@ -45,6 +171,41 @@ export const onRequest: PagesFunction<AuthEnv> = async ({ request, env, params }
 
   if (url.pathname === "/api/trips" && request.method === "POST") {
     return createTrip(request, env);
+  }
+
+  if (path === "ai/plan" && request.method === "POST") {
+    return createAiTripDraft(request, env, "plan");
+  }
+
+  if (path === "ai/import" && request.method === "POST") {
+    return createAiTripDraft(request, env, "import");
+  }
+
+  if (path === "ai/ocr" && request.method === "POST") {
+    return extractAiTripTextFromImages(request, env);
+  }
+
+  if (path === "geo/search" && request.method === "GET") {
+    return searchDestinations(request, env);
+  }
+
+  const publicShareMatch = path.match(/^share\/([^/]+)$/);
+  if (publicShareMatch && request.method === "GET") {
+    return getPublicShare(env, decodeURIComponent(publicShareMatch[1]!));
+  }
+
+  const tripShareMatch = path.match(/^trips\/([^/]+)\/share$/);
+  if (tripShareMatch && request.method === "GET") {
+    return getTripShare(request, env, decodeURIComponent(tripShareMatch[1]!));
+  }
+
+  if (tripShareMatch && request.method === "POST") {
+    return createTripShare(request, env, decodeURIComponent(tripShareMatch[1]!));
+  }
+
+  const shareMatch = path.match(/^shares\/([^/]+)$/);
+  if (shareMatch && request.method === "DELETE") {
+    return revokeShare(request, env, decodeURIComponent(shareMatch[1]!));
   }
 
   const tripMatch = path.match(/^trips\/([^/]+)$/);
@@ -71,6 +232,89 @@ export const onRequest: PagesFunction<AuthEnv> = async ({ request, env, params }
   return json({ error: "not_found" }, 404);
 };
 
+async function searchDestinations(request: Request, env: AuthEnv): Promise<Response> {
+  const url = new URL(request.url);
+  const query = (url.searchParams.get("q") ?? "").trim();
+  if (query.length < 2) {
+    return json({ candidates: [] });
+  }
+  if (query.length > 120) {
+    return json({ error: "query_too_long" }, 400);
+  }
+
+  if (!env.GOOGLE_MAPS_API_KEY?.trim()) {
+    return json({ candidates: searchFallbackDestinations(query) });
+  }
+
+  try {
+    const geocodeUrl = new URL("https://maps.googleapis.com/maps/api/geocode/json");
+    geocodeUrl.searchParams.set("address", query);
+    geocodeUrl.searchParams.set("key", env.GOOGLE_MAPS_API_KEY);
+    geocodeUrl.searchParams.set("language", "en");
+
+    const geocodeResponse = await fetch(geocodeUrl.toString());
+    if (!geocodeResponse.ok) {
+      return json({ candidates: searchFallbackDestinations(query), providerError: "google_geocode_http_error" });
+    }
+
+    const geocode = (await geocodeResponse.json()) as GoogleGeocodeResponse;
+    if (geocode.status !== "OK") {
+      return json({ candidates: searchFallbackDestinations(query), providerError: geocode.status });
+    }
+
+    const candidates = await Promise.all(
+      (geocode.results ?? [])
+        .slice(0, 5)
+        .map(async (result): Promise<DestinationCandidate | null> => {
+          const location = result.geometry?.location;
+          if (!location || !result.formatted_address) return null;
+          const country = result.address_components?.find((component) => component.types.includes("country"));
+          const locality =
+            result.address_components?.find((component) => component.types.includes("locality")) ??
+            result.address_components?.find((component) => component.types.includes("administrative_area_level_1")) ??
+            result.address_components?.[0];
+          const timezone = await fetchGoogleTimezone(env, location.lat, location.lng);
+          return {
+            name: locality?.long_name ?? result.formatted_address,
+            fullName: result.formatted_address,
+            countryCode: country?.short_name,
+            latitude: location.lat,
+            longitude: location.lng,
+            timezone,
+            provider: "google",
+            providerPlaceId: result.place_id
+          };
+        })
+    );
+
+    return json({ candidates: candidates.filter((candidate): candidate is DestinationCandidate => Boolean(candidate)) });
+  } catch (error) {
+    return json({
+      candidates: searchFallbackDestinations(query),
+      providerError: error instanceof Error ? error.message : "google_geocode_failed"
+    });
+  }
+}
+
+async function fetchGoogleTimezone(env: AuthEnv, latitude: number, longitude: number): Promise<string | undefined> {
+  if (!env.GOOGLE_MAPS_API_KEY?.trim()) return undefined;
+  const timezoneUrl = new URL("https://maps.googleapis.com/maps/api/timezone/json");
+  timezoneUrl.searchParams.set("location", `${latitude},${longitude}`);
+  timezoneUrl.searchParams.set("timestamp", `${Math.floor(Date.now() / 1000)}`);
+  timezoneUrl.searchParams.set("key", env.GOOGLE_MAPS_API_KEY);
+  const response = await fetch(timezoneUrl.toString());
+  if (!response.ok) return undefined;
+  const payload = (await response.json()) as GoogleTimezoneResponse;
+  return payload.status === "OK" ? payload.timeZoneId : undefined;
+}
+
+function searchFallbackDestinations(query: string): DestinationCandidate[] {
+  const normalized = query.toLowerCase();
+  return fallbackDestinations
+    .filter((candidate) => `${candidate.name} ${candidate.fullName}`.toLowerCase().includes(normalized))
+    .slice(0, 5);
+}
+
 async function listTrips(request: Request, env: AuthEnv): Promise<Response> {
   const auth = await requireTripAuth(request, env);
   if (auth instanceof Response) return auth;
@@ -85,6 +329,123 @@ async function listTrips(request: Request, env: AuthEnv): Promise<Response> {
     .all<TripRow>();
 
   return json({ trips: result.results.map(rowToTripSummary) });
+}
+
+async function createAiTripDraft(request: Request, env: AuthEnv, mode: "plan" | "import"): Promise<Response> {
+  const user = await getSessionUser(request, env);
+  if (!user) {
+    return json({ error: "unauthorized" }, 401);
+  }
+  if (!env.AI) {
+    return json({ error: "workers_ai_not_configured" }, 503);
+  }
+
+  const payload = await request.json<AiRoutebookRequest>();
+  const trip = payload.trip ?? {};
+  const model = env.WORKERS_AI_TEXT_MODEL?.trim() || defaultWorkersAiTextModel;
+  const userText = mode === "plan" ? clampText(payload.prompt ?? "", 4000) : clampText(payload.text ?? "", 12000);
+  if (!userText.trim()) {
+    return json({ error: mode === "plan" ? "prompt_required" : "text_required" }, 400);
+  }
+
+  const currentTrip = {
+    title: trip.title,
+    destination: trip.destination,
+    startDate: trip.startDate,
+    endDate: trip.endDate,
+    timezone: trip.timezone,
+    existingDays: (trip.days ?? []).map((day) => ({
+      date: day.date,
+      title: day.title,
+      items: (day.items ?? []).map((item) => ({
+        title: item.title,
+        startTime: item.startTime,
+        locationName: item.locationName,
+        reason: item.reason,
+        notes: item.notes
+      }))
+    })),
+    places: trip.places ?? [],
+    bookings: trip.bookings ?? []
+  };
+
+  const systemPrompt = [
+    "You are Pocket Routebook AI. Return only strict JSON, no markdown.",
+    "The JSON shape is:",
+    '{"title":"string","destination":"string","startDate":"YYYY-MM-DD","endDate":"YYYY-MM-DD","timezone":"IANA timezone","items":[{"date":"YYYY-MM-DD","type":"place|food|hotel|transport|activity|note|booking","title":"string","startTime":"HH:MM","endTime":"HH:MM","locationName":"string","latitude":number,"longitude":number,"googlePlaceId":"string","reason":"string","notes":"string"}]}',
+    "Use the trip date range from context unless the user clearly provided different dates.",
+    "Give every non-note item a short reason explaining why it belongs at that point in the day.",
+    "Keep items practical for offline travel use. Mark uncertain details in notes instead of inventing confirmation numbers."
+  ].join("\n");
+
+  const taskPrompt =
+    mode === "plan"
+      ? `Create a reviewable itinerary draft from this request.\nCurrent routebook context:\n${JSON.stringify(currentTrip)}\nUser request:\n${userText}`
+      : `Extract a reviewable routebook draft from pasted travel material. Preserve confirmed facts and put uncertainty in notes.\nCurrent routebook context:\n${JSON.stringify(currentTrip)}\nMaterial:\n${userText}`;
+
+  try {
+    const aiResult = (await env.AI.run(model, {
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: taskPrompt }
+      ],
+      temperature: mode === "plan" ? 0.35 : 0.1,
+      max_tokens: 3200,
+      response_format: {
+        type: "json_schema",
+        json_schema: aiTripDraftJsonSchema
+      }
+    })) as AiTextResult;
+    const draftJson = parseAiTripDraft(parseJsonFromAiOutput(extractAiOutput(aiResult)));
+    const normalized = normalizeAiTripDraft(draftJson);
+    return json({ draft: draftJson, trip: normalized.trip, provider: "cloudflare-workers-ai", model });
+  } catch (error) {
+    return json({ error: "ai_draft_failed", message: error instanceof Error ? error.message : "Could not create AI draft" }, 502);
+  }
+}
+
+async function extractAiTripTextFromImages(request: Request, env: AuthEnv): Promise<Response> {
+  const user = await getSessionUser(request, env);
+  if (!user) {
+    return json({ error: "unauthorized" }, 401);
+  }
+  if (!env.AI) {
+    return json({ error: "workers_ai_not_configured" }, 503);
+  }
+
+  try {
+    const payload = await request.json<AiOcrRequest>();
+    const images = normalizeAiOcrImages(payload.images);
+    const model = env.WORKERS_AI_VISION_MODEL?.trim() || defaultWorkersAiVisionModel;
+    const chunks = await Promise.all(
+      images.map(async (image, index) => {
+        const result = (await env.AI!.run(model, {
+          task: "query",
+          image: image.dataUrl,
+          question: [
+            "请从这张旅行订单或行程截图中提取可导入路书的文字。",
+            "保留日期、时间、航班/酒店/车票/门票名称、出发到达城市、机场航站楼、地址、房型、订单号等行程事实。",
+            "忽略手机号、邮箱、支付金额、身份证件号、广告文案和页面导航文字。",
+            "如果字段无法确定，请写“未识别”。按原图顺序用简洁中文输出。"
+          ].join("\n"),
+          reasoning: false,
+          stream: false,
+          temperature: 0.1,
+          max_tokens: 1800
+        })) as AiVisionResult;
+        const text = clampText(stringifyAiOutput(extractAiOutput(result)), 5000).trim();
+        return text ? `【截图 ${index + 1}：${image.name}】\n${text}` : "";
+      })
+    );
+    const text = chunks.filter(Boolean).join("\n\n").trim();
+    if (!text) {
+      return json({ error: "ocr_empty", message: "没有从截图中识别到可导入的行程内容" }, 422);
+    }
+    return json({ text, provider: "cloudflare-workers-ai", model });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "截图识别失败";
+    return json({ error: "ai_ocr_failed", message }, message.includes("截图") || message.includes("支持") ? 400 : 502);
+  }
 }
 
 async function createTrip(request: Request, env: AuthEnv): Promise<Response> {
@@ -108,6 +469,118 @@ async function createTrip(request: Request, env: AuthEnv): Promise<Response> {
   return json({ trip: JSON.parse(payload) }, 201);
 }
 
+async function getTripShare(request: Request, env: AuthEnv, tripId: string): Promise<Response> {
+  const auth = await requireTripAuth(request, env);
+  if (auth instanceof Response) return auth;
+
+  const trip = await auth.db.prepare("SELECT id FROM trips WHERE id = ? AND owner_id = ?").bind(tripId, auth.ownerId).first<{ id: string }>();
+  if (!trip) {
+    return json({ error: "trip_not_found" }, 404);
+  }
+
+  const row = await auth.db.prepare(
+    `SELECT id, trip_id, owner_id, token, visibility, allow_copy, revoked_at, expires_at, created_at, updated_at
+     FROM shares
+     WHERE trip_id = ? AND owner_id = ? AND revoked_at IS NULL
+     ORDER BY created_at DESC
+     LIMIT 1`
+  )
+    .bind(tripId, auth.ownerId)
+    .first<ShareRow>();
+
+  return json({ share: row ? rowToShare(row) : null });
+}
+
+async function createTripShare(request: Request, env: AuthEnv, tripId: string): Promise<Response> {
+  const auth = await requireTripAuth(request, env);
+  if (auth instanceof Response) return auth;
+
+  const trip = await auth.db.prepare("SELECT id FROM trips WHERE id = ? AND owner_id = ?").bind(tripId, auth.ownerId).first<{ id: string }>();
+  if (!trip) {
+    return json({ error: "trip_not_found" }, 404);
+  }
+
+  const existing = await auth.db.prepare(
+    `SELECT id, trip_id, owner_id, token, visibility, allow_copy, revoked_at, expires_at, created_at, updated_at
+     FROM shares
+     WHERE trip_id = ? AND owner_id = ? AND revoked_at IS NULL
+     ORDER BY created_at DESC
+     LIMIT 1`
+  )
+    .bind(tripId, auth.ownerId)
+    .first<ShareRow>();
+  if (existing) {
+    return json({ share: rowToShare(existing) });
+  }
+
+  const id = `share_${crypto.randomUUID()}`;
+  const token = createShareToken();
+  await auth.db.prepare(
+    `INSERT INTO shares (id, trip_id, owner_id, token, visibility, allow_copy, updated_at)
+     VALUES (?, ?, ?, ?, 'public', 0, CURRENT_TIMESTAMP)`
+  )
+    .bind(id, tripId, auth.ownerId, token)
+    .run();
+
+  const row = await auth.db.prepare(
+    `SELECT id, trip_id, owner_id, token, visibility, allow_copy, revoked_at, expires_at, created_at, updated_at
+     FROM shares
+     WHERE id = ?`
+  )
+    .bind(id)
+    .first<ShareRow>();
+
+  return json({ share: rowToShare(row!) }, 201);
+}
+
+async function revokeShare(request: Request, env: AuthEnv, shareId: string): Promise<Response> {
+  const auth = await requireTripAuth(request, env);
+  if (auth instanceof Response) return auth;
+
+  const result = await auth.db.prepare(
+    `UPDATE shares
+     SET revoked_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+     WHERE id = ? AND owner_id = ? AND revoked_at IS NULL`
+  )
+    .bind(shareId, auth.ownerId)
+    .run();
+
+  if (!result.meta.changes) {
+    return json({ error: "share_not_found" }, 404);
+  }
+
+  return new Response(null, { status: 204 });
+}
+
+async function getPublicShare(env: AuthEnv, token: string): Promise<Response> {
+  if (!env.DB) {
+    return json({ error: "database_not_configured" }, 503);
+  }
+
+  const row = await env.DB.prepare(
+    `SELECT shares.id, shares.trip_id, shares.owner_id, shares.token, shares.visibility, shares.allow_copy,
+            shares.revoked_at, shares.expires_at, shares.created_at, shares.updated_at, trips.payload
+     FROM shares
+     INNER JOIN trips ON trips.id = shares.trip_id AND trips.owner_id = shares.owner_id
+     WHERE shares.token = ?
+     LIMIT 1`
+  )
+    .bind(token)
+    .first<ShareTripRow>();
+
+  if (!row) {
+    return json({ error: "share_not_found" }, 404);
+  }
+
+  const share = rowToShare(row);
+  const gate = canViewShare(share, new Date().toISOString());
+  if (!gate.allowed) {
+    return json({ error: gate.reason }, gate.reason === "share_private" ? 403 : 410);
+  }
+
+  return json({ share, trip: sanitizeSharedTrip(JSON.parse(row.payload)) });
+}
+
 function rowToTripSummary(row: TripRow): TripSummary {
   const payload = JSON.parse(row.payload) as TripDraftPayload & {
     days?: unknown[];
@@ -126,6 +599,49 @@ function rowToTripSummary(row: TripRow): TripSummary {
     bookingCount: payload.bookings?.length ?? 0,
     updatedAt: row.updated_at
   };
+}
+
+function rowToShare(row: ShareRow) {
+  return {
+    id: row.id,
+    tripId: row.trip_id,
+    token: row.token,
+    visibility: row.visibility,
+    allowCopy: Boolean(row.allow_copy),
+    revokedAt: row.revoked_at,
+    expiresAt: row.expires_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function sanitizeSharedTrip(payload: Record<string, unknown>): Record<string, unknown> {
+  const bookings = Array.isArray(payload.bookings)
+    ? payload.bookings.map((booking) => {
+        if (!booking || typeof booking !== "object") return booking;
+        const { confirmationCode: _confirmationCode, attachmentIds: _attachmentIds, ...safeBooking } = booking as Record<string, unknown>;
+        return { ...safeBooking, attachmentIds: [] };
+      })
+    : [];
+
+  return {
+    ...payload,
+    ownerId: "shared",
+    bookings,
+    attachments: [],
+    budgetMembers: [],
+    budgetItems: []
+  };
+}
+
+function createShareToken(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 async function getTrip(request: Request, env: AuthEnv, id: string): Promise<Response> {
@@ -255,4 +771,43 @@ function buildOwnerAttachmentKey(ownerId: string, key: string): string {
   const ownerSegment = ownerId.replace(/[^a-zA-Z0-9_-]/g, "_");
   const cleanKey = key.replace(/^\/+/, "").replace(/\.\./g, "_");
   return `users/${ownerSegment}/${cleanKey}`;
+}
+
+function clampText(value: string, maxLength: number): string {
+  return value.length > maxLength ? value.slice(0, maxLength) : value;
+}
+
+function extractAiOutput(result: AiTextResult | AiVisionResult): unknown {
+  if (typeof result === "string") return result;
+  const payload = result as {
+      response?: unknown;
+      answer?: unknown;
+      caption?: unknown;
+      description?: unknown;
+      result?: { response?: unknown; answer?: unknown; caption?: unknown; description?: unknown };
+      choices?: Array<{ message?: { content?: unknown } }>;
+  };
+  return payload.response ?? payload.answer ?? payload.caption ?? payload.description ?? payload.result?.response ?? payload.result?.answer ?? payload.result?.caption ?? payload.result?.description ?? payload.choices?.[0]?.message?.content ?? "";
+}
+
+function stringifyAiOutput(output: unknown): string {
+  if (typeof output === "string") return output;
+  if (output === undefined || output === null) return "";
+  return JSON.stringify(output);
+}
+
+function parseJsonFromAiOutput(output: unknown): unknown {
+  if (typeof output === "object" && output !== null) return output;
+  if (typeof output !== "string") throw new Error("AI returned an unsupported response shape");
+  const text = output;
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error("AI returned an empty response");
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const start = trimmed.indexOf("{");
+    const end = trimmed.lastIndexOf("}");
+    if (start < 0 || end <= start) throw new Error("AI response did not contain JSON");
+    return JSON.parse(trimmed.slice(start, end + 1));
+  }
 }

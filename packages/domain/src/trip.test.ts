@@ -6,8 +6,19 @@ import {
   removeItineraryItem,
   sortItineraryItems,
   TripSchema,
+  getOfflineReadiness,
   updateItineraryItem
 } from "./index";
+
+describe("product brand", () => {
+  it("uses Chinese routebook-first public naming instead of the internal Wanderlust codename", async () => {
+    const { productBrand } = await import("./index");
+
+    expect(productBrand.name).toBe("随身路书");
+    expect(productBrand.shortName).toBe("路书");
+    expect(productBrand.tagline).toContain("离线执行");
+  });
+});
 
 describe("TripSchema", () => {
   it("accepts a structured trip with days, items, places, bookings, and entitlements", () => {
@@ -59,19 +70,82 @@ describe("TripSchema", () => {
 
     expect(parsed.days[0]?.items[0]?.type).toBe("transport");
   });
+
+  it("accepts itinerary item reasons separately from user notes", () => {
+    const parsed = TripSchema.parse({
+      id: "trip_reason",
+      ownerId: "user_1",
+      title: "Tokyo First Visit",
+      destination: "Tokyo, Japan",
+      startDate: "2026-11-01",
+      endDate: "2026-11-01",
+      timezone: "Asia/Tokyo",
+      status: "draft",
+      days: [
+        {
+          id: "day_1",
+          tripId: "trip_reason",
+          date: "2026-11-01",
+          title: "Day 1",
+          sortOrder: 0,
+          items: [
+            {
+              id: "item_1",
+              dayId: "day_1",
+              type: "place",
+              title: "Meiji Shrine",
+              reason: "Good first stop because it opens early and sits near the next neighborhood.",
+              notes: "User wants a quiet start.",
+              sortOrder: 0
+            }
+          ]
+        }
+      ],
+      places: [],
+      bookings: [],
+      attachments: []
+    });
+
+    expect(parsed.days[0]?.items[0]?.reason).toContain("opens early");
+    expect(parsed.days[0]?.items[0]?.notes).toBe("User wants a quiet start.");
+  });
+});
+
+describe("getOfflineReadiness", () => {
+  it("summarizes the pre-departure offline package status", () => {
+    const readiness = getOfflineReadiness({
+      days: createTripDays("trip_1", "2026-10-12", "2026-10-13"),
+      places: [{ id: "place_1", tripId: "trip_1", name: "Fushimi Inari", category: "culture", latitude: 34.9671, longitude: 135.7727 }],
+      bookings: [],
+      attachments: [],
+      packingItems: [{ id: "pack_1", tripId: "trip_1", title: "Passport", category: "documents", quantity: 1, packed: true }],
+      weather: []
+    });
+
+    expect(readiness.readyCount).toBe(3);
+    expect(readiness.totalCount).toBe(6);
+    expect(readiness.items.map((item) => `${item.key}:${item.ready}`)).toEqual([
+      "itinerary:true",
+      "places:true",
+      "bookings:false",
+      "files:false",
+      "packing:true",
+      "weather:false"
+    ]);
+  });
 });
 
 describe("createTripDays", () => {
   it("creates one dated day for every date in the inclusive trip range", () => {
     expect(createTripDays("trip_1", "2026-10-12", "2026-10-14")).toEqual([
-      { id: "trip_1-2026-10-12", tripId: "trip_1", date: "2026-10-12", title: "Day 1", sortOrder: 0, items: [] },
-      { id: "trip_1-2026-10-13", tripId: "trip_1", date: "2026-10-13", title: "Day 2", sortOrder: 1, items: [] },
-      { id: "trip_1-2026-10-14", tripId: "trip_1", date: "2026-10-14", title: "Day 3", sortOrder: 2, items: [] }
+      { id: "trip_1-2026-10-12", tripId: "trip_1", date: "2026-10-12", title: "第 1 天", sortOrder: 0, items: [] },
+      { id: "trip_1-2026-10-13", tripId: "trip_1", date: "2026-10-13", title: "第 2 天", sortOrder: 1, items: [] },
+      { id: "trip_1-2026-10-14", tripId: "trip_1", date: "2026-10-14", title: "第 3 天", sortOrder: 2, items: [] }
     ]);
   });
 
   it("rejects an end date before the start date", () => {
-    expect(() => createTripDays("trip_1", "2026-10-14", "2026-10-12")).toThrow("endDate must be on or after startDate");
+    expect(() => createTripDays("trip_1", "2026-10-14", "2026-10-12")).toThrow("结束日期必须晚于或等于开始日期");
   });
 });
 
@@ -118,7 +192,7 @@ describe("editable itinerary helpers", () => {
 describe("getTodayTripDay", () => {
   it("returns the matching trip day for a local ISO date", () => {
     const days = createTripDays("trip_1", "2026-10-12", "2026-10-14");
-    expect(getTodayTripDay(days, "2026-10-13")?.title).toBe("Day 2");
+    expect(getTodayTripDay(days, "2026-10-13")?.title).toBe("第 2 天");
   });
 });
 

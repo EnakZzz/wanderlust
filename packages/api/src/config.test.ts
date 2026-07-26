@@ -4,6 +4,7 @@ import {
   buildOAuthAuthorizationUrl,
   getOAuthProviderStatus,
   parseClientRuntimeConfig,
+  parseAgentApiTokens,
   parseHealthResponse,
   parseServerConfig
 } from "./index";
@@ -24,7 +25,7 @@ describe("parseServerConfig", () => {
   });
 
   it("rejects missing secrets with actionable field names", () => {
-    expect(() => parseServerConfig({})).toThrow("Missing or invalid server config");
+    expect(() => parseServerConfig({})).toThrow("服务器配置缺失或无效");
   });
 });
 
@@ -39,6 +40,32 @@ describe("parseClientRuntimeConfig", () => {
 
   it("rejects missing API URLs with actionable field names", () => {
     expect(() => parseClientRuntimeConfig({})).toThrow("apiBaseUrl");
+  });
+});
+
+describe("parseAgentApiTokens", () => {
+  it("maps bearer tokens to stable owner ids for local agents", () => {
+    expect(
+      parseAgentApiTokens(
+        JSON.stringify([
+          {
+            token: "wl_agent_test_secret",
+            ownerId: "google:12345",
+            name: "Local Codex"
+          }
+        ])
+      )
+    ).toEqual([
+      {
+        token: "wl_agent_test_secret",
+        ownerId: "google:12345",
+        name: "Local Codex"
+      }
+    ]);
+  });
+
+  it("rejects malformed agent token configuration", () => {
+    expect(() => parseAgentApiTokens(JSON.stringify([{ token: "short", ownerId: "google:12345" }]))).toThrow("AGENT_API_TOKENS 配置无效");
   });
 });
 
@@ -59,7 +86,7 @@ describe("Cloudflare API health helpers", () => {
   });
 
   it("rejects unexpected health response payloads", () => {
-    expect(() => parseHealthResponse({ ok: true, service: "other" })).toThrow("Invalid health response");
+    expect(() => parseHealthResponse({ ok: true, service: "other" })).toThrow("无效的健康检查响应");
   });
 });
 
@@ -102,6 +129,6 @@ describe("OAuth helpers", () => {
         state: "state_123",
         returnTo: "https://evil.example/#editor"
       })
-    ).toThrow("returnTo must be an app-relative path");
+    ).toThrow("returnTo 必须是应用内相对路径");
   });
 });

@@ -1,0 +1,184 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { FileUp, MapPinned, PlaneTakeoff, Plus, Route, Sparkles } from "lucide-react";
+import { DestinationSearchPanel, editorHref } from "./DestinationSearchPanel";
+import type { SessionUser, TripSummary } from "./routebook/types";
+
+type DashboardState = {
+  user: SessionUser | null;
+  trips: TripSummary[];
+  loaded: boolean;
+  error?: string;
+};
+
+const discoveryCards = [
+  { eyebrow: "茶、寺与庭园", title: "京都", copy: "围绕茶、庭园和建筑，做一条慢节奏路线。" },
+  { eyebrow: "第一次去也稳", title: "里斯本", copy: "电车、观景台、海鲜和一日游都很紧凑。" },
+  { eyebrow: "城市充电", title: "首尔", copy: "街区跳转、深夜小吃、快速交通和山边散步。" }
+];
+
+async function readSession(): Promise<SessionUser | null> {
+  const response = await fetch("/auth/session", { credentials: "include" });
+  if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return null;
+  const session = (await response.json()) as { user?: SessionUser | null };
+  return session.user ?? null;
+}
+
+function formatTripDates(trip: TripSummary): string {
+  if (!trip.startDate || !trip.endDate) return "日期未设置";
+  if (trip.startDate === trip.endDate) return trip.startDate;
+  return `${trip.startDate} - ${trip.endDate}`;
+}
+
+function tripEditorHref(tripId: string): string {
+  return `/?tripId=${encodeURIComponent(tripId)}#editor`;
+}
+
+export function DashboardClient() {
+  const [state, setState] = useState<DashboardState>({ user: null, trips: [], loaded: false });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboard() {
+      const user = await readSession();
+      if (!user) {
+        if (!cancelled) setState({ user: null, trips: [], loaded: true });
+        return;
+      }
+
+      const tripsResponse = await fetch("/api/trips", { credentials: "include" });
+      if (!tripsResponse.ok) throw new Error("无法加载路书");
+      const tripsPayload = (await tripsResponse.json()) as { trips: TripSummary[] };
+      if (!cancelled) setState({ user, trips: tripsPayload.trips, loaded: true });
+    }
+
+    loadDashboard().catch((error) => {
+      if (!cancelled) {
+        setState({
+          user: null,
+          trips: [],
+          loaded: true,
+          error: error instanceof Error ? error.message : "无法加载控制台"
+        });
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const stats = useMemo(() => {
+    const upcoming = state.trips.filter((trip) => trip.startDate && trip.startDate >= new Date().toISOString().slice(0, 10)).length;
+    const places = state.trips.reduce((total, trip) => total + trip.placeCount, 0);
+    const bookings = state.trips.reduce((total, trip) => total + trip.bookingCount, 0);
+    return [
+      { label: "路书", value: state.trips.length },
+      { label: "即将出发", value: upcoming },
+      { label: "已保存地点", value: places },
+      { label: "预订", value: bookings }
+    ];
+  }, [state.trips]);
+
+  const recentTrips = state.trips.slice(0, 3);
+  const userName = state.user?.name?.split(" ")[0] || state.user?.email?.split("@")[0] || "旅行者";
+
+  return (
+    <section className="dashboard-shell">
+      <div className="dashboard-hero">
+        <div>
+          <p className="eyebrow">旅行控制台</p>
+          <h1>{state.user ? `${userName}，继续整理你的下一段旅程。` : "从一个地方开始规划下一次旅行。"}</h1>
+          <p>
+            在进入复杂编辑器之前，先搜索目的地、生成草稿、保存路书并检查离线准备状态。
+            灵感可以很快变成真正能带上路的计划。
+          </p>
+        </div>
+        <div className="dashboard-hero-actions">
+          <a className="save-button" href="/#editor">
+            <Plus size={18} />
+            <span>新建路书</span>
+          </a>
+          <a className="sample-button" href="/#editor">
+            <Sparkles size={18} />
+            <span>打开 AI 草稿</span>
+          </a>
+        </div>
+      </div>
+
+      {state.error ? <div className="sync-error">{state.error}</div> : null}
+
+      <DestinationSearchPanel className="dashboard-destination-panel" />
+
+      <div className="dashboard-stat-grid">
+        {stats.map((stat) => (
+          <div key={stat.label}>
+            <strong>{state.loaded ? stat.value : "--"}</strong>
+            <span>{stat.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="dashboard-main-grid">
+        <section className="dashboard-section">
+          <div className="dashboard-section-heading">
+            <div>
+              <p className="eyebrow">继续规划</p>
+              <h2>{recentTrips.length ? "正在进行的路书" : "第一本路书从这里开始"}</h2>
+            </div>
+            <a className="sample-button" href="/journeys">
+              <Route size={17} />
+              <span>查看全部路书</span>
+            </a>
+          </div>
+
+          <div className="dashboard-trip-list">
+            {recentTrips.map((trip) => (
+              <a key={trip.id} className="dashboard-trip-card" href={tripEditorHref(trip.id)}>
+                <span>{trip.status}</span>
+                <strong>{trip.title}</strong>
+                <em>{trip.destination}</em>
+                <small>{formatTripDates(trip)} · {trip.dayCount} 天 · {trip.placeCount} 个地点</small>
+              </a>
+            ))}
+            {state.loaded && recentTrips.length === 0 ? (
+              <div className="dashboard-empty-card">
+                <PlaneTakeoff size={22} />
+                <strong>还没有路书。</strong>
+                <span>可以从目的地开始，粘贴预订记录，或让 AI 生成一份可审核草稿。</span>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <aside className="dashboard-section dashboard-next-panel">
+          <p className="eyebrow">下一步</p>
+          <a href="/#editor"><Plus size={17} /><span>创建路书框架</span></a>
+          <a href="/#editor"><FileUp size={17} /><span>导入预订或笔记</span></a>
+          <a href="/#editor"><Sparkles size={17} /><span>生成 AI 路线草稿</span></a>
+          <a href="/passport"><MapPinned size={17} /><span>查看旅行足迹</span></a>
+        </aside>
+      </div>
+
+      <section className="dashboard-section">
+        <div className="dashboard-section-heading">
+          <div>
+            <p className="eyebrow">目的地灵感</p>
+            <h2>把一个城市信号变成可执行计划。</h2>
+          </div>
+        </div>
+        <div className="dashboard-discovery-grid">
+          {discoveryCards.map((card) => (
+            <a key={card.title} href={editorHref(card.title)}>
+              <span>{card.eyebrow}</span>
+              <strong>{card.title}</strong>
+              <small>{card.copy}</small>
+            </a>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+}

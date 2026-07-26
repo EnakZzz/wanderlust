@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+export const productBrand = {
+  name: "随身路书",
+  shortName: "路书",
+  tagline: "出发前整理、旅行中离线执行的随身路书。",
+  description: "在网页上规划行程，把票据、地点、清单和当天下一步离线带到手机上。"
+} as const;
+
 export const ItineraryItemTypeSchema = z.enum([
   "place",
   "food",
@@ -23,6 +30,7 @@ export const ItineraryItemSchema = z.object({
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
   googlePlaceId: z.string().optional(),
+  reason: z.string().optional(),
   notes: z.string().optional(),
   attachmentIds: z.array(z.string()).default([]),
   sortOrder: z.number().int().nonnegative()
@@ -146,6 +154,17 @@ export const WeatherForecastSchema = z.object({
   fetchedAt: z.string().optional()
 });
 
+export const DestinationMetaSchema = z.object({
+  name: z.string().min(1),
+  fullName: z.string().min(1),
+  countryCode: z.string().min(2).max(2).optional(),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  timezone: z.string().min(1).optional(),
+  provider: z.enum(["google", "fallback"]),
+  providerPlaceId: z.string().optional()
+});
+
 export const OfflineBundleSchema = z.object({
   tripId: z.string().min(1),
   version: z.number().int().positive(),
@@ -168,6 +187,7 @@ export const TripSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   timezone: z.string().min(1),
+  destinationMeta: DestinationMetaSchema.optional(),
   status: z.enum(["draft", "active", "archived"]),
   coverImageUrl: z.string().url().optional(),
   days: z.array(TripDaySchema),
@@ -221,8 +241,22 @@ export type BudgetMember = z.input<typeof BudgetMemberSchema>;
 export type BudgetItem = z.input<typeof BudgetItemSchema>;
 export type PackingItem = z.input<typeof PackingItemSchema>;
 export type WeatherForecast = z.input<typeof WeatherForecastSchema>;
+export type DestinationMeta = z.input<typeof DestinationMetaSchema>;
 export type OfflineBundle = z.input<typeof OfflineBundleSchema>;
 export type Trip = z.input<typeof TripSchema>;
+
+export type OfflineReadinessItem = {
+  key: "itinerary" | "places" | "bookings" | "files" | "packing" | "weather";
+  label: string;
+  ready: boolean;
+  count: number;
+};
+
+export type OfflineReadiness = {
+  readyCount: number;
+  totalCount: number;
+  items: OfflineReadinessItem[];
+};
 
 export type NavigationTarget = {
   latitude: number;
@@ -252,7 +286,7 @@ export function createTripDays(tripId: string, startDate: string, endDate: strin
   const end = parseIsoDate(endDate);
 
   if (end.getTime() < start.getTime()) {
-    throw new Error("endDate must be on or after startDate");
+    throw new Error("结束日期必须晚于或等于开始日期");
   }
 
   const days: TripDay[] = [];
@@ -262,7 +296,7 @@ export function createTripDays(tripId: string, startDate: string, endDate: strin
       id: `${tripId}-${date}`,
       tripId,
       date,
-      title: `Day ${index + 1}`,
+      title: `第 ${index + 1} 天`,
       sortOrder: index,
       items: []
     });
@@ -303,6 +337,25 @@ export function removeItineraryItem(items: ItineraryItem[], itemId: string): Iti
 
 export function getTodayTripDay(days: TripDay[], localIsoDate: string): TripDay | undefined {
   return days.find((day) => day.date === localIsoDate);
+}
+
+export function getOfflineReadiness(trip: Pick<Trip, "days" | "places" | "bookings" | "attachments" | "packingItems" | "weather">): OfflineReadiness {
+  const itineraryCount = trip.days.reduce((total, day) => total + (day.items?.length ?? 0), 0);
+  const packedCount = trip.packingItems?.filter((item) => item.packed).length ?? 0;
+  const items: OfflineReadinessItem[] = [
+    { key: "itinerary", label: "行程", ready: trip.days.length > 0, count: itineraryCount },
+    { key: "places", label: "地点", ready: (trip.places?.length ?? 0) > 0, count: trip.places?.length ?? 0 },
+    { key: "bookings", label: "预订", ready: (trip.bookings?.length ?? 0) > 0, count: trip.bookings?.length ?? 0 },
+    { key: "files", label: "文件", ready: (trip.attachments?.length ?? 0) > 0, count: trip.attachments?.length ?? 0 },
+    { key: "packing", label: "打包", ready: (trip.packingItems?.length ?? 0) > 0 && packedCount === trip.packingItems?.length, count: packedCount },
+    { key: "weather", label: "天气", ready: (trip.weather?.length ?? 0) > 0, count: trip.weather?.length ?? 0 }
+  ];
+
+  return {
+    readyCount: items.filter((item) => item.ready).length,
+    totalCount: items.length,
+    items
+  };
 }
 
 export function buildMapsUrl(target: NavigationTarget, provider: MapProvider): string {
@@ -379,7 +432,7 @@ export function canViewShare(shareInput: Share, nowIso: string, hasMemberSession
 function parseIsoDate(value: string): Date {
   const date = new Date(`${value}T00:00:00.000Z`);
   if (Number.isNaN(date.getTime())) {
-    throw new Error(`Invalid ISO date: ${value}`);
+    throw new Error(`无效的 ISO 日期：${value}`);
   }
   return date;
 }
