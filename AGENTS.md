@@ -43,6 +43,14 @@ binding = "AI"
 
 正式生产部署已经改为 GitHub Actions：推送到 `main` 后由 `.github/workflows/deploy-cloudflare-web.yml` 构建并发布 Cloudflare Pages 到 `https://wanderlust-web.pages.dev/`。本地 `npm run deploy:web` 仅作为手动兜底和诊断流程。
 
+正常发布流程：
+
+```powershell
+git push origin main
+```
+
+推送到 `main` 后，GitHub Actions 会自动执行 typecheck、test、D1 migrations、Web build、Cloudflare Pages production deploy 和生产域名验证。除非 GitHub Actions 故障、Cloudflare 权限排查或需要紧急手动修复，否则不要在本地跑部署命令作为常规发布方式。
+
 GitHub 仓库 `EnakZzz/wanderlust` 需要配置这些 Actions Secrets：
 
 - `CLOUDFLARE_API_TOKEN`: Cloudflare API token，至少允许目标账号的 Pages deploy 权限。
