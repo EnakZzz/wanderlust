@@ -41,13 +41,39 @@ binding = "AI"
 
 ## Cloudflare Deploy
 
-部署前先确认 Wrangler 已登录：
+正式生产部署已经改为 GitHub Actions：推送到 `main` 后由 `.github/workflows/deploy-cloudflare-web.yml` 构建并发布 Cloudflare Pages 到 `https://wanderlust-web.pages.dev/`。本地 `npm run deploy:web` 仅作为手动兜底和诊断流程。
+
+GitHub 仓库 `EnakZzz/wanderlust` 需要配置这些 Actions Secrets：
+
+- `CLOUDFLARE_API_TOKEN`: Cloudflare API token，至少允许目标账号的 Pages deploy 权限。
+- `CLOUDFLARE_ACCOUNT_ID`: Cloudflare Account ID。
+- `CLOUDFLARE_PAGES_PROJECT_NAME`: Cloudflare Pages 项目名，当前为 `wanderlust-web`。
+- `CLOUDFLARE_WORKER_NAME`: Cloudflare Worker 名，用于生成 server wrangler 配置并执行 D1 migrations。
+- `CLOUDFLARE_D1_DATABASE_NAME`: D1 数据库名。
+- `CLOUDFLARE_D1_DATABASE_ID`: D1 数据库 id。
+- `CLOUDFLARE_R2_BUCKET_NAME`: R2 bucket 名。
+- `GOOGLE_MAPS_API_KEY`: Google Maps / Places API key，CI 会同步到 Cloudflare Pages secret。
+- `SESSION_SECRET`: 会话签名密钥，CI 会同步到 Cloudflare Pages secret。
+- `GOOGLE_OAUTH_CLIENT_ID`: Google OAuth client id，CI 会同步到 Cloudflare Pages secret。
+- `GOOGLE_OAUTH_CLIENT_SECRET`: Google OAuth client secret，CI 会同步到 Cloudflare Pages secret。
+- `APPLE_OAUTH_CLIENT_ID`: Apple Service ID，CI 会同步到 Cloudflare Pages secret。
+- `APPLE_OAUTH_CLIENT_SECRET`: Apple client-secret JWT，CI 会同步到 Cloudflare Pages secret。
+- `AGENT_API_TOKENS`: 本地 agent token JSON，CI 会同步到 Cloudflare Pages secret。
+
+可选 GitHub Actions Variables：
+
+- `APP_PUBLIC_URL`: Web/Pages 的公开 URL；不配置时默认为 `https://wanderlust-web.pages.dev`。
+- `WORKERS_AI_TEXT_MODEL`: 临时切换 Workers AI 文本模型；不配置时使用代码默认模型。
+
+GitHub Actions 会在发布前把非空运行时 secret 写入 Cloudflare Pages secrets。不要把这些值写入 `.deploy.local.ps1` 以外的可提交文件，也不要写入 `wrangler.toml [vars]`。
+
+本地手动部署前先确认 Wrangler 已登录：
 
 ```powershell
 npx wrangler whoami
 ```
 
-首次部署或有 D1 migration 时：
+首次部署或有 D1 migration 时，本地手动执行：
 
 ```powershell
 npm run migrate:server
@@ -59,7 +85,7 @@ npm run migrate:server
 npm run deploy:web
 ```
 
-正式发布一律部署到主域名 `https://wanderlust-web.pages.dev/`。如果当前 git 分支不是 Cloudflare Pages 的生产分支，不能只运行默认预览部署；需要显式使用生产分支发布：
+正式发布一律部署到主域名 `https://wanderlust-web.pages.dev/`。GitHub Actions 会显式使用 `--branch main` 发布。如果临时手动发布，也必须显式使用生产分支：
 
 ```powershell
 Push-Location apps/web

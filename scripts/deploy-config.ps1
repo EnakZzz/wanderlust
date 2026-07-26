@@ -58,6 +58,10 @@ binding = "DB"
 database_name = "$($Config.D1DatabaseName)"
 database_id = "$($Config.D1DatabaseId)"
 
+[[r2_buckets]]
+binding = "ATTACHMENTS"
+bucket_name = "$($Config.R2BucketName)"
+
 [ai]
 binding = "AI"
 "@ | Set-Content -LiteralPath $webWrangler -NoNewline

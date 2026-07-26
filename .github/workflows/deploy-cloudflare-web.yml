@@ -1,0 +1,162 @@
+name: Deploy Cloudflare Web
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deploy-cloudflare-web.yml"
+      - "apps/web/**"
+      - "apps/server/migrations/**"
+      - "packages/**"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+concurrency:
+  group: cloudflare-web-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and deploy Pages
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck --workspaces --if-present
+
+      - name: Test
+        run: npm run test --workspaces --if-present
+
+      - name: Generate Cloudflare config
+        shell: bash
+        env:
+          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}
+          CLOUDFLARE_WORKER_NAME: ${{ secrets.CLOUDFLARE_WORKER_NAME }}
+          CLOUDFLARE_D1_DATABASE_NAME: ${{ secrets.CLOUDFLARE_D1_DATABASE_NAME }}
+          CLOUDFLARE_D1_DATABASE_ID: ${{ secrets.CLOUDFLARE_D1_DATABASE_ID }}
+          CLOUDFLARE_R2_BUCKET_NAME: ${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }}
+          APP_PUBLIC_URL: ${{ vars.APP_PUBLIC_URL }}
+          WORKERS_AI_TEXT_MODEL: ${{ vars.WORKERS_AI_TEXT_MODEL }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_PAGES_PROJECT_NAME"
+          test -n "$CLOUDFLARE_WORKER_NAME"
+          test -n "$CLOUDFLARE_D1_DATABASE_NAME"
+          test -n "$CLOUDFLARE_D1_DATABASE_ID"
+          test -n "$CLOUDFLARE_R2_BUCKET_NAME"
+          cat > apps/web/wrangler.toml <<EOF
+          name = "$CLOUDFLARE_PAGES_PROJECT_NAME"
+          compatibility_date = "2026-07-19"
+          pages_build_output_dir = "out"
+
+          [[d1_databases]]
+          binding = "DB"
+          database_name = "$CLOUDFLARE_D1_DATABASE_NAME"
+          database_id = "$CLOUDFLARE_D1_DATABASE_ID"
+
+          [[r2_buckets]]
+          binding = "ATTACHMENTS"
+          bucket_name = "$CLOUDFLARE_R2_BUCKET_NAME"
+
+          [vars]
+          APP_PUBLIC_URL = "${APP_PUBLIC_URL:-https://wanderlust-web.pages.dev}"
+          WORKERS_AI_TEXT_MODEL = "$WORKERS_AI_TEXT_MODEL"
+
+          [ai]
+          binding = "AI"
+          EOF
+          cat > apps/server/wrangler.jsonc <<EOF
+          {
+            "\$schema": "node_modules/wrangler/config-schema.json",
+            "name": "$CLOUDFLARE_WORKER_NAME",
+            "main": "src/worker.ts",
+            "compatibility_date": "2026-07-19",
+            "vars": {
+              "APP_PUBLIC_URL": "${APP_PUBLIC_URL:-https://wanderlust-web.pages.dev}"
+            },
+            "d1_databases": [
+              {
+                "binding": "DB",
+                "database_name": "$CLOUDFLARE_D1_DATABASE_NAME",
+                "database_id": "$CLOUDFLARE_D1_DATABASE_ID"
+              }
+            ],
+            "r2_buckets": [
+              {
+                "binding": "ATTACHMENTS",
+                "bucket_name": "$CLOUDFLARE_R2_BUCKET_NAME"
+              }
+            ]
+          }
+          EOF
+
+      - name: Sync Cloudflare Pages secrets
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          APPLE_OAUTH_CLIENT_ID: ${{ secrets.APPLE_OAUTH_CLIENT_ID }}
+          APPLE_OAUTH_CLIENT_SECRET: ${{ secrets.APPLE_OAUTH_CLIENT_SECRET }}
+          AGENT_API_TOKENS: ${{ secrets.AGENT_API_TOKENS }}
+        run: |
+          set -euo pipefail
+          put_secret() {
+            local name="$1"
+            local value="$2"
+            if [ -n "$value" ]; then
+              printf '%s' "$value" | npx wrangler pages secret put "$name" --project-name "$CLOUDFLARE_PAGES_PROJECT_NAME"
+            fi
+          }
+
+          put_secret GOOGLE_MAPS_API_KEY "$GOOGLE_MAPS_API_KEY"
+          put_secret SESSION_SECRET "$SESSION_SECRET"
+          put_secret GOOGLE_OAUTH_CLIENT_ID "$GOOGLE_OAUTH_CLIENT_ID"
+          put_secret GOOGLE_OAUTH_CLIENT_SECRET "$GOOGLE_OAUTH_CLIENT_SECRET"
+          put_secret APPLE_OAUTH_CLIENT_ID "$APPLE_OAUTH_CLIENT_ID"
+          put_secret APPLE_OAUTH_CLIENT_SECRET "$APPLE_OAUTH_CLIENT_SECRET"
+          put_secret AGENT_API_TOKENS "$AGENT_API_TOKENS"
+
+      - name: Apply D1 migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/server
+          command: d1 migrations apply "${{ secrets.CLOUDFLARE_D1_DATABASE_NAME }}" --remote
+
+      - name: Build web
+        run: npm run build -w @wanderlust/web
+
+      - name: Deploy production Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/web
+          command: pages deploy out --project-name "${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}" --branch main
+
+      - name: Verify production domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location https://wanderlust-web.pages.dev/ >/dev/null

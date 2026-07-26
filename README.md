@@ -42,7 +42,11 @@ npm run create:android:keystore
 
 ## Cloudflare 部署
 
-部署资源名和 ID 都是本机配置。把 `.deploy.local.example.ps1` 复制为 `.deploy.local.ps1`，填写 Cloudflare 值，并保持本地文件不提交。
+生产 Web 部署由 GitHub Actions 执行：推送到 `main` 后，`.github/workflows/deploy-cloudflare-web.yml` 会同步 Cloudflare Pages secrets、执行 D1 migrations、构建 `apps/web` 并发布到 Cloudflare Pages 主域名。
+
+GitHub Actions 需要在仓库 Secrets 中配置 Cloudflare 部署凭据、D1/R2 资源名和运行时密钥。完整清单见 `AGENTS.md`。
+
+本地手动部署仍然可用。部署资源名和 ID 都是本机配置。把 `.deploy.local.example.ps1` 复制为 `.deploy.local.ps1`，填写 Cloudflare 值，并保持本地文件不提交。
 
 部署命令：
 
