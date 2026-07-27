@@ -64,7 +64,7 @@ Push-Location $repo
 try {
   Invoke-Checked "npm" @("test")
   Invoke-Checked "npm" @("run", "typecheck", "--workspaces", "--if-present")
-  Invoke-Checked "npm" @("run", "verify:store")
+  Invoke-Checked (Get-PowerShellCommand) @("-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "verify-store-readiness.ps1"))
   Invoke-Checked "npm" @("run", "build", "-w", "@wanderlust/web")
   Stop-AndroidGradleDaemon
   Invoke-Checked "npm" @("run", "prebuild", "-w", "@wanderlust/mobile")
