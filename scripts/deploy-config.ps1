@@ -4,14 +4,32 @@ function Get-DeployConfig {
   $repo = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
   $localConfig = Join-Path $repo ".deploy.local.ps1"
 
-  if (-not (Test-Path -LiteralPath $localConfig)) {
-    throw "Missing .deploy.local.ps1. Copy .deploy.local.example.ps1 to .deploy.local.ps1 and fill Cloudflare values."
-  }
+  if (Test-Path -LiteralPath $localConfig) {
+    . $localConfig
 
-  . $localConfig
+    if (-not $DeployConfig) {
+      throw ".deploy.local.ps1 must define `$DeployConfig."
+    }
+  } else {
+    $pagesProjectName = [Environment]::GetEnvironmentVariable("CLOUDFLARE_PAGES_PROJECT_NAME", "Process")
+    $appPublicUrl = [Environment]::GetEnvironmentVariable("APP_PUBLIC_URL", "Process")
+    if ([string]::IsNullOrWhiteSpace($appPublicUrl) -and -not [string]::IsNullOrWhiteSpace($pagesProjectName)) {
+      $appPublicUrl = "https://$pagesProjectName.pages.dev"
+    }
+    $mobileApiBaseUrl = [Environment]::GetEnvironmentVariable("MOBILE_API_BASE_URL", "Process")
+    if ([string]::IsNullOrWhiteSpace($mobileApiBaseUrl)) {
+      $mobileApiBaseUrl = $appPublicUrl
+    }
 
-  if (-not $DeployConfig) {
-    throw ".deploy.local.ps1 must define `$DeployConfig."
+    $DeployConfig = @{
+      PagesProjectName = $pagesProjectName
+      WorkerName = [Environment]::GetEnvironmentVariable("CLOUDFLARE_WORKER_NAME", "Process")
+      AppPublicUrl = $appPublicUrl
+      MobileApiBaseUrl = $mobileApiBaseUrl
+      D1DatabaseName = [Environment]::GetEnvironmentVariable("CLOUDFLARE_D1_DATABASE_NAME", "Process")
+      D1DatabaseId = [Environment]::GetEnvironmentVariable("CLOUDFLARE_D1_DATABASE_ID", "Process")
+      R2BucketName = [Environment]::GetEnvironmentVariable("CLOUDFLARE_R2_BUCKET_NAME", "Process")
+    }
   }
 
   $requiredKeys = @(
@@ -26,7 +44,7 @@ function Get-DeployConfig {
 
   foreach ($key in $requiredKeys) {
     if (-not $DeployConfig.ContainsKey($key) -or [string]::IsNullOrWhiteSpace([string]$DeployConfig[$key])) {
-      throw "Missing DeployConfig.$key in .deploy.local.ps1"
+      throw "Missing DeployConfig.$key in .deploy.local.ps1 or matching CI environment variable"
     }
   }
 

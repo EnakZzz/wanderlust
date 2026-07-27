@@ -132,6 +132,6 @@ EAS fallback is configured in `apps/mobile/eas.json`, but it still requires an E
 ## 商店审核准备
 
 - 认证方案：Apple、Google 和邮箱登录。iOS 已配置 `usesAppleSignIn` 和 `expo-apple-authentication`。
-- 隐私政策要求：在提交 App Store / Google Play 前发布隐私政策 URL，并说明账户身份、行程内容、附件、基于定位的导航、AI 提示、计费权益状态和诊断信息的数据用途。
-- 删除账号要求：在提交前提供应用内删除账号操作。该操作必须删除或匿名化用户资料、撤销分享、移除协作者、删除私有附件，并清除本地离线副本。
+- 隐私政策要求：在提交 App Store / Google Play 前发布 privacy policy URL，并说明账户身份、行程内容、附件、基于定位的导航、AI 提示、计费权益状态和诊断信息的数据用途。
+- 删除账号要求：在提交前提供应用内 delete account 操作。该操作必须删除或匿名化用户资料、撤销分享、移除协作者、删除私有附件，并清除本地离线副本。
 - 用户生成内容控制：私有/公开分享链接都可撤销并可过期；公开发现功能在首个商店版本中有意不做。

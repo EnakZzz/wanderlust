@@ -1,6 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 . (Join-Path $PSScriptRoot "deploy-config.ps1")
+. (Join-Path $PSScriptRoot "android-signing.ps1")
 
 $config = Get-DeployConfig
 Write-CloudflareConfig -Config $config
@@ -32,8 +33,8 @@ $readme = if (Test-Path -LiteralPath $readmePath) { Get-Content -LiteralPath $re
 
 $failures = New-Object System.Collections.Generic.List[string]
 
-if ($app.name -ne "Wanderlust Planner") { $failures.Add("expo.name must be Wanderlust Planner") }
-if ($app.slug -ne "wanderlust-planner") { $failures.Add("expo.slug must be wanderlust-planner") }
+if ($app.name -ne "随身路书") { $failures.Add("expo.name must be 随身路书") }
+if ($app.slug -ne "pocket-routebook") { $failures.Add("expo.slug must be pocket-routebook") }
 if ($app.ios.bundleIdentifier -ne "com.enakzzz.wanderlust") { $failures.Add("ios.bundleIdentifier mismatch") }
 if ($app.android.package -ne "com.enakzzz.wanderlust") { $failures.Add("android.package mismatch") }
 if (-not $app.ios.infoPlist.NSLocationWhenInUseUsageDescription) { $failures.Add("missing NSLocationWhenInUseUsageDescription") }
@@ -46,7 +47,13 @@ if ($server.d1_databases[0].binding -ne "DB") { $failures.Add("Cloudflare D1 bin
 if ($server.r2_buckets[0].binding -ne "ATTACHMENTS") { $failures.Add("Cloudflare R2 binding ATTACHMENTS must be configured") }
 if (-not $eas.build.production.ios.image) { $failures.Add("EAS production iOS image must be configured") }
 if (-not $eas.build.production.android.buildType) { $failures.Add("EAS production Android build type must be configured") }
-if (-not (Test-Path -LiteralPath (Join-Path $repo ".android-signing.local.ps1"))) { $failures.Add("missing local Android release signing config; run npm run create:android:keystore") }
+try {
+  if (-not (Get-AndroidSigningConfig)) {
+    $failures.Add("missing Android release signing config; run npm run create:android:keystore locally or configure Android upload signing secrets in CI")
+  }
+} catch {
+  $failures.Add($_.Exception.Message)
+}
 if ($readme -notmatch "delete account") { $failures.Add("README must document the delete account requirement for review readiness") }
 if ($readme -notmatch "privacy policy") { $failures.Add("README must document the privacy policy requirement for review readiness") }
 

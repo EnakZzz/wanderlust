@@ -71,6 +71,7 @@ GitHub 仓库 `EnakZzz/wanderlust` 需要配置这些 Actions Secrets：
 可选 GitHub Actions Variables：
 
 - `APP_PUBLIC_URL`: Web/Pages 的公开 URL；不配置时默认为 `https://wanderlust-web.pages.dev`。
+- `MOBILE_API_BASE_URL`: 移动端访问 API 的 base URL；不配置时跟随 `APP_PUBLIC_URL`。
 - `WORKERS_AI_TEXT_MODEL`: 临时切换 Workers AI 文本模型；不配置时使用代码默认模型。
 
 GitHub Actions 会在发布前把非空运行时 secret 写入 Cloudflare Pages secrets。不要把这些值写入 `.deploy.local.ps1` 以外的可提交文件，也不要写入 `wrangler.toml [vars]`。
