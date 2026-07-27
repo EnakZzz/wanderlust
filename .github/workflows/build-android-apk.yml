@@ -22,6 +22,9 @@ concurrency:
   group: android-apk-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build release APK
@@ -98,9 +101,71 @@ jobs:
         run: ./scripts/build-android-apk.ps1
 
       - name: Upload APK artifact
+        id: upload-apk
         uses: actions/upload-artifact@v4
         with:
           name: wanderlust-release-apk
           path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish Android latest release notes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK_SOURCE: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          RELEASE_TAG: android-latest
+          RELEASE_APK_NAME: wanderlust-release.apk
+          RELEASE_QR_NAME: wanderlust-release-qr.png
+        run: |
+          set -euo pipefail
+
+          mkdir -p artifacts/android-release-notes
+          cp "$APK_SOURCE" "artifacts/android-release-notes/$RELEASE_APK_NAME"
+
+          apk_url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/${RELEASE_APK_NAME}"
+          qr_path="artifacts/android-release-notes/$RELEASE_QR_NAME"
+          npx --yes qrcode -o "$qr_path" -w 512 "$apk_url"
+
+          notes_path="artifacts/android-release-notes/release-notes.md"
+          cat > "$notes_path" <<EOF
+          ## Android APK
+
+          - Commit: \`${GITHUB_SHA}\`
+          - APK: [${RELEASE_APK_NAME}](${apk_url})
+          - GitHub Actions run: [${GITHUB_RUN_ID}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
+
+          ### Scan to install
+
+          ![Scan to download Android APK](https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/${RELEASE_QR_NAME})
+          EOF
+
+          git tag -f "$RELEASE_TAG" "$GITHUB_SHA"
+          git push -f origin "$RELEASE_TAG"
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" \
+              --title "Android latest APK" \
+              --notes-file "$notes_path" \
+              --prerelease
+          else
+            gh release create "$RELEASE_TAG" \
+              --title "Android latest APK" \
+              --notes-file "$notes_path" \
+              --prerelease \
+              --target "$GITHUB_SHA"
+          fi
+
+          gh release upload "$RELEASE_TAG" \
+            "artifacts/android-release-notes/$RELEASE_APK_NAME" \
+            "artifacts/android-release-notes/$RELEASE_QR_NAME" \
+            --clobber
+
+          {
+            echo "## Android APK"
+            echo
+            echo "- Release notes: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}"
+            echo "- APK: ${apk_url}"
+            echo
+            echo "![Scan to download Android APK](https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/${RELEASE_QR_NAME})"
+          } >> "$GITHUB_STEP_SUMMARY"

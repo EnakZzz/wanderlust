@@ -159,6 +159,20 @@ artifact 内的 APK 路径：
 apps/mobile/android/app/build/outputs/apk/release/app-release.apk
 ```
 
+构建成功后 workflow 还会更新固定 prerelease：
+
+```text
+https://github.com/EnakZzz/wanderlust/releases/tag/android-latest
+```
+
+该 release notes 会展示二维码，二维码指向：
+
+```text
+https://github.com/EnakZzz/wanderlust/releases/download/android-latest/wanderlust-release.apk
+```
+
+用于手机扫码下载最新 Android APK。release asset 名称固定为 `wanderlust-release.apk`，二维码 asset 名称固定为 `wanderlust-release-qr.png`。
+
 GitHub 仓库 `EnakZzz/wanderlust` 需要配置这些 Android Actions Secrets：
 
 - `ANDROID_UPLOAD_KEYSTORE_BASE64`: Android upload keystore 文件的 base64 内容。

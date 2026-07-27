@@ -24,7 +24,7 @@ Android 发布 APK 输出：
 apps/mobile/android/app/build/outputs/apk/release/app-release.apk
 ```
 
-GitHub Actions 会在 `Build Android APK` workflow 中构建 release APK，并上传 `wanderlust-release-apk` artifact 供下载。所需 GitHub Secrets 见 `AGENTS.md`。
+GitHub Actions 会在 `Build Android APK` workflow 中构建 release APK，并上传 `wanderlust-release-apk` artifact 供下载。构建成功后还会更新 `android-latest` prerelease，release notes 内带二维码，扫码可下载最新 Android APK。所需 GitHub Secrets 见 `AGENTS.md`。
 
 ## Android 发布签名
 
