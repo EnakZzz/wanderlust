@@ -86,7 +86,7 @@ jobs:
 
       - name: Build release APK
         shell: pwsh
-        run: npm run build:android:apk
+        run: ./scripts/build-android-apk.ps1
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
