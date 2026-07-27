@@ -142,6 +142,31 @@ npx wrangler pages secret put APPLE_OAUTH_CLIENT_SECRET --project-name <PagesPro
 npm run verify:auth
 ```
 
+## Android GitHub Actions
+
+Android release APK 由 GitHub Actions 构建：`.github/workflows/build-android-apk.yml`。推送到 `main` 且改动涉及移动端、共享包、Web build 依赖或 Android 构建脚本时会自动触发，也可以在 GitHub Actions 页面手动运行 `Build Android APK`。
+
+构建完成后，在 workflow run 的 Artifacts 中下载：
+
+```text
+wanderlust-release-apk
+```
+
+artifact 内的 APK 路径：
+
+```text
+apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+```
+
+GitHub 仓库 `EnakZzz/wanderlust` 需要配置这些 Android Actions Secrets：
+
+- `ANDROID_UPLOAD_KEYSTORE_BASE64`: Android upload keystore 文件的 base64 内容。
+- `ANDROID_UPLOAD_STORE_PASSWORD`: keystore store password。
+- `ANDROID_UPLOAD_KEY_ALIAS`: upload key alias。
+- `ANDROID_UPLOAD_KEY_PASSWORD`: upload key password。
+
+本地仍使用 `.android-signing.local.ps1` 和 `.local/android/` 下的 keystore；这些文件已忽略，不提交。CI 会从 GitHub Secrets 还原 keystore 到临时 `.local/android/wanderlust-upload.keystore`，再复用 `npm run build:android:apk` 构建和 `verify-android-apk.ps1` 校验。正常下载测试包优先使用 GitHub Actions artifact，本地构建只作为诊断或离线打包兜底。
+
 ## Local Agent API
 
 本地 Codex/agent 可以用主域名 API 直接读写路书，不需要浏览器 Cookie。正式接口一律走：

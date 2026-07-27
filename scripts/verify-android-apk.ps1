@@ -5,8 +5,49 @@ $apk = Join-Path $repo "apps/mobile/android/app/build/outputs/apk/release/app-re
 $expectedPackage = "com.enakzzz.wanderlust"
 $expectedVersionCode = "1"
 $expectedVersionName = "0.1.0"
-$aapt = Join-Path $env:LOCALAPPDATA "Android/Sdk/build-tools/36.0.0/aapt2.exe"
-$apksigner = Join-Path $env:LOCALAPPDATA "Android/Sdk/build-tools/36.0.0/apksigner.bat"
+
+function Get-AndroidSdkRoot {
+  foreach ($name in @("ANDROID_HOME", "ANDROID_SDK_ROOT")) {
+    $value = [Environment]::GetEnvironmentVariable($name)
+    if (-not [string]::IsNullOrWhiteSpace($value) -and (Test-Path -LiteralPath $value)) {
+      return $value
+    }
+  }
+  if ($env:LOCALAPPDATA) {
+    $localSdk = Join-Path $env:LOCALAPPDATA "Android/Sdk"
+    if (Test-Path -LiteralPath $localSdk) { return $localSdk }
+  }
+  throw "Android SDK root not found. Set ANDROID_HOME or ANDROID_SDK_ROOT."
+}
+
+function Get-AndroidBuildTool {
+  param([Parameter(Mandatory = $true)] [string] $BaseName)
+
+  $sdk = Get-AndroidSdkRoot
+  $buildTools = Join-Path $sdk "build-tools"
+  if (-not (Test-Path -LiteralPath $buildTools)) {
+    throw "Android build-tools directory not found: $buildTools"
+  }
+
+  $versions = Get-ChildItem -LiteralPath $buildTools -Directory |
+    Sort-Object -Property Name -Descending
+  foreach ($version in $versions) {
+    foreach ($candidate in @(
+      (Join-Path $version.FullName $BaseName),
+      (Join-Path $version.FullName "$BaseName.exe"),
+      (Join-Path $version.FullName "$BaseName.bat")
+    )) {
+      if (Test-Path -LiteralPath $candidate) {
+        return $candidate
+      }
+    }
+  }
+
+  throw "Android build tool '$BaseName' not found under $buildTools"
+}
+
+$aapt = Get-AndroidBuildTool "aapt2"
+$apksigner = Get-AndroidBuildTool "apksigner"
 
 if (-not (Test-Path -LiteralPath $apk)) {
   throw "APK not found: $apk"

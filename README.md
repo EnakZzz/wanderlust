@@ -24,6 +24,8 @@ Android 发布 APK 输出：
 apps/mobile/android/app/build/outputs/apk/release/app-release.apk
 ```
 
+GitHub Actions 会在 `Build Android APK` workflow 中构建 release APK，并上传 `wanderlust-release-apk` artifact 供下载。所需 GitHub Secrets 见 `AGENTS.md`。
+
 ## Android 发布签名
 
 Android Play upload signing uses local ignored files. 在新构建机器上：

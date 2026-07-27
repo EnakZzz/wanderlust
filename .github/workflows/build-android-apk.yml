@@ -1,0 +1,97 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/build-android-apk.yml"
+      - "apps/mobile/**"
+      - "apps/web/**"
+      - "packages/**"
+      - "scripts/android-signing.ps1"
+      - "scripts/build-android-apk.ps1"
+      - "scripts/verify-android-apk.ps1"
+      - "scripts/verify-store-readiness.ps1"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore Android upload keystore
+        shell: pwsh
+        env:
+          ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $missing = @()
+          foreach ($name in @(
+            "ANDROID_UPLOAD_KEYSTORE_BASE64",
+            "ANDROID_UPLOAD_STORE_PASSWORD",
+            "ANDROID_UPLOAD_KEY_ALIAS",
+            "ANDROID_UPLOAD_KEY_PASSWORD"
+          )) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+              $missing += $name
+            }
+          }
+          if ($missing.Count -gt 0) {
+            foreach ($name in $missing) {
+              Write-Output "::error::Missing required GitHub secret: $name"
+            }
+            exit 1
+          }
+
+          $keystore = Join-Path $PWD ".local/android/wanderlust-upload.keystore"
+          New-Item -ItemType Directory -Force -Path (Split-Path -Parent $keystore) | Out-Null
+          [IO.File]::WriteAllBytes($keystore, [Convert]::FromBase64String($env:ANDROID_UPLOAD_KEYSTORE_BASE64))
+
+          "WANDERLUST_ANDROID_UPLOAD_STORE_FILE=$($keystore.Replace('\', '/'))" >> $env:GITHUB_ENV
+          "WANDERLUST_ANDROID_UPLOAD_STORE_PASSWORD=$env:ANDROID_UPLOAD_STORE_PASSWORD" >> $env:GITHUB_ENV
+          "WANDERLUST_ANDROID_UPLOAD_KEY_ALIAS=$env:ANDROID_UPLOAD_KEY_ALIAS" >> $env:GITHUB_ENV
+          "WANDERLUST_ANDROID_UPLOAD_KEY_PASSWORD=$env:ANDROID_UPLOAD_KEY_PASSWORD" >> $env:GITHUB_ENV
+
+      - name: Build release APK
+        shell: pwsh
+        run: npm run build:android:apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wanderlust-release-apk
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14

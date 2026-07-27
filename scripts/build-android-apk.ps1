@@ -18,12 +18,32 @@ function Invoke-Checked {
   }
 }
 
+function Test-IsWindows {
+  return [System.Environment]::OSVersion.Platform -eq "Win32NT"
+}
+
+function Get-PowerShellCommand {
+  if (Get-Command pwsh -ErrorAction SilentlyContinue) { return "pwsh" }
+  return "powershell"
+}
+
+function Invoke-Gradle {
+  param([Parameter(Mandatory = $true)] [string[]] $Arguments)
+
+  $gradlew = if (Test-IsWindows) { ".\gradlew.bat" } else { "./gradlew" }
+  if (-not (Test-IsWindows)) {
+    Invoke-Checked "chmod" @("+x", $gradlew)
+  }
+  Invoke-Checked $gradlew $Arguments
+}
+
 function Stop-AndroidGradleDaemon {
-  $gradlew = Join-Path $android "gradlew.bat"
+  $gradlew = Join-Path $android ($(if (Test-IsWindows) { "gradlew.bat" } else { "gradlew" }))
   if (Test-Path -LiteralPath $gradlew) {
     Push-Location $android
     try {
-      & .\gradlew.bat --stop
+      if (-not (Test-IsWindows)) { & chmod +x $gradlew }
+      if (Test-IsWindows) { & .\gradlew.bat --stop } else { & ./gradlew --stop }
       $global:LASTEXITCODE = 0
     }
     finally {
@@ -31,11 +51,13 @@ function Stop-AndroidGradleDaemon {
     }
   }
 
-  Get-CimInstance Win32_Process |
-    Where-Object { $_.CommandLine -match "org\.gradle\.launcher\.daemon\.bootstrap\.GradleDaemon|KotlinCompileDaemon" } |
-    ForEach-Object {
-      Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
-    }
+  if (Get-Command Get-CimInstance -ErrorAction SilentlyContinue) {
+    Get-CimInstance Win32_Process |
+      Where-Object { $_.CommandLine -match "org\.gradle\.launcher\.daemon\.bootstrap\.GradleDaemon|KotlinCompileDaemon" } |
+      ForEach-Object {
+        Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+      }
+  }
 }
 
 Push-Location $repo
@@ -64,7 +86,7 @@ finally {
 Push-Location $android
 try {
   $env:NODE_ENV = "production"
-  Invoke-Checked ".\gradlew.bat" @("assembleRelease")
+  Invoke-Gradle @("assembleRelease")
 }
 finally {
   Pop-Location
@@ -75,4 +97,4 @@ if (-not (Test-Path -LiteralPath $apk)) {
   throw "Android release APK was not produced at $apk"
 }
 
-Invoke-Checked "powershell" @("-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "verify-android-apk.ps1"))
+Invoke-Checked (Get-PowerShellCommand) @("-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "verify-android-apk.ps1"))

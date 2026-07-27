@@ -6,7 +6,14 @@ $expectedPackage = "com.enakzzz.wanderlust"
 $expectedVersionCode = "1"
 $expectedVersionName = "0.1.0"
 $bundletoolVersion = "1.18.1"
-$bundletool = Join-Path $env:LOCALAPPDATA "Wanderlust/bundletool/bundletool-all-$bundletoolVersion.jar"
+$bundletoolRoot = if ($env:LOCALAPPDATA) {
+  Join-Path $env:LOCALAPPDATA "Wanderlust/bundletool"
+} elseif ($env:RUNNER_TEMP) {
+  Join-Path $env:RUNNER_TEMP "wanderlust-bundletool"
+} else {
+  Join-Path ([Environment]::GetFolderPath("UserProfile")) ".cache/wanderlust/bundletool"
+}
+$bundletool = Join-Path $bundletoolRoot "bundletool-all-$bundletoolVersion.jar"
 
 if (-not (Test-Path -LiteralPath $aab)) {
   throw "AAB not found: $aab"
