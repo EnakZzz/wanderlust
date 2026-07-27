@@ -85,9 +85,16 @@ $certText = $certs -join "`n"
 if ($certText -match "CN=Android Debug") {
   throw "APK is signed with the Android debug certificate. Generate and use a release upload keystore before publishing."
 }
-$sha256Line = $certs | Select-String -Pattern "Signer #1 certificate SHA-256 digest:" | Select-Object -First 1
-if (-not $sha256Line) {
-  throw "Could not read APK signing certificate SHA-256 digest"
+$sha256Digest = $null
+foreach ($line in $certs) {
+  $match = [regex]::Match($line, "(?i)SHA-?256.*digest:\s*([0-9A-F:]+)")
+  if ($match.Success) {
+    $sha256Digest = $match.Groups[1].Value
+    break
+  }
+}
+if (-not $sha256Digest) {
+  throw "Could not read APK signing certificate SHA-256 digest. apksigner output: $certText"
 }
 
 $info = Get-Item -LiteralPath $apk
@@ -96,7 +103,7 @@ $info = Get-Item -LiteralPath $apk
   Package = $expectedPackage
   VersionCode = $expectedVersionCode
   VersionName = $expectedVersionName
-  SigningCertificateSha256 = ($sha256Line.ToString() -replace "^.*digest:\s*", "")
+  SigningCertificateSha256 = $sha256Digest
   Bytes = $info.Length
   LastWriteTime = $info.LastWriteTime
 }
