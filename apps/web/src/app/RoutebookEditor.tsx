@@ -48,7 +48,16 @@ import {
   type TripDay,
 } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   attachmentCategories,
   bookingTypes,
@@ -1823,23 +1832,27 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
         {!showPlanHome ? (
           <aside className="rail editor-module-rail" aria-label="行程模块">
             <TooltipProvider delayDuration={120}>
-              {modules.map((module) => (
-                <Tooltip key={module.id}>
-                  <TooltipTrigger asChild>
-                    <button
-                      className={activeModule === module.id ? "rail-item active" : "rail-item"}
-                      type="button"
-                      aria-label={module.title}
-                      aria-pressed={activeModule === module.id}
-                      onClick={() => setActiveModule(module.id)}
-                    >
-                      <module.icon size={18} />
-                      <span>{module.title}</span>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>{module.copy}</TooltipContent>
-                </Tooltip>
-              ))}
+              <ToggleGroup
+                className="editor-module-toggle"
+                type="single"
+                value={activeModule}
+                aria-label="行程模块"
+                onValueChange={(value) => {
+                  if (value) setActiveModule(value as EditorModule);
+                }}
+              >
+                {modules.map((module) => (
+                  <Tooltip key={module.id}>
+                    <TooltipTrigger asChild>
+                      <ToggleGroupItem className="rail-item" size="icon" value={module.id} aria-label={module.title}>
+                        <module.icon size={18} />
+                        <span>{module.title}</span>
+                      </ToggleGroupItem>
+                    </TooltipTrigger>
+                    <TooltipContent>{module.copy}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </ToggleGroup>
             </TooltipProvider>
           </aside>
         ) : null}
@@ -1954,24 +1967,21 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
           </div>
         ) : null}
         {user && !showPlanHome ? (
-          <div className={routebookDrawerOpen ? "routebook-drawer open" : "routebook-drawer"} role="dialog" aria-modal="true" aria-label="路书列表">
-            <button className="routebook-drawer-backdrop" type="button" aria-label="关闭路书列表" onClick={() => setRoutebookDrawerOpen(false)} />
-            <aside className="routebook-drawer-panel">
-              <div className="routebook-drawer-heading">
+          <Dialog open={routebookDrawerOpen} onOpenChange={setRoutebookDrawerOpen}>
+            <DialogContent className="routebook-drawer-content" aria-label="路书列表">
+              <DialogHeader className="routebook-drawer-heading">
                 <div>
                   <p className="eyebrow">路书列表</p>
-                  <h2>你的行程</h2>
+                  <DialogTitle>你的行程</DialogTitle>
+                  <DialogDescription className="routebook-drawer-description">切换、查看或删除已经同步的路书。</DialogDescription>
                 </div>
-                <button className="icon-button" type="button" onClick={() => setRoutebookDrawerOpen(false)} title="关闭路书列表" aria-label="关闭路书列表">
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="routebook-drawer-list">
+              </DialogHeader>
+              <ScrollArea className="routebook-drawer-list">
                 {trips.map(renderTripCard)}
                 {trips.length === 0 ? <div className="empty-trip-card">{isSyncing ? "正在同步路书..." : "还没有路书。 先创建一个路书开始。"}</div> : null}
-              </div>
-            </aside>
-          </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
         ) : null}
 
         {showPlanHome ? (

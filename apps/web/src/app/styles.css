@@ -1048,8 +1048,10 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   cursor: pointer;
 }
 .rail-item.active { background: var(--paper-deep); color: var(--accent); }
+.rail-item[data-state="on"] { background: var(--paper-deep); color: var(--accent); }
 .rail-item:hover { background: var(--paper-deep); color: var(--ink); }
 .rail-item.active:hover { background: var(--paper-deep); }
+.rail-item[data-state="on"]:hover { background: var(--paper-deep); color: var(--accent); }
 .rail-item span { font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
 
 .panel {
@@ -1237,6 +1239,24 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .routebook-drawer.open .routebook-drawer-panel {
   transform: translateX(0) scale(1);
 }
+.routebook-drawer-content {
+  top: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  left: 18px;
+  width: min(430px, calc(100% - 36px));
+  max-height: none;
+  overflow: hidden;
+  transform: none;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+  padding: 18px;
+  border-color: rgba(229, 226, 217, 0.82);
+  border-radius: 24px;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.97), rgba(245, 242, 237, 0.94)),
+    var(--surface);
+  box-shadow: 0 28px 80px rgba(29, 27, 24, 0.28);
+}
 .routebook-drawer-heading {
   display: flex;
   align-items: center;
@@ -1247,13 +1267,21 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   margin: 2px 0 0;
   font-size: 30px;
 }
+.routebook-drawer-description {
+  margin-top: 6px;
+}
 .routebook-drawer-list {
   min-height: 0;
-  overflow-y: auto;
+  height: 100%;
   display: grid;
   align-content: start;
   gap: 12px;
   padding-right: 2px;
+}
+.routebook-drawer-list > div {
+  display: grid;
+  align-content: start;
+  gap: 12px;
 }
 .new-trip-button {
   align-self: end;
@@ -3654,6 +3682,15 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .routebook-modal-panel { max-height: calc(100vh - 20px); overflow-y: auto; border-radius: 22px; }
   .routebook-drawer-panel { inset: auto 10px calc(76px + env(safe-area-inset-bottom)); width: auto; max-height: min(78vh, 680px); border-radius: 22px; transform: translateY(calc(100% + 100px)) scale(0.98); }
   .routebook-drawer.open .routebook-drawer-panel { transform: translateY(0) scale(1); }
+  .routebook-drawer-content {
+    top: auto;
+    right: 10px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    left: 10px;
+    width: auto;
+    max-height: min(78vh, 680px);
+    border-radius: 22px;
+  }
   .trip-card { aspect-ratio: 1.85 / 1; }
   .new-trip-button { justify-self: start; }
   .plan-home-heading { align-items: stretch; flex-direction: column; }
