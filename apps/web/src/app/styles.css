@@ -3277,6 +3277,199 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   line-height: 1.35;
 }
 
+/* Routebook editor refinement: calmer hierarchy, less nested-card noise. */
+.workspace:not(.workspace-loading) {
+  width: min(1440px, calc(100% - clamp(32px, 7vw, 132px)));
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 24px;
+  padding-top: clamp(22px, 3vw, 34px);
+}
+.workspace:not(.workspace-loading) .rail {
+  width: min(620px, calc(100% - 32px));
+  margin-bottom: 18px;
+  padding: 4px;
+  box-shadow: 0 12px 32px rgba(45, 45, 45, 0.07);
+}
+.workspace:not(.workspace-loading) .rail-item {
+  min-height: 48px;
+}
+.workspace:not(.workspace-loading) .rail-item svg {
+  width: 17px;
+  height: 17px;
+}
+.workspace:not(.workspace-loading) .panel {
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 18px 54px rgba(45, 45, 45, 0.045);
+}
+.workspace:not(.workspace-loading) .itinerary-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 248, 243, 0.94)),
+    var(--surface);
+}
+.workspace:not(.workspace-loading) .trip-library {
+  align-items: stretch;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+}
+.workspace:not(.workspace-loading) .routebook-current {
+  min-height: 74px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: none;
+}
+.workspace:not(.workspace-loading) .routebook-current-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+}
+.workspace:not(.workspace-loading) .routebook-current strong {
+  font-size: clamp(24px, 2.2vw, 34px);
+}
+.workspace:not(.workspace-loading) .trip-library-actions {
+  align-self: center;
+}
+.workspace:not(.workspace-loading) .module-heading {
+  margin: 0 0 14px;
+  padding: 0 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+.workspace:not(.workspace-loading) .module-heading p {
+  margin: 0;
+  font-size: 21px;
+}
+.workspace:not(.workspace-loading) .module-heading span {
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+}
+.workspace:not(.workspace-loading) .day-strip {
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.workspace:not(.workspace-loading) .day-tab {
+  min-height: 58px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.78);
+}
+.workspace:not(.workspace-loading) .day-tab.active {
+  background: #fff;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.workspace:not(.workspace-loading) .journey-day-shell {
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 12px;
+}
+.workspace:not(.workspace-loading) .journey-day-content {
+  gap: 12px;
+}
+.workspace:not(.workspace-loading) .journey-day-hero {
+  align-items: center;
+  min-height: 116px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  box-shadow: 0 12px 34px var(--journey-glow);
+}
+.workspace:not(.workspace-loading) .journey-day-title-input {
+  min-height: 44px;
+  font-size: clamp(32px, 3.5vw, 48px);
+}
+.workspace:not(.workspace-loading) .journey-day-tools {
+  align-items: center;
+}
+.workspace:not(.workspace-loading) .journey-date-control,
+.workspace:not(.workspace-loading) .add-button.compact,
+.workspace:not(.workspace-loading) .ai-inline-button {
+  min-height: 40px;
+}
+.workspace:not(.workspace-loading) .journey-timeline {
+  gap: 14px;
+}
+.workspace:not(.workspace-loading) .route-step-card {
+  min-height: 220px;
+  grid-template-columns: 104px minmax(190px, 30%) minmax(0, 1fr);
+  border-radius: 18px;
+  box-shadow: 0 12px 34px rgba(45, 45, 45, 0.055);
+}
+.workspace:not(.workspace-loading) .route-step-date-panel {
+  min-height: 220px;
+  gap: 8px;
+  padding: 14px 8px;
+}
+.workspace:not(.workspace-loading) .route-step-date-panel::after {
+  box-shadow: 0 -112px 0 color-mix(in srgb, var(--journey-accent) 48%, white), 0 112px 0 color-mix(in srgb, var(--journey-accent) 48%, white);
+}
+.workspace:not(.workspace-loading) .route-step-date-panel em {
+  width: 46px;
+  height: 46px;
+  font-size: 20px;
+}
+.workspace:not(.workspace-loading) .route-step-date-panel strong {
+  font-size: 21px;
+}
+.workspace:not(.workspace-loading) .route-step-image {
+  min-height: 220px;
+}
+.workspace:not(.workspace-loading) .route-step-body {
+  gap: 10px;
+  padding: 20px 22px;
+}
+.workspace:not(.workspace-loading) .route-step-body h3 {
+  font-size: clamp(25px, 2.4vw, 34px);
+}
+.workspace:not(.workspace-loading) .route-step-body p {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.workspace:not(.workspace-loading) .route-step-fact {
+  min-height: 34px;
+}
+.workspace:not(.workspace-loading) .route-step-actions {
+  margin-top: 4px;
+}
+.workspace:not(.workspace-loading) .side-panel {
+  gap: 12px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.76);
+}
+.workspace:not(.workspace-loading) .weather-card,
+.workspace:not(.workspace-loading) .offline-readiness,
+.workspace:not(.workspace-loading) .quick-grid div {
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: none;
+}
+.workspace:not(.workspace-loading) .weather-card {
+  grid-template-columns: 1fr 40px;
+  padding: 15px;
+}
+.workspace:not(.workspace-loading) .weather-card strong {
+  font-size: 30px;
+}
+.workspace:not(.workspace-loading) .map-card {
+  min-height: 220px;
+  border-radius: 18px;
+  opacity: 0.86;
+}
+.workspace:not(.workspace-loading) .quick-grid {
+  gap: 8px;
+}
+.workspace:not(.workspace-loading) .quick-grid div {
+  padding: 14px;
+}
+.workspace:not(.workspace-loading) .quick-grid strong {
+  font-size: 29px;
+}
+.workspace:not(.workspace-loading) .offline-button {
+  min-height: 46px;
+}
+
 @media (max-width: 900px) {
   .hero-shell {
     min-height: clamp(620px, 88vh, 780px);
