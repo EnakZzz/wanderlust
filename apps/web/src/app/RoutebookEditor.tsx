@@ -8,7 +8,6 @@ import {
   ChevronDown,
   Clock,
   FileUp,
-  FolderOpen,
   ImageUp,
   Landmark,
   Map as MapIcon,
@@ -1771,29 +1770,6 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
   return (
     <section id="editor" className={showPlanHome ? "workspace workspace-plan-home" : "workspace workspace-editor"}>
-      <aside className="rail" aria-label="行程模块">
-        {showPlanHome ? (
-          <button className="rail-item active" type="button" title="Account routebooks" aria-pressed="true">
-            <FolderOpen size={18} />
-            <span>路书</span>
-          </button>
-        ) : (
-          modules.map((module) => (
-            <button
-              key={module.id}
-              className={activeModule === module.id ? "rail-item active" : "rail-item"}
-              type="button"
-              title={module.copy}
-              aria-pressed={activeModule === module.id}
-              onClick={() => setActiveModule(module.id)}
-            >
-              <module.icon size={18} />
-              <span>{module.title}</span>
-            </button>
-          ))
-        )}
-      </aside>
-
       <div className="panel itinerary-panel">
         {!showPlanHome ? (
           <div className="trip-library">
@@ -1843,6 +1819,24 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               </button>
             </div>
           </div>
+        ) : null}
+
+        {!showPlanHome ? (
+          <aside className="rail editor-module-rail" aria-label="行程模块">
+            {modules.map((module) => (
+              <button
+                key={module.id}
+                className={activeModule === module.id ? "rail-item active" : "rail-item"}
+                type="button"
+                title={module.copy}
+                aria-pressed={activeModule === module.id}
+                onClick={() => setActiveModule(module.id)}
+              >
+                <module.icon size={18} />
+                <span>{module.title}</span>
+              </button>
+            ))}
+          </aside>
         ) : null}
         {metaDialogMode ? (
           <div className="routebook-modal" role="dialog" aria-modal="true" aria-label={metaDialogMode === "create" ? "创建路书" : "编辑路书"}>
