@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Compass, Flag, MapPinned, Plus, Route } from "lucide-react";
+import { buildTripEditorPath } from "@wanderlust/domain";
 import type { SessionUser, TripSummary } from "./routebook/types";
 
 type PassportState = {
@@ -42,7 +43,7 @@ function parseDestination(destination: string): { city: string; country: string 
 }
 
 function tripEditorHref(tripId: string): string {
-  return `/?tripId=${encodeURIComponent(tripId)}#editor`;
+  return buildTripEditorPath(tripId);
 }
 
 export function PassportClient() {

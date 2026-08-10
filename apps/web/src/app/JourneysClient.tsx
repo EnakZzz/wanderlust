@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CalendarDays, MapPin, Plus, Route, Ticket } from "lucide-react";
+import { buildTripEditorPath } from "@wanderlust/domain";
 import type { SessionUser, TripSummary } from "./routebook/types";
 
 type JourneysState = {
@@ -24,7 +25,7 @@ function formatTripDates(trip: TripSummary): string {
 }
 
 function tripEditorHref(tripId: string): string {
-  return `/?tripId=${encodeURIComponent(tripId)}#editor`;
+  return buildTripEditorPath(tripId);
 }
 
 export function JourneysClient() {

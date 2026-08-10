@@ -339,6 +339,21 @@ export function getTodayTripDay(days: TripDay[], localIsoDate: string): TripDay 
   return days.find((day) => day.date === localIsoDate);
 }
 
+export function buildTripEditorPath(tripId: string): string {
+  return `/journeys/${encodeURIComponent(tripId)}`;
+}
+
+export function parseTripIdFromEditorPath(pathname: string): string | null {
+  const match = pathname.match(/^\/journeys\/([^/?#]+)$/);
+  if (!match?.[1] || match[1] === "edit") return null;
+
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
+}
+
 export function getOfflineReadiness(trip: Pick<Trip, "days" | "places" | "bookings" | "attachments" | "packingItems" | "weather">): OfflineReadiness {
   const itineraryCount = trip.days.reduce((total, day) => total + (day.items?.length ?? 0), 0);
   const packedCount = trip.packingItems?.filter((item) => item.packed).length ?? 0;

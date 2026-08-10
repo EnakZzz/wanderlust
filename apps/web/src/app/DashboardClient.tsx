@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { FileUp, MapPinned, PlaneTakeoff, Plus, Route, Sparkles } from "lucide-react";
+import { buildTripEditorPath } from "@wanderlust/domain";
 import { DestinationSearchPanel, editorHref } from "./DestinationSearchPanel";
 import type { SessionUser, TripSummary } from "./routebook/types";
 
@@ -32,7 +33,7 @@ function formatTripDates(trip: TripSummary): string {
 }
 
 function tripEditorHref(tripId: string): string {
-  return `/?tripId=${encodeURIComponent(tripId)}#editor`;
+  return buildTripEditorPath(tripId);
 }
 
 export function DashboardClient() {

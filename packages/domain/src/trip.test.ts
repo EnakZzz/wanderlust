@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildTripEditorPath,
   buildMapsUrl,
   createTripDays,
   getTodayTripDay,
+  parseTripIdFromEditorPath,
   removeItineraryItem,
   sortItineraryItems,
   TripSchema,
@@ -193,6 +195,16 @@ describe("getTodayTripDay", () => {
   it("returns the matching trip day for a local ISO date", () => {
     const days = createTripDays("trip_1", "2026-10-12", "2026-10-14");
     expect(getTodayTripDay(days, "2026-10-13")?.title).toBe("第 2 天");
+  });
+});
+
+describe("routebook editor routes", () => {
+  it("uses a path segment containing the trip id for saved trip editor URLs", () => {
+    expect(buildTripEditorPath("trip_abc/123")).toBe("/journeys/trip_abc%2F123");
+  });
+
+  it("reads the trip id from the path based editor URL", () => {
+    expect(parseTripIdFromEditorPath("/journeys/trip_abc%2F123")).toBe("trip_abc/123");
   });
 });
 

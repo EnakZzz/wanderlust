@@ -30,9 +30,11 @@ import {
   X
 } from "lucide-react";
 import {
+  buildTripEditorPath,
   buildMapsUrl,
   createTripDays,
   getOfflineReadiness,
+  parseTripIdFromEditorPath,
   removeItineraryItem,
   sortItineraryItems,
   updateItineraryItem,
@@ -175,6 +177,10 @@ type DestinationSearchResponse = {
 
 type ShareResponse = {
   share: RoutebookShare | null;
+};
+
+type RoutebookEditorProps = {
+  initialTripId?: string;
 };
 
 function createEmptyTripDraft(id = "local_draft", ownerId = "local"): TripDraft {
@@ -705,7 +711,7 @@ async function fetchWeatherForDraft(draft: TripDraft): Promise<WeatherForecast[]
   });
 }
 
-export function RoutebookEditor() {
+export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [draft, setDraft] = useState<TripDraft>(() => createEmptyTripDraft());
   const [trips, setTrips] = useState<TripSummary[]>([]);
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -785,7 +791,7 @@ export function RoutebookEditor() {
 
   useEffect(() => {
     if (!isAuthChecked || initialDestinationConsumed) return;
-    const tripId = new URLSearchParams(window.location.search).get("tripId")?.trim();
+    const tripId = getRequestedTripId();
     if (tripId) {
       setInitialDestinationConsumed(true);
       return;
@@ -803,11 +809,11 @@ export function RoutebookEditor() {
     setMetaDialogMode("create");
     setRoutebookDrawerOpen(false);
     setInitialDestinationConsumed(true);
-  }, [initialDestinationConsumed, isAuthChecked]);
+  }, [initialDestinationConsumed, initialTripId, isAuthChecked]);
 
   useEffect(() => {
     if (!isAuthChecked || initialTripIdConsumed) return;
-    const tripId = new URLSearchParams(window.location.search).get("tripId")?.trim();
+    const tripId = getRequestedTripId();
     if (!tripId) {
       setInitialTripIdConsumed(true);
       return;
@@ -819,8 +825,8 @@ export function RoutebookEditor() {
     }
 
     setInitialTripIdConsumed(true);
-    void loadTrip(tripId);
-  }, [initialTripIdConsumed, isAuthChecked, user]);
+    void loadTrip(tripId, { updateRoute: !initialTripId, routeMode: "replace" });
+  }, [initialTripId, initialTripIdConsumed, isAuthChecked, user]);
 
   const selectedDay = useMemo(() => draft.days.find((day) => day.id === selectedDayId) ?? draft.days[0]!, [draft.days, selectedDayId]);
   const isAccountTripPersisted = Boolean(user && trips.some((trip) => trip.id === draft.id));
@@ -828,10 +834,7 @@ export function RoutebookEditor() {
   const activeTripSummary = useMemo(() => trips.find((trip) => trip.id === draft.id), [draft.id, trips]);
   const displayTitle = draft.title || "未命名路书";
   const displayDestination = draft.destination || "未设置目的地";
-  const hasTripDeepLink = Boolean(
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("tripId")?.trim()
-  );
+  const hasTripDeepLink = Boolean(getRequestedTripId());
   const hasPendingTripDeepLink = Boolean(
     hasTripDeepLink && !initialTripIdConsumed
   );
@@ -842,6 +845,21 @@ export function RoutebookEditor() {
   const offlineReadiness = useMemo(() => getOfflineReadiness(draft), [draft]);
   const settlements = useMemo(() => calculateBudgetSettlements(draft.budgetMembers, draft.budgetItems), [draft.budgetMembers, draft.budgetItems]);
   const shareUrl = shareInfo ? buildShareUrl(shareInfo.token) : null;
+
+  function getRequestedTripId(): string | null {
+    const routeTripId = initialTripId?.trim();
+    if (routeTripId) return routeTripId;
+    if (typeof window === "undefined") return null;
+    return parseTripIdFromEditorPath(window.location.pathname) ?? (new URLSearchParams(window.location.search).get("tripId")?.trim() || null);
+  }
+
+  function updateTripRoute(tripId: string, mode: "push" | "replace" = "push") {
+    if (typeof window === "undefined") return;
+    const nextPath = buildTripEditorPath(tripId);
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (currentPath === nextPath) return;
+    window.history[mode === "replace" ? "replaceState" : "pushState"]({}, "", nextPath);
+  }
 
   useEffect(() => {
     if (!routebookNeedsMeta || metaDialogMode) return;
@@ -1132,7 +1150,7 @@ export function RoutebookEditor() {
     setTrips(payload.trips);
   }
 
-  async function loadTrip(tripId: string) {
+  async function loadTrip(tripId: string, options: { updateRoute?: boolean; routeMode?: "push" | "replace" } = {}) {
     setIsSyncing(true);
     setSyncError(null);
     try {
@@ -1147,6 +1165,9 @@ export function RoutebookEditor() {
       setShareStatus(null);
       setMetaDialogMode(null);
       setRoutebookDrawerOpen(false);
+      if (options.updateRoute) {
+        updateTripRoute(hydrated.id, options.routeMode);
+      }
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "无法打开路书");
     } finally {
@@ -1214,6 +1235,9 @@ export function RoutebookEditor() {
       setIsSaved(true);
       setMetaDialogMode(null);
       await refreshTrips();
+      if (!existing) {
+        updateTripRoute(hydrated.id, "replace");
+      }
       return hydrated;
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "无法保存路书");
@@ -1565,7 +1589,7 @@ export function RoutebookEditor() {
   function renderTripCard(trip: TripSummary) {
     return (
       <article key={trip.id} className={trip.id === draft.id ? "trip-card active" : "trip-card"}>
-        <button className="trip-card-open" type="button" onClick={() => loadTrip(trip.id)}>
+        <button className="trip-card-open" type="button" onClick={() => loadTrip(trip.id, { updateRoute: true })}>
           <span className="trip-card-icon" aria-hidden="true">
             <MapPin size={22} />
           </span>
