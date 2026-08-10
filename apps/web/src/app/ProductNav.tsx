@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Compass, LayoutDashboard, LogOut, MapPinned, Plane, Route, Search, Sparkles } from "lucide-react";
 import { productBrand } from "@wanderlust/domain";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SessionUser } from "./routebook/types";
 
 type ProductNavProps = {
@@ -66,17 +68,24 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
         <span>{productBrand.shortName}</span>
       </a>
 
-      <div className="product-nav-links">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <a key={item.id} className={active === item.id ? "active" : undefined} href={item.href}>
-              <Icon size={15} />
-              <span>{item.label}</span>
-            </a>
-          );
-        })}
-      </div>
+      <TooltipProvider delayDuration={120}>
+        <div className="product-nav-links product-nav-icon-links">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Tooltip key={item.id}>
+                <TooltipTrigger asChild>
+                  <a className={active === item.id ? "active" : undefined} href={item.href} aria-label={item.label}>
+                    <Icon size={16} />
+                    <span>{item.label}</span>
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>{item.label}</TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
+      </TooltipProvider>
 
       <div className="product-nav-actions">
         {!loaded ? (
@@ -88,15 +97,19 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
               <span>{user.name || user.email || "旅行者"}</span>
             </a>
             <form action="/auth/session" method="post">
-              <button type="submit" title="退出登录" aria-label="退出登录">
+              <Button variant="icon" size="icon" type="submit" title="退出登录" aria-label="退出登录">
                 <LogOut size={16} />
-              </button>
+              </Button>
             </form>
           </>
         ) : (
           <>
-            <a className="product-nav-signin" href={authHref}>登录</a>
-            <a className="product-nav-primary" href={authHref}>开始规划</a>
+            <Button asChild variant="ghost" size="sm">
+              <a href={authHref}>登录</a>
+            </Button>
+            <Button asChild size="sm">
+              <a href={authHref}>开始规划</a>
+            </Button>
           </>
         )}
       </div>

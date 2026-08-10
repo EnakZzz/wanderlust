@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type CSSProperties, type ChangeEvent, type DragEvent } from "react";
 import JSZip from "jszip";
+import { AnimatePresence, motion } from "motion/react";
 import {
   CalendarDays,
   CheckSquare,
@@ -46,6 +47,8 @@ import {
   type Place,
   type TripDay,
 } from "@wanderlust/domain";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   attachmentCategories,
   bookingTypes,
@@ -1042,7 +1045,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
   if (!isAuthChecked) {
     return (
-      <section id="editor" className="workspace workspace-loading" aria-busy="true">
+      <section id="editor" className="workspace workspace-editor workspace-loading" aria-busy="true">
         <div className="panel itinerary-panel editor-loading-panel">
           <div className="editor-loading-routebook">
             <span />
@@ -1057,10 +1060,6 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
             <span />
             <span />
           </div>
-        </div>
-        <div className="panel side-panel editor-loading-side">
-          <div className="editor-loading-line" />
-          <div className="editor-loading-map" />
         </div>
       </section>
     );
@@ -1798,21 +1797,21 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               </span>
             </button>
             <div className="trip-library-actions">
-              <button className="icon-button" type="button" onClick={openEditTripMetaDialog} disabled={routebookNeedsMeta} title="编辑路书信息" aria-label="编辑路书信息">
+              <Button variant="icon" size="icon" type="button" onClick={openEditTripMetaDialog} disabled={routebookNeedsMeta} title="编辑路书信息" aria-label="编辑路书信息">
                 <PencilLine size={18} />
-              </button>
-              <button className="save-button trip-save-button" type="button" onClick={() => persistDraft()} disabled={routebookNeedsMeta} title="保存路书">
+              </Button>
+              <Button className="trip-save-button" type="button" onClick={() => persistDraft()} disabled={routebookNeedsMeta} title="保存路书">
                 <Save size={18} />
                 <span>{isSyncing ? "保存中" : "保存"}</span>
-              </button>
-              <button className="sample-button share-button" type="button" onClick={createOrCopyShare} disabled={routebookNeedsMeta || isSharing || !user} title="分享只读路书">
+              </Button>
+              <Button variant="secondary" type="button" onClick={createOrCopyShare} disabled={routebookNeedsMeta || isSharing || !user} title="分享只读路书">
                 <Share2 size={17} />
                 <span>{isSharing ? "生成中" : shareUrl ? "复制分享" : "分享"}</span>
-              </button>
+              </Button>
               {shareInfo ? (
-                <button className="icon-button" type="button" onClick={revokeShare} disabled={isSharing} title="取消分享" aria-label="取消分享">
+                <Button variant="icon" size="icon" type="button" onClick={revokeShare} disabled={isSharing} title="取消分享" aria-label="取消分享">
                   <X size={18} />
-                </button>
+                </Button>
               ) : null}
               <button className="new-trip-button" type="button" onClick={createSyncedTrip} title="新建行程" aria-label="新建行程">
                 <Plus size={20} />
@@ -1823,19 +1822,25 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
         {!showPlanHome ? (
           <aside className="rail editor-module-rail" aria-label="行程模块">
-            {modules.map((module) => (
-              <button
-                key={module.id}
-                className={activeModule === module.id ? "rail-item active" : "rail-item"}
-                type="button"
-                title={module.copy}
-                aria-pressed={activeModule === module.id}
-                onClick={() => setActiveModule(module.id)}
-              >
-                <module.icon size={18} />
-                <span>{module.title}</span>
-              </button>
-            ))}
+            <TooltipProvider delayDuration={120}>
+              {modules.map((module) => (
+                <Tooltip key={module.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      className={activeModule === module.id ? "rail-item active" : "rail-item"}
+                      type="button"
+                      aria-label={module.title}
+                      aria-pressed={activeModule === module.id}
+                      onClick={() => setActiveModule(module.id)}
+                    >
+                      <module.icon size={18} />
+                      <span>{module.title}</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{module.copy}</TooltipContent>
+                </Tooltip>
+              ))}
+            </TooltipProvider>
           </aside>
         ) : null}
         {metaDialogMode ? (
@@ -2631,8 +2636,16 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       </div>
 
       <div className={aiAssistantOpen ? "ai-assistant open" : "ai-assistant"}>
+        <AnimatePresence mode="popLayout">
         {aiAssistantOpen ? (
-          <section className="ai-assistant-panel" aria-label="AI 修改行程">
+          <motion.section
+            className="ai-assistant-panel"
+            aria-label="AI 修改行程"
+            initial={{ opacity: 0, y: 18, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.96 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
             <div className="ai-assistant-heading">
               <div>
                 <p className="eyebrow">AI 修改</p>
@@ -2716,18 +2729,24 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 </div>
               </div>
             ) : null}
-          </section>
+          </motion.section>
         ) : (
-          <button
+          <motion.button
             className="ai-assistant-launcher"
             type="button"
             onClick={() => openAiAssistant({ source: "global", label: "整份路书" })}
             title="AI 修改路书"
             aria-label="AI 修改路书"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            whileHover={{ y: -2, scale: 1.03 }}
+            whileTap={{ scale: 0.96 }}
           >
             <Sparkles size={22} />
-          </button>
+          </motion.button>
         )}
+        </AnimatePresence>
       </div>
 
       {showPlanHome ? (

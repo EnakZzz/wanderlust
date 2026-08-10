@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { CalendarDays, MapPin, Plus, Route, Ticket } from "lucide-react";
 import { buildTripEditorPath } from "@wanderlust/domain";
+import { Button } from "@/components/ui/button";
+import { MotionSection } from "@/components/MotionShell";
 import type { SessionUser, TripSummary } from "./routebook/types";
 
 type JourneysState = {
@@ -64,7 +66,7 @@ export function JourneysClient() {
   }, []);
 
   return (
-    <section className="journeys-shell">
+    <MotionSection className="journeys-shell">
       <div className="journeys-heading">
         <div>
           <p className="eyebrow">我的路书</p>
@@ -73,10 +75,9 @@ export function JourneysClient() {
             把草稿、预订、地点、打包清单和离线准备状态放在同一个工作区里。
           </p>
         </div>
-        <a className="save-button" href="/#editor">
-          <Plus size={18} />
-          <span>新建路书</span>
-        </a>
+        <Button asChild>
+          <a href="/#editor"><Plus size={18} /><span>新建路书</span></a>
+        </Button>
       </div>
 
       {state.error ? <div className="sync-error">{state.error}</div> : null}
@@ -101,10 +102,9 @@ export function JourneysClient() {
             <Route size={24} />
             <strong>还没有路书。</strong>
             <span>先创建框架、粘贴旅行笔记，或让 AI 生成第一版行程。</span>
-            <a className="sample-button" href="/#editor">
-              <Plus size={17} />
-              <span>开始规划</span>
-            </a>
+            <Button asChild variant="secondary" size="sm">
+              <a href="/#editor"><Plus size={17} /><span>开始规划</span></a>
+            </Button>
           </div>
         ) : null}
 
@@ -115,6 +115,6 @@ export function JourneysClient() {
           </>
         ) : null}
       </div>
-    </section>
+    </MotionSection>
   );
 }

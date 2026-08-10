@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Compass, Flag, MapPinned, Plus, Route } from "lucide-react";
 import { buildTripEditorPath } from "@wanderlust/domain";
+import { Button } from "@/components/ui/button";
+import { MotionSection } from "@/components/MotionShell";
 import type { SessionUser, TripSummary } from "./routebook/types";
 
 type PassportState = {
@@ -98,7 +100,7 @@ export function PassportClient() {
   const recentFootprint = footprint.slice(0, 6);
 
   return (
-    <section className="passport-shell">
+    <MotionSection className="passport-shell">
       <div className="passport-hero">
         <div>
           <p className="eyebrow">旅行足迹</p>
@@ -109,14 +111,12 @@ export function PassportClient() {
           </p>
         </div>
         <div className="passport-hero-actions">
-          <a className="save-button" href="/journeys">
-            <Route size={18} />
-            <span>打开路书</span>
-          </a>
-          <a className="sample-button" href="/search">
-            <Plus size={18} />
-            <span>添加目的地</span>
-          </a>
+          <Button asChild>
+            <a href="/journeys"><Route size={18} /><span>打开路书</span></a>
+          </Button>
+          <Button asChild variant="secondary">
+            <a href="/search"><Plus size={18} /><span>添加目的地</span></a>
+          </Button>
         </div>
       </div>
 
@@ -182,12 +182,11 @@ export function PassportClient() {
               ? `再记录 ${milestoneRemaining} 个国家/地区即可达到下一个足迹阶段。`
               : "先创建一个真实目的地路书来激活足迹阶段。"}
           </span>
-          <a className="sample-button" href="/search">
-            <Plus size={17} />
-            <span>寻找下一个目的地</span>
-          </a>
+          <Button asChild variant="secondary" size="sm">
+            <a href="/search"><Plus size={17} /><span>下个目的地</span></a>
+          </Button>
         </aside>
       </div>
-    </section>
+    </MotionSection>
   );
 }

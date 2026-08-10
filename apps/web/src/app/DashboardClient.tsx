@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileUp, MapPinned, PlaneTakeoff, Plus, Route, Sparkles } from "lucide-react";
 import { buildTripEditorPath } from "@wanderlust/domain";
+import { Button } from "@/components/ui/button";
+import { MotionDiv, MotionSection } from "@/components/MotionShell";
 import { DestinationSearchPanel, editorHref } from "./DestinationSearchPanel";
 import type { SessionUser, TripSummary } from "./routebook/types";
 
@@ -14,9 +16,9 @@ type DashboardState = {
 };
 
 const discoveryCards = [
-  { eyebrow: "茶、寺与庭园", title: "京都", copy: "围绕茶、庭园和建筑，做一条慢节奏路线。" },
-  { eyebrow: "第一次去也稳", title: "里斯本", copy: "电车、观景台、海鲜和一日游都很紧凑。" },
-  { eyebrow: "城市充电", title: "首尔", copy: "街区跳转、深夜小吃、快速交通和山边散步。" }
+  { eyebrow: "茶、寺与庭园", title: "京都", copy: "围绕茶、庭园和建筑，做一条慢节奏路线。", image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1200&q=80" },
+  { eyebrow: "第一次去也稳", title: "里斯本", copy: "电车、观景台、海鲜和一日游都很紧凑。", image: "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=1200&q=80" },
+  { eyebrow: "城市充电", title: "首尔", copy: "街区跳转、深夜小吃、快速交通和山边散步。", image: "https://images.unsplash.com/photo-1538485399081-7c8ed83d3d5c?auto=format&fit=crop&w=1200&q=80" }
 ];
 
 async function readSession(): Promise<SessionUser | null> {
@@ -87,7 +89,7 @@ export function DashboardClient() {
   const userName = state.user?.name?.split(" ")[0] || state.user?.email?.split("@")[0] || "旅行者";
 
   return (
-    <section className="dashboard-shell">
+    <MotionSection className="dashboard-shell">
       <div className="dashboard-hero">
         <div>
           <p className="eyebrow">旅行控制台</p>
@@ -98,14 +100,12 @@ export function DashboardClient() {
           </p>
         </div>
         <div className="dashboard-hero-actions">
-          <a className="save-button" href="/#editor">
-            <Plus size={18} />
-            <span>新建路书</span>
-          </a>
-          <a className="sample-button" href="/#editor">
-            <Sparkles size={18} />
-            <span>打开 AI 草稿</span>
-          </a>
+          <Button asChild>
+            <a href="/#editor"><Plus size={18} /><span>新建路书</span></a>
+          </Button>
+          <Button asChild variant="secondary">
+            <a href="/#editor"><Sparkles size={18} /><span>AI 草稿</span></a>
+          </Button>
         </div>
       </div>
 
@@ -113,14 +113,14 @@ export function DashboardClient() {
 
       <DestinationSearchPanel className="dashboard-destination-panel" />
 
-      <div className="dashboard-stat-grid">
+      <MotionDiv className="dashboard-stat-grid">
         {stats.map((stat) => (
           <div key={stat.label}>
             <strong>{state.loaded ? stat.value : "--"}</strong>
             <span>{stat.label}</span>
           </div>
         ))}
-      </div>
+      </MotionDiv>
 
       <div className="dashboard-main-grid">
         <section className="dashboard-section">
@@ -129,10 +129,9 @@ export function DashboardClient() {
               <p className="eyebrow">继续规划</p>
               <h2>{recentTrips.length ? "正在进行的路书" : "第一本路书从这里开始"}</h2>
             </div>
-            <a className="sample-button" href="/journeys">
-              <Route size={17} />
-              <span>查看全部路书</span>
-            </a>
+            <Button asChild variant="secondary" size="sm">
+              <a href="/journeys"><Route size={17} /><span>全部路书</span></a>
+            </Button>
           </div>
 
           <div className="dashboard-trip-list">
@@ -172,7 +171,7 @@ export function DashboardClient() {
         </div>
         <div className="dashboard-discovery-grid">
           {discoveryCards.map((card) => (
-            <a key={card.title} href={editorHref(card.title)}>
+            <a key={card.title} href={editorHref(card.title)} style={{ backgroundImage: `linear-gradient(180deg, rgba(29,27,24,0.08), rgba(29,27,24,0.68)), url(${card.image})` }}>
               <span>{card.eyebrow}</span>
               <strong>{card.title}</strong>
               <small>{card.copy}</small>
@@ -180,6 +179,6 @@ export function DashboardClient() {
           ))}
         </div>
       </section>
-    </section>
+    </MotionSection>
   );
 }

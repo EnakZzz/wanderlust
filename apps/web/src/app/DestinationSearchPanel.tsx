@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, MapPin, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { DestinationMeta } from "./routebook/types";
 
 type DestinationSearchPanelProps = {
@@ -83,9 +84,11 @@ export function DestinationSearchPanel({
       <div className="destination-panel-search">
         <Search size={20} />
         <input value={query} placeholder={placeholder} onChange={(event) => setQuery(event.target.value)} />
-        <a className={query.trim() ? "destination-panel-action active" : "destination-panel-action"} href={editorHref(query)}>
-          开始
-        </a>
+        <Button asChild size="icon" variant={query.trim() ? "default" : "secondary"} className="destination-panel-action">
+          <a href={editorHref(query)} aria-label="开始规划">
+            <ArrowRight size={17} />
+          </a>
+        </Button>
       </div>
 
       <div className="destination-panel-results">
@@ -99,7 +102,9 @@ export function DestinationSearchPanel({
               <strong>{candidate.name}</strong>
               <small>{candidate.fullName}{candidate.timezone ? ` · ${candidate.timezone}` : ""}</small>
             </span>
-            <ArrowRight size={16} />
+            <span className="destination-result-action" aria-hidden="true">
+              <ArrowRight size={16} />
+            </span>
           </a>
         ))}
 
