@@ -223,6 +223,76 @@ export const ShareSchema = z.object({
   expiresAt: z.string().datetime().nullable().default(null)
 });
 
+const AiPatchDayUpdateSchema = z.object({
+  title: z.string().min(1).optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
+});
+
+const AiPatchItemUpdateSchema = ItineraryItemSchema.partial().omit({ id: true, dayId: true }).extend({
+  id: z.never().optional(),
+  dayId: z.never().optional()
+});
+
+export const AiAddItineraryItemOperationSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("add_item"),
+  summary: z.string().min(1),
+  dayId: z.string().min(1),
+  after: ItineraryItemSchema
+});
+
+export const AiUpdateItineraryItemOperationSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("update_item"),
+  summary: z.string().min(1),
+  dayId: z.string().min(1),
+  itemId: z.string().min(1),
+  before: AiPatchItemUpdateSchema.optional(),
+  after: AiPatchItemUpdateSchema
+});
+
+export const AiDeleteItineraryItemOperationSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("delete_item"),
+  summary: z.string().min(1),
+  dayId: z.string().min(1),
+  itemId: z.string().min(1),
+  before: ItineraryItemSchema.optional()
+});
+
+export const AiMoveItineraryItemOperationSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("move_item"),
+  summary: z.string().min(1),
+  dayId: z.string().min(1),
+  itemId: z.string().min(1),
+  toDayId: z.string().min(1),
+  toSortOrder: z.number().int().nonnegative().optional()
+});
+
+export const AiUpdateItineraryDayOperationSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("update_day"),
+  summary: z.string().min(1),
+  dayId: z.string().min(1),
+  before: AiPatchDayUpdateSchema.optional(),
+  after: AiPatchDayUpdateSchema
+});
+
+export const AiItineraryPatchOperationSchema = z.discriminatedUnion("type", [
+  AiAddItineraryItemOperationSchema,
+  AiUpdateItineraryItemOperationSchema,
+  AiDeleteItineraryItemOperationSchema,
+  AiMoveItineraryItemOperationSchema,
+  AiUpdateItineraryDayOperationSchema
+]);
+
+export const AiItineraryPatchProposalSchema = z.object({
+  id: z.string().min(1),
+  summary: z.string().min(1),
+  operations: z.array(AiItineraryPatchOperationSchema).default([])
+});
+
 export type TripDay = {
   id: string;
   tripId: string;
@@ -269,6 +339,10 @@ export type MapProvider = "apple" | "google";
 
 export type Entitlement = z.infer<typeof EntitlementSchema>;
 export type Share = z.infer<typeof ShareSchema>;
+export type AiItineraryPatchOperation = z.infer<typeof AiItineraryPatchOperationSchema>;
+export type AiItineraryPatchProposal = z.infer<typeof AiItineraryPatchProposalSchema>;
+export type AppliedTrip = z.output<typeof TripSchema>;
+type AppliedItineraryItem = z.output<typeof ItineraryItemSchema>;
 
 export type GateResult =
   | { allowed: true }
@@ -337,6 +411,88 @@ export function removeItineraryItem(items: ItineraryItem[], itemId: string): Iti
 
 export function getTodayTripDay(days: TripDay[], localIsoDate: string): TripDay | undefined {
   return days.find((day) => day.date === localIsoDate);
+}
+
+export function applyItineraryPatchOperations(
+  trip: Trip,
+  operations: AiItineraryPatchOperation[],
+  selectedOperationIds: string[]
+): { trip: AppliedTrip; appliedOperationIds: string[]; skippedOperationIds: string[] } {
+  const selected = new Set(selectedOperationIds);
+  const nextTrip = TripSchema.parse({
+    ...trip,
+    days: trip.days.map((day) => ({
+      ...day,
+      items: [...(day.items ?? [])]
+    }))
+  });
+  const appliedOperationIds: string[] = [];
+  const skippedOperationIds: string[] = [];
+
+  for (const operation of operations) {
+    if (!selected.has(operation.id)) continue;
+    const applied = applyItineraryPatchOperation(nextTrip, operation);
+    if (applied) {
+      appliedOperationIds.push(operation.id);
+    } else {
+      skippedOperationIds.push(operation.id);
+    }
+  }
+
+  return { trip: nextTrip, appliedOperationIds, skippedOperationIds };
+}
+
+function applyItineraryPatchOperation(trip: AppliedTrip, operation: AiItineraryPatchOperation): boolean {
+  if (operation.type === "add_item") {
+    const day = trip.days.find((item) => item.id === operation.dayId);
+    if (!day) return false;
+    day.items = resequenceDomainItems([...day.items, parseAppliedItineraryItem({ ...operation.after, dayId: day.id })]);
+    return true;
+  }
+
+  if (operation.type === "update_item") {
+    const day = trip.days.find((item) => item.id === operation.dayId);
+    const itemIndex = day?.items.findIndex((item) => item.id === operation.itemId) ?? -1;
+    if (!day || itemIndex < 0) return false;
+    day.items = resequenceDomainItems(
+      day.items.map((item, index) =>
+        index === itemIndex ? parseAppliedItineraryItem({ ...item, ...operation.after, id: item.id, dayId: item.dayId }) : item
+      )
+    );
+    return true;
+  }
+
+  if (operation.type === "delete_item") {
+    const day = trip.days.find((item) => item.id === operation.dayId);
+    if (!day || !day.items.some((item) => item.id === operation.itemId)) return false;
+    day.items = resequenceDomainItems(day.items.filter((item) => item.id !== operation.itemId));
+    return true;
+  }
+
+  if (operation.type === "move_item") {
+    const fromDay = trip.days.find((item) => item.id === operation.dayId);
+    const toDay = trip.days.find((item) => item.id === operation.toDayId);
+    const moving = fromDay?.items.find((item) => item.id === operation.itemId);
+    if (!fromDay || !toDay || !moving) return false;
+    fromDay.items = resequenceDomainItems(fromDay.items.filter((item) => item.id !== operation.itemId));
+    const moved = parseAppliedItineraryItem({ ...moving, dayId: toDay.id });
+    const targetIndex = Math.min(operation.toSortOrder ?? toDay.items.length, toDay.items.length);
+    toDay.items = resequenceDomainItems([...toDay.items.slice(0, targetIndex), moved, ...toDay.items.slice(targetIndex)]);
+    return true;
+  }
+
+  const day = trip.days.find((item) => item.id === operation.dayId);
+  if (!day) return false;
+  Object.assign(day, operation.after);
+  return true;
+}
+
+function parseAppliedItineraryItem(item: unknown): AppliedItineraryItem {
+  return ItineraryItemSchema.parse(item);
+}
+
+function resequenceDomainItems(items: AppliedItineraryItem[]): AppliedItineraryItem[] {
+  return items.map((item, index) => ({ ...item, sortOrder: index }));
 }
 
 export function buildTripEditorPath(tripId: string): string {

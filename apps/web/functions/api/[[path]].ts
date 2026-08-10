@@ -1,5 +1,5 @@
 import { normalizeAiOcrImages, normalizeAiTripDraft, parseAiTripDraft } from "@wanderlust/api";
-import { canViewShare } from "@wanderlust/domain";
+import { AiItineraryPatchProposalSchema, TripSchema, canViewShare } from "@wanderlust/domain";
 import { getSessionUser, getUserStorageId, json, type AuthEnv } from "../_auth";
 
 type TripDraftPayload = {
@@ -76,6 +76,15 @@ type AiRoutebookRequest = {
 type AiTextResult = string | { response?: unknown; result?: { response?: unknown }; choices?: Array<{ message?: { content?: unknown } }> };
 type AiOcrRequest = {
   images?: unknown;
+};
+type AiPatchRequest = {
+  trip?: unknown;
+  prompt?: string;
+  context?: {
+    source?: "global" | "day" | "item";
+    dayId?: string;
+    itemId?: string;
+  };
 };
 type AiVisionResult =
   | string
@@ -156,6 +165,107 @@ const aiTripDraftJsonSchema = {
   },
   required: ["title", "destination", "startDate", "endDate", "timezone", "items"]
 };
+const aiItineraryPatchJsonSchema = {
+  type: "object",
+  properties: {
+    id: { type: "string" },
+    summary: { type: "string" },
+    operations: {
+      type: "array",
+      items: {
+        oneOf: [
+          {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              type: { const: "add_item" },
+              summary: { type: "string" },
+              dayId: { type: "string" },
+              after: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                  dayId: { type: "string" },
+                  type: { enum: ["place", "food", "hotel", "transport", "activity", "note", "booking"] },
+                  title: { type: "string" },
+                  startTime: { type: "string" },
+                  endTime: { type: "string" },
+                  locationName: { type: "string" },
+                  latitude: { type: "number" },
+                  longitude: { type: "number" },
+                  googlePlaceId: { type: "string" },
+                  reason: { type: "string" },
+                  notes: { type: "string" },
+                  attachmentIds: { type: "array", items: { type: "string" } },
+                  sortOrder: { type: "integer", minimum: 0 }
+                },
+                required: ["id", "dayId", "type", "title", "sortOrder"]
+              }
+            },
+            required: ["id", "type", "summary", "dayId", "after"]
+          },
+          {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              type: { const: "update_item" },
+              summary: { type: "string" },
+              dayId: { type: "string" },
+              itemId: { type: "string" },
+              before: { type: "object" },
+              after: { type: "object" }
+            },
+            required: ["id", "type", "summary", "dayId", "itemId", "after"]
+          },
+          {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              type: { const: "delete_item" },
+              summary: { type: "string" },
+              dayId: { type: "string" },
+              itemId: { type: "string" },
+              before: { type: "object" }
+            },
+            required: ["id", "type", "summary", "dayId", "itemId"]
+          },
+          {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              type: { const: "move_item" },
+              summary: { type: "string" },
+              dayId: { type: "string" },
+              itemId: { type: "string" },
+              toDayId: { type: "string" },
+              toSortOrder: { type: "integer", minimum: 0 }
+            },
+            required: ["id", "type", "summary", "dayId", "itemId", "toDayId"]
+          },
+          {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              type: { const: "update_day" },
+              summary: { type: "string" },
+              dayId: { type: "string" },
+              before: { type: "object" },
+              after: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  date: { type: "string" }
+                }
+              }
+            },
+            required: ["id", "type", "summary", "dayId", "after"]
+          }
+        ]
+      }
+    }
+  },
+  required: ["id", "summary", "operations"]
+};
 
 export const onRequest: PagesFunction<AuthEnv> = async ({ request, env, params }) => {
   if (request.method === "OPTIONS") {
@@ -183,6 +293,10 @@ export const onRequest: PagesFunction<AuthEnv> = async ({ request, env, params }
 
   if (path === "ai/ocr" && request.method === "POST") {
     return extractAiTripTextFromImages(request, env);
+  }
+
+  if (path === "ai/patch" && request.method === "POST") {
+    return createAiItineraryPatch(request, env);
   }
 
   if (path === "geo/search" && request.method === "GET") {
@@ -401,6 +515,97 @@ async function createAiTripDraft(request: Request, env: AuthEnv, mode: "plan" | 
     return json({ draft: draftJson, trip: normalized.trip, provider: "cloudflare-workers-ai", model });
   } catch (error) {
     return json({ error: "ai_draft_failed", message: error instanceof Error ? error.message : "Could not create AI draft" }, 502);
+  }
+}
+
+async function createAiItineraryPatch(request: Request, env: AuthEnv): Promise<Response> {
+  const user = await getSessionUser(request, env);
+  if (!user) {
+    return json({ error: "unauthorized" }, 401);
+  }
+  if (!env.AI) {
+    return json({ error: "workers_ai_not_configured" }, 503);
+  }
+
+  const payload = await request.json<AiPatchRequest>();
+  const prompt = clampText(payload.prompt ?? "", 4000);
+  if (!prompt.trim()) {
+    return json({ error: "prompt_required" }, 400);
+  }
+
+  let trip;
+  try {
+    trip = TripSchema.parse(payload.trip);
+  } catch (error) {
+    return json({ error: "invalid_trip", message: error instanceof Error ? error.message : "Trip payload is invalid" }, 400);
+  }
+
+  const model = env.WORKERS_AI_TEXT_MODEL?.trim() || defaultWorkersAiTextModel;
+  const existingDayIds = trip.days.map((day) => day.id);
+  const existingItemIds = trip.days.flatMap((day) => day.items.map((item) => item.id));
+  const compactTrip = {
+    id: trip.id,
+    title: trip.title,
+    destination: trip.destination,
+    startDate: trip.startDate,
+    endDate: trip.endDate,
+    timezone: trip.timezone,
+    days: trip.days.map((day) => ({
+      id: day.id,
+      date: day.date,
+      title: day.title,
+      sortOrder: day.sortOrder,
+      items: day.items.map((item) => ({
+        id: item.id,
+        dayId: item.dayId,
+        type: item.type,
+        title: item.title,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        locationName: item.locationName,
+        reason: item.reason,
+        notes: item.notes,
+        sortOrder: item.sortOrder
+      }))
+    }))
+  };
+
+  const systemPrompt = [
+    "You are Pocket Routebook AI. Return only strict JSON, no markdown.",
+    "Create a reviewable itinerary patch proposal. Do not return a full trip.",
+    "Allowed operation types: add_item, update_item, delete_item, move_item, update_day.",
+    "Use only existing dayId values for dayId/toDayId. Use only existing itemId values for update_item/delete_item/move_item.",
+    "For add_item, generate id values with prefix ai_item_ and keep dayId equal to the target day.",
+    "For update_item, after must include only changed editable fields. Never include id or dayId in after.",
+    "Prefer small, concrete changes. If the request is ambiguous, return an empty operations array with a short summary."
+  ].join("\n");
+
+  const taskPrompt = [
+    `Current routebook: ${JSON.stringify(compactTrip)}`,
+    `Valid day ids: ${JSON.stringify(existingDayIds)}`,
+    `Valid item ids: ${JSON.stringify(existingItemIds)}`,
+    `Edit context: ${JSON.stringify(payload.context ?? { source: "global" })}`,
+    `User prompt: ${prompt}`
+  ].join("\n");
+
+  try {
+    const aiResult = (await env.AI.run(model, {
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: taskPrompt }
+      ],
+      temperature: 0.2,
+      max_tokens: 2600,
+      response_format: {
+        type: "json_schema",
+        json_schema: aiItineraryPatchJsonSchema
+      }
+    })) as AiTextResult;
+    const rawProposal = parseJsonFromAiOutput(extractAiOutput(aiResult));
+    const proposal = AiItineraryPatchProposalSchema.parse(rawProposal);
+    return json({ proposal, provider: "cloudflare-workers-ai", model });
+  } catch (error) {
+    return json({ error: "ai_patch_failed", message: error instanceof Error ? error.message : "Could not create AI patch" }, 502);
   }
 }
 

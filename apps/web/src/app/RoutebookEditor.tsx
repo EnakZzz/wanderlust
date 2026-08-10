@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ChangeEvent, type DragEvent } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ChangeEvent, type DragEvent } from "react";
 import JSZip from "jszip";
 import {
   CalendarDays,
@@ -32,6 +32,7 @@ import {
 import {
   buildTripEditorPath,
   buildMapsUrl,
+  applyItineraryPatchOperations,
   createTripDays,
   getOfflineReadiness,
   parseTripIdFromEditorPath,
@@ -39,6 +40,8 @@ import {
   sortItineraryItems,
   updateItineraryItem,
   type Attachment,
+  type AiItineraryPatchOperation,
+  type AiItineraryPatchProposal,
   type Booking,
   type BudgetItem,
   type BudgetMember,
@@ -101,6 +104,54 @@ const itineraryTypeVisuals: Record<ItineraryItem["type"], { image: string; color
   activity: { image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=900&q=80", color: "#7b6f58" },
   note: { image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80", color: "#726b63" },
   booking: { image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=900&q=80", color: "#8a6f59" }
+};
+
+const destinationThemes = [
+  {
+    keywords: ["kyoto", "京都", "japan", "日本", "tokyo", "东京", "大阪", "osaka"],
+    accent: "#cf7483",
+    ink: "#8f4f5e",
+    wash: "#fff5f7",
+    line: "#f3d4da",
+    glow: "rgba(207, 116, 131, 0.2)",
+    image: "https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=1600&q=80"
+  },
+  {
+    keywords: ["sea", "island", "beach", "bali", "maldives", "海", "岛", "巴厘", "马尔代夫", "红海"],
+    accent: "#3f95a3",
+    ink: "#2e6f7b",
+    wash: "#eefbfb",
+    line: "#c6e7e8",
+    glow: "rgba(63, 149, 163, 0.2)",
+    image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80"
+  },
+  {
+    keywords: ["egypt", "cairo", "desert", "埃及", "开罗", "沙漠", "摩洛哥", "morocco"],
+    accent: "#bd7a45",
+    ink: "#8a5636",
+    wash: "#fff6ec",
+    line: "#ecd2b8",
+    glow: "rgba(189, 122, 69, 0.2)",
+    image: "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=1600&q=80"
+  },
+  {
+    keywords: ["forest", "mountain", "swiss", "alps", "森林", "山", "瑞士", "阿尔卑斯"],
+    accent: "#66845c",
+    ink: "#4d6846",
+    wash: "#f3f9ef",
+    line: "#d5e5cf",
+    glow: "rgba(102, 132, 92, 0.2)",
+    image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1600&q=80"
+  }
+] satisfies Array<{ keywords: string[]; accent: string; ink: string; wash: string; line: string; glow: string; image: string }>;
+
+const defaultDestinationTheme = {
+  accent: "#8b735b",
+  ink: "#6f5d49",
+  wash: "#fbf7ef",
+  line: "#e7dccd",
+  glow: "rgba(139, 115, 91, 0.18)",
+  image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1600&q=80"
 };
 
 const bookingTypeLabels: Record<Booking["type"], string> = {
@@ -166,6 +217,19 @@ type AiOcrResponse = {
   text: string;
   provider: string;
   model: string;
+};
+
+type AiPatchResponse = {
+  proposal: AiItineraryPatchProposal;
+  provider: string;
+  model: string;
+};
+
+type AiPatchContext = {
+  source: "global" | "day" | "item";
+  dayId?: string;
+  itemId?: string;
+  label: string;
 };
 
 type RoutebookMetaForm = Pick<TripDraft, "title" | "destination" | "startDate" | "endDate" | "timezone" | "destinationMeta">;
@@ -343,6 +407,55 @@ function applyAiTripDraft(current: TripDraft, aiTrip: Partial<TripDraft>): TripD
   });
 }
 
+function describeAiPatchOperation(operation: AiItineraryPatchOperation, trip: TripDraft): { before: string; after: string; dayTitle: string } {
+  const day = trip.days.find((item) => item.id === operation.dayId);
+  const dayTitle = day ? `${day.title} · ${day.date}` : "未找到的日期";
+  if (operation.type === "add_item") {
+    return {
+      dayTitle,
+      before: "无",
+      after: `${operation.after.startTime ? `${operation.after.startTime} ` : ""}${operation.after.title}`
+    };
+  }
+  if (operation.type === "update_day") {
+    return {
+      dayTitle,
+      before: [day?.title, day?.date].filter(Boolean).join(" · ") || "无",
+      after: [operation.after.title ?? day?.title, operation.after.date ?? day?.date].filter(Boolean).join(" · ")
+    };
+  }
+  const item = day?.items.find((entry) => entry.id === operation.itemId);
+  if (operation.type === "delete_item") {
+    return {
+      dayTitle,
+      before: item ? `${item.startTime ? `${item.startTime} ` : ""}${item.title}` : "未找到",
+      after: "删除"
+    };
+  }
+  if (operation.type === "move_item") {
+    const toDay = trip.days.find((entry) => entry.id === operation.toDayId);
+    return {
+      dayTitle,
+      before: item ? `${dayTitle} · ${item.title}` : "未找到",
+      after: `${toDay ? `${toDay.title} · ${toDay.date}` : operation.toDayId}${typeof operation.toSortOrder === "number" ? ` · 第 ${operation.toSortOrder + 1} 位` : ""}`
+    };
+  }
+  return {
+    dayTitle,
+    before: item ? `${item.startTime ? `${item.startTime} ` : ""}${item.title}` : "未找到",
+    after: [
+      operation.after.startTime ?? item?.startTime,
+      operation.after.title ?? item?.title,
+      operation.after.locationName ?? item?.locationName
+    ].filter(Boolean).join(" · ")
+  };
+}
+
+function getAiPatchTouchedDayIds(proposal: AiItineraryPatchProposal | null, fallbackDayId: string): string[] {
+  if (!proposal?.operations.length) return [fallbackDayId];
+  return Array.from(new Set(proposal.operations.flatMap((operation) => operation.type === "move_item" ? [operation.dayId, operation.toDayId] : [operation.dayId])));
+}
+
 function formatTripSummaryLine(trip: TripSummary): string {
   const dates = trip.startDate && trip.endDate ? `${trip.startDate} - ${trip.endDate}` : "日期未设置";
   const dayCount = trip.dayCount || 0;
@@ -489,6 +602,58 @@ function getPlaceForItem(item: ItineraryItem, places: Place[]): Place | undefine
 function formatItemTime(item: ItineraryItem): string {
   if (item.startTime && item.endTime) return `${item.startTime}-${item.endTime}`;
   return item.startTime ?? item.endTime ?? "时间待定";
+}
+
+function formatDayMonthDate(date: string): string {
+  const [, , month, day] = date.match(/^(\d{4})-(\d{2})-(\d{2})$/) ?? [];
+  return month && day ? `${Number(month)}.${day}` : date;
+}
+
+function formatWeekday(date: string): string {
+  const parsed = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return new Intl.DateTimeFormat("zh-CN", { weekday: "short" }).format(parsed);
+}
+
+function getDestinationTheme(destination: string) {
+  const normalized = destination.toLowerCase();
+  return destinationThemes.find((theme) => theme.keywords.some((keyword) => normalized.includes(keyword.toLowerCase()))) ?? defaultDestinationTheme;
+}
+
+function getItineraryIconLabel(item: ItineraryItem): string {
+  const labels: Record<ItineraryItem["type"], string> = {
+    place: "景",
+    food: "食",
+    hotel: "宿",
+    transport: "行",
+    activity: "玩",
+    note: "记",
+    booking: "票"
+  };
+  return labels[item.type];
+}
+
+function getTransportSummary(item: ItineraryItem): string {
+  if (item.type === "transport") return item.title;
+  if (item.type === "hotel") return "抵达后办理入住";
+  if (item.type === "food") return "步行或就近交通";
+  if (item.type === "booking") return "按预订时间前往";
+  return "市内交通 + 步行";
+}
+
+function formatMoney(amount: number, currency: string): string {
+  const normalized = currency.toUpperCase();
+  const symbol = normalized === "CNY" ? "¥" : normalized === "JPY" ? "¥" : normalized === "EUR" ? "€" : normalized === "GBP" ? "£" : normalized === "USD" ? "$" : `${normalized} `;
+  return `${symbol}${Math.round(amount).toLocaleString("en-US")}`;
+}
+
+function getItemBudgetEstimate(item: ItineraryItem, day: TripDay, budgetItems: BudgetItem[]): string {
+  const specificMatches = budgetItems.filter((budget) => (item.placeId && budget.placeId === item.placeId) || (item.bookingId && budget.bookingId === item.bookingId));
+  const matches = specificMatches.length ? specificMatches : budgetItems.filter((budget) => !budget.placeId && !budget.bookingId && budget.date === day.date);
+  if (!matches.length) return "待估算";
+  const currency = matches[0]?.currency ?? "USD";
+  const total = matches.filter((budget) => (budget.currency ?? "USD") === currency).reduce((sum, budget) => sum + budget.amount, 0);
+  return formatMoney(total, currency);
 }
 
 function getItemLocationLabel(item: ItineraryItem, place?: Place): string {
@@ -739,6 +904,13 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [isOcrRunning, setIsOcrRunning] = useState(false);
   const [aiScreenshotNames, setAiScreenshotNames] = useState<string[]>([]);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+  const [aiPatchPrompt, setAiPatchPrompt] = useState("");
+  const [aiPatchContext, setAiPatchContext] = useState<AiPatchContext>({ source: "global", label: "整份路书" });
+  const [aiPatchPreview, setAiPatchPreview] = useState<AiPatchResponse | null>(null);
+  const [selectedAiPatchOperationIds, setSelectedAiPatchOperationIds] = useState<string[]>([]);
+  const [isAiPatchRunning, setIsAiPatchRunning] = useState(false);
+  const [aiPatchError, setAiPatchError] = useState<string | null>(null);
   const [expandedItineraryItemId, setExpandedItineraryItemId] = useState<string | null>(null);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
   const [initialDestinationConsumed, setInitialDestinationConsumed] = useState(false);
@@ -845,6 +1017,24 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const offlineReadiness = useMemo(() => getOfflineReadiness(draft), [draft]);
   const settlements = useMemo(() => calculateBudgetSettlements(draft.budgetMembers, draft.budgetItems), [draft.budgetMembers, draft.budgetItems]);
   const shareUrl = shareInfo ? buildShareUrl(shareInfo.token) : null;
+  const destinationTheme = useMemo(() => getDestinationTheme(draft.destination), [draft.destination]);
+  const aiPatchPreviewTrip = useMemo(() => {
+    if (!aiPatchPreview) return null;
+    try {
+      return applyItineraryPatchOperations(draft, aiPatchPreview.proposal.operations, selectedAiPatchOperationIds).trip;
+    } catch {
+      return null;
+    }
+  }, [aiPatchPreview, draft, selectedAiPatchOperationIds]);
+  const aiPatchTouchedDayIds = useMemo(() => getAiPatchTouchedDayIds(aiPatchPreview?.proposal ?? null, selectedDay.id), [aiPatchPreview, selectedDay.id]);
+  const journeyThemeStyle = {
+    "--journey-accent": destinationTheme.accent,
+    "--journey-ink": destinationTheme.ink,
+    "--journey-wash": destinationTheme.wash,
+    "--journey-line": destinationTheme.line,
+    "--journey-glow": destinationTheme.glow,
+    "--journey-theme-image": `url(${destinationTheme.image})`
+  } as CSSProperties;
 
   function getRequestedTripId(): string | null {
     const routeTripId = initialTripId?.trim();
@@ -1012,7 +1202,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   }
 
   function updateSelectedDay(patch: Partial<Pick<TripDay, "title" | "date">>) {
-    setDraft((current) => ({ ...current, 天: current.days.map((day) => (day.id === selectedDay.id ? { ...day, ...patch } : day)) }));
+    setDraft((current) => ({ ...current, days: current.days.map((day) => (day.id === selectedDay.id ? { ...day, ...patch } : day)) }));
     markDirty();
   }
 
@@ -1541,6 +1731,67 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     }
   }
 
+  function openAiAssistant(context: AiPatchContext, suggestedPrompt = "") {
+    setAiPatchContext(context);
+    if (suggestedPrompt) setAiPatchPrompt(suggestedPrompt);
+    setAiPatchError(null);
+    setAiAssistantOpen(true);
+  }
+
+  async function requestAiPatch() {
+    if (!user) {
+      setAiPatchError("运行 AI 修改前请先用 Google 或 Apple 登录。");
+      return;
+    }
+    if (!aiPatchPrompt.trim()) return;
+    setIsAiPatchRunning(true);
+    setAiPatchError(null);
+    try {
+      const response = await fetch("/api/ai/patch", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          trip: draft,
+          prompt: aiPatchPrompt,
+          context: {
+            source: aiPatchContext.source,
+            dayId: aiPatchContext.dayId,
+            itemId: aiPatchContext.itemId
+          }
+        })
+      });
+      const payload = (await response.json()) as AiPatchResponse & { error?: string; message?: string };
+      if (!response.ok) throw new Error(payload.message || payload.error || "AI 修改预览生成失败");
+      setAiPatchPreview(payload);
+      setSelectedAiPatchOperationIds(payload.proposal.operations.map((operation) => operation.id));
+    } catch (error) {
+      setAiPatchError(error instanceof Error ? error.message : "AI 修改预览生成失败");
+    } finally {
+      setIsAiPatchRunning(false);
+    }
+  }
+
+  function toggleAiPatchOperation(operationId: string) {
+    setSelectedAiPatchOperationIds((current) =>
+      current.includes(operationId) ? current.filter((id) => id !== operationId) : [...current, operationId]
+    );
+  }
+
+  function applyAiPatchPreview() {
+    if (!aiPatchPreview) return;
+    const result = applyItineraryPatchOperations(draft, aiPatchPreview.proposal.operations, selectedAiPatchOperationIds);
+    const nextDraft = hydrateDraft(result.trip);
+    setDraft(nextDraft);
+    if (!nextDraft.days.some((day) => day.id === selectedDayId)) {
+      setSelectedDayId(nextDraft.days[0]?.id ?? createEmptyTripDraft().days[0]!.id);
+    }
+    setAiPatchPreview(null);
+    setSelectedAiPatchOperationIds([]);
+    setAiPatchPrompt("");
+    markDirty();
+  }
+
   async function requestScreenshotOcr(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
@@ -1868,7 +2119,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   ))}
                 </div>
 
-                <section className="journey-day-shell">
+                <section className="journey-day-shell" style={journeyThemeStyle}>
                   <div className="journey-day-rail" aria-hidden="true">
                     <span />
                   </div>
@@ -1892,6 +2143,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                           <Plus size={18} />
                           <span>添加行程项</span>
                         </button>
+                        <button
+                          className="ai-inline-button"
+                          type="button"
+                          onClick={() => openAiAssistant({ source: "day", dayId: selectedDay.id, label: selectedDay.title }, `帮我优化${selectedDay.title}的行程安排`)}
+                        >
+                          <Sparkles size={16} />
+                          <span>AI 修改</span>
+                        </button>
                       </div>
                     </div>
 
@@ -1900,6 +2159,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         const linkedPlace = getPlaceForItem(item, draft.places);
                         const navigationTarget = getItemNavigationTarget(item, linkedPlace);
                         const isExpanded = expandedItineraryItemId === item.id;
+                        const dayNumber = draft.days.findIndex((day) => day.id === selectedDay.id) + 1;
                         return (
                           <article
                             key={item.id}
@@ -1909,18 +2169,25 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                             onDragOver={(event) => event.preventDefault()}
                             onDrop={(event) => dropOnItem(event, selectedDay.id, item.id)}
                           >
+                            <aside className="route-step-date-panel">
+                              <span>Day {dayNumber}</span>
+                              <strong>{formatDayMonthDate(selectedDay.date)}</strong>
+                              <small>{formatWeekday(selectedDay.date)}</small>
+                              <em>{getItineraryIconLabel(item)}</em>
+                              <b>{itineraryTypeLabels[item.type]}</b>
+                            </aside>
                             <div
                               className="route-step-image"
                               style={{
                                 backgroundColor: itineraryTypeVisuals[item.type].color,
-                                backgroundImage: `linear-gradient(90deg, rgba(29, 27, 24, 0.12), rgba(29, 27, 24, 0.06)), url(${getItemImage(item, linkedPlace)})`
+                                backgroundImage: `linear-gradient(90deg, rgba(29, 27, 24, 0.08), rgba(29, 27, 24, 0.02)), url(${getItemImage(item, linkedPlace)})`
                               }}
                               aria-hidden="true"
                             />
                             <div className="route-step-body">
                               <div className="route-step-topline">
                                 <div className="route-step-kicker">
-                                  <span>{itineraryTypeLabels[item.type]}</span>
+                                  <span>{displayDestination}</span>
                                   {item.bookingId ? <small>已关联预订</small> : null}
                                 </div>
                                 <div className="route-step-time">
@@ -1930,9 +2197,19 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                               </div>
                               <h3>{item.title}</h3>
                               <p>{getItemDescription(item, linkedPlace)}</p>
-                              <div className="route-step-place">
-                                <MapPin size={16} />
-                                <span>{getItemLocationLabel(item, linkedPlace)}</span>
+                              <div className="route-step-facts">
+                                <div className="route-step-fact">
+                                  <MapPin size={18} />
+                                  <span>{getItemLocationLabel(item, linkedPlace)}</span>
+                                </div>
+                                <div className="route-step-fact">
+                                  <Navigation size={18} />
+                                  <span>{getTransportSummary(item)}</span>
+                                </div>
+                                <div className="route-step-fact">
+                                  <Landmark size={18} />
+                                  <span>预计费用：{getItemBudgetEstimate(item, selectedDay, draft.budgetItems)}</span>
+                                </div>
                               </div>
                               <div className="route-step-actions">
                                 <button className="route-link-button route-detail-button" type="button" onClick={() => setExpandedItineraryItemId(isExpanded ? null : item.id)}>
@@ -1952,6 +2229,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                                 )}
                                 <button className="icon-button small" type="button" onClick={() => setExpandedItineraryItemId(isExpanded ? null : item.id)} title="编辑行程项" aria-label={`编辑 ${item.title}`}>
                                   <PencilLine size={16} />
+                                </button>
+                                <button
+                                  className="icon-button small ai"
+                                  type="button"
+                                  onClick={() => openAiAssistant({ source: "item", dayId: selectedDay.id, itemId: item.id, label: item.title }, `帮我调整“${item.title}”这个行程项`)}
+                                  title="用 AI 修改"
+                                  aria-label={`用 AI 修改 ${item.title}`}
+                                >
+                                  <Sparkles size={16} />
                                 </button>
                                 <button className="icon-button small danger" type="button" onClick={() => deleteItem(item.id)} title="删除条目" aria-label={`删除 ${item.title}`}>
                                   <Trash2 size={16} />
@@ -2445,6 +2731,106 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               </div>
             ) : null}
           </>
+        )}
+      </div>
+
+      <div className={aiAssistantOpen ? "ai-assistant open" : "ai-assistant"}>
+        {aiAssistantOpen ? (
+          <section className="ai-assistant-panel" aria-label="AI 修改行程">
+            <div className="ai-assistant-heading">
+              <div>
+                <p className="eyebrow">AI 修改</p>
+                <h2>{aiPatchContext.label}</h2>
+              </div>
+              <button className="icon-button small" type="button" onClick={() => setAiAssistantOpen(false)} title="关闭 AI 修改" aria-label="关闭 AI 修改">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="ai-assistant-prompt">
+              <textarea
+                value={aiPatchPrompt}
+                placeholder="例如：把今天上午排松一点，午餐换成附近更有当地特色的餐厅。"
+                onChange={(event) => setAiPatchPrompt(event.target.value)}
+              />
+              <button className="save-button" type="button" onClick={requestAiPatch} disabled={isAiPatchRunning || !aiPatchPrompt.trim() || !user}>
+                <Sparkles size={17} />
+                <span>{isAiPatchRunning ? "生成预览..." : "生成修改预览"}</span>
+              </button>
+            </div>
+            {!user ? <div className="ai-assistant-note">登录后可使用 AI 修改行程。</div> : null}
+            {aiPatchError ? <div className="sync-error compact">{aiPatchError}</div> : null}
+            {aiPatchPreview ? (
+              <div className="ai-patch-preview">
+                <div className="ai-patch-preview-heading">
+                  <div>
+                    <strong>{aiPatchPreview.proposal.summary}</strong>
+                    <span>{aiPatchPreview.proposal.operations.length ? "勾选要应用的修改" : "没有可应用修改"}</span>
+                  </div>
+                  <button className="save-button compact" type="button" onClick={applyAiPatchPreview} disabled={!selectedAiPatchOperationIds.length}>
+                    <CheckSquare size={16} />
+                    <span>应用勾选修改</span>
+                  </button>
+                </div>
+                <div className="ai-operation-list">
+                  {aiPatchPreview.proposal.operations.map((operation) => {
+                    const description = describeAiPatchOperation(operation, draft);
+                    return (
+                      <label key={operation.id} className="ai-operation-row">
+                        <input
+                          type="checkbox"
+                          checked={selectedAiPatchOperationIds.includes(operation.id)}
+                          onChange={() => toggleAiPatchOperation(operation.id)}
+                        />
+                        <span>
+                          <strong>{operation.summary}</strong>
+                          <small>{description.dayTitle}</small>
+                          <em>{description.before} → {description.after}</em>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="ai-before-after">
+                  <div className="ai-route-column">
+                    <strong>修改前</strong>
+                    {aiPatchTouchedDayIds.map((dayId) => {
+                      const day = draft.days.find((item) => item.id === dayId);
+                      if (!day) return null;
+                      return (
+                        <article key={day.id} className="ai-route-mini-day">
+                          <span>{day.title} · {day.date}</span>
+                          {day.items.map((item) => <p key={item.id}><b>{item.startTime ?? "--:--"}</b>{item.title}</p>)}
+                        </article>
+                      );
+                    })}
+                  </div>
+                  <div className="ai-route-column after">
+                    <strong>修改后</strong>
+                    {aiPatchTouchedDayIds.map((dayId) => {
+                      const day = aiPatchPreviewTrip?.days.find((item) => item.id === dayId);
+                      if (!day) return null;
+                      return (
+                        <article key={day.id} className="ai-route-mini-day">
+                          <span>{day.title} · {day.date}</span>
+                          {day.items.map((item) => <p key={item.id}><b>{item.startTime ?? "--:--"}</b>{item.title}</p>)}
+                        </article>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </section>
+        ) : (
+          <button
+            className="ai-assistant-launcher"
+            type="button"
+            onClick={() => openAiAssistant({ source: "global", label: "整份路书" })}
+            title="AI 修改路书"
+            aria-label="AI 修改路书"
+          >
+            <Sparkles size={22} />
+          </button>
         )}
       </div>
 

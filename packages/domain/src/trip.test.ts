@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyItineraryPatchOperations,
   buildTripEditorPath,
   buildMapsUrl,
   createTripDays,
@@ -205,6 +206,139 @@ describe("routebook editor routes", () => {
 
   it("reads the trip id from the path based editor URL", () => {
     expect(parseTripIdFromEditorPath("/journeys/trip_abc%2F123")).toBe("trip_abc/123");
+  });
+});
+
+describe("applyItineraryPatchOperations", () => {
+  function createPatchTrip() {
+    return TripSchema.parse({
+      id: "trip_patch",
+      ownerId: "user_1",
+      title: "Kyoto Spring",
+      destination: "Kyoto, Japan",
+      startDate: "2026-04-01",
+      endDate: "2026-04-02",
+      timezone: "Asia/Tokyo",
+      status: "draft",
+      days: [
+        {
+          id: "day_1",
+          tripId: "trip_patch",
+          date: "2026-04-01",
+          title: "Arrival",
+          sortOrder: 0,
+          items: [
+            { id: "item_arrive", dayId: "day_1", type: "transport", title: "Arrive in Kyoto", startTime: "14:30", sortOrder: 0 },
+            { id: "item_dinner", dayId: "day_1", type: "food", title: "Dinner", startTime: "19:00", sortOrder: 1 }
+          ]
+        },
+        {
+          id: "day_2",
+          tripId: "trip_patch",
+          date: "2026-04-02",
+          title: "Temples",
+          sortOrder: 1,
+          items: [
+            { id: "item_temple", dayId: "day_2", type: "place", title: "Kiyomizu-dera", startTime: "09:00", sortOrder: 0 }
+          ]
+        }
+      ],
+      places: [],
+      bookings: [],
+      attachments: []
+    });
+  }
+
+  it("applies only selected itinerary patch operations", () => {
+    const trip = createPatchTrip();
+    const result = applyItineraryPatchOperations(
+      trip,
+      [
+        {
+          id: "op_add",
+          type: "add_item",
+          summary: "新增咖啡休息",
+          dayId: "day_1",
+          after: {
+            id: "item_coffee",
+            dayId: "day_1",
+            type: "food",
+            title: "Coffee break",
+            startTime: "16:00",
+            attachmentIds: [],
+            sortOrder: 2
+          }
+        },
+        {
+          id: "op_update",
+          type: "update_item",
+          summary: "晚餐改成怀石料理",
+          dayId: "day_1",
+          itemId: "item_dinner",
+          after: { title: "Kaiseki dinner", reason: "A slower dinner keeps the arrival day relaxed." }
+        },
+        {
+          id: "op_unchecked",
+          type: "delete_item",
+          summary: "删除清水寺",
+          dayId: "day_2",
+          itemId: "item_temple"
+        }
+      ],
+      ["op_add", "op_update"]
+    );
+
+    expect(result.appliedOperationIds).toEqual(["op_add", "op_update"]);
+    expect(result.skippedOperationIds).toEqual([]);
+    expect(result.trip.days[0]?.items.map((item) => item.id)).toEqual(["item_arrive", "item_dinner", "item_coffee"]);
+    expect(result.trip.days[0]?.items.find((item) => item.id === "item_dinner")).toMatchObject({
+      title: "Kaiseki dinner",
+      reason: "A slower dinner keeps the arrival day relaxed."
+    });
+    expect(result.trip.days[1]?.items.map((item) => item.id)).toEqual(["item_temple"]);
+  });
+
+  it("moves items, updates days, and reports missing targets as skipped", () => {
+    const trip = createPatchTrip();
+    const result = applyItineraryPatchOperations(
+      trip,
+      [
+        {
+          id: "op_move",
+          type: "move_item",
+          summary: "把晚餐移动到第二天",
+          dayId: "day_1",
+          itemId: "item_dinner",
+          toDayId: "day_2",
+          toSortOrder: 1
+        },
+        {
+          id: "op_day",
+          type: "update_day",
+          summary: "更新第二天标题",
+          dayId: "day_2",
+          after: { title: "清水寺慢游" }
+        },
+        {
+          id: "op_missing",
+          type: "update_item",
+          summary: "修改不存在的行程项",
+          dayId: "day_2",
+          itemId: "missing",
+          after: { title: "Missing" }
+        }
+      ],
+      ["op_move", "op_day", "op_missing"]
+    );
+
+    expect(result.appliedOperationIds).toEqual(["op_move", "op_day"]);
+    expect(result.skippedOperationIds).toEqual(["op_missing"]);
+    expect(result.trip.days[0]?.items.map((item) => item.id)).toEqual(["item_arrive"]);
+    expect(result.trip.days[1]).toMatchObject({ title: "清水寺慢游" });
+    expect(result.trip.days[1]?.items.map((item) => `${item.id}:${item.dayId}:${item.sortOrder}`)).toEqual([
+      "item_temple:day_2:0",
+      "item_dinner:day_2:1"
+    ]);
   });
 });
 
