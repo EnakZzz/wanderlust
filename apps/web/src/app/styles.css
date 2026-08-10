@@ -3469,6 +3469,13 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .workspace:not(.workspace-loading) .offline-button {
   min-height: 46px;
 }
+.workspace.workspace-editor:not(.workspace-loading) {
+  width: min(1220px, calc(100% - clamp(32px, 7vw, 132px)));
+  grid-template-columns: minmax(0, 1fr);
+}
+.workspace.workspace-editor:not(.workspace-loading) .itinerary-panel {
+  grid-column: 1 / -1;
+}
 
 @media (max-width: 900px) {
   .hero-shell {

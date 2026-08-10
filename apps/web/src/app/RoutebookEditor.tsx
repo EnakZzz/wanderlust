@@ -7,8 +7,6 @@ import {
   CheckSquare,
   ChevronDown,
   Clock,
-  CloudSun,
-  Download,
   FileUp,
   FolderOpen,
   ImageUp,
@@ -34,7 +32,6 @@ import {
   buildMapsUrl,
   applyItineraryPatchOperations,
   createTripDays,
-  getOfflineReadiness,
   parseTripIdFromEditorPath,
   removeItineraryItem,
   sortItineraryItems,
@@ -46,18 +43,15 @@ import {
   type BudgetItem,
   type BudgetMember,
   type ItineraryItem,
-  type OfflineBundle,
   type PackingItem,
   type Place,
   type TripDay,
-  type WeatherForecast
 } from "@wanderlust/domain";
 import {
   attachmentCategories,
   bookingTypes,
   budgetCategories,
   moduleCopy,
-  offlineStorageKey,
   packingCategories,
   placeCategories,
   storageKey
@@ -485,22 +479,6 @@ function readLocalDraft(): TripDraft {
   }
 }
 
-function buildOfflineBundle(draft: TripDraft): OfflineBundle {
-  return {
-    tripId: draft.id,
-    version: 1,
-    generatedAt: new Date().toISOString(),
-    includes: {
-      itinerary: true,
-      places: draft.places.length > 0,
-      bookings: draft.bookings.length > 0,
-      attachments: draft.attachments.length > 0,
-      packing: draft.packingItems.length > 0,
-      weather: draft.weather.length > 0
-    }
-  };
-}
-
 function calculateMapPosition(place: Place, places: Place[]): { left: string; top: string } {
   const lats = places.map((item) => item.latitude);
   const lngs = places.map((item) => item.longitude);
@@ -835,47 +813,6 @@ function calculateBudgetSettlements(members: BudgetMember[], items: BudgetItem[]
   return settlements;
 }
 
-async function fetchWeatherForDraft(draft: TripDraft): Promise<WeatherForecast[]> {
-  const anchor = draft.places[0] ?? draft.days.flatMap((day) => day.items).find((item) => typeof item.latitude === "number" && typeof item.longitude === "number");
-  if (!anchor) throw new Error("请先添加一个带坐标的地点，再获取天气。");
-
-  const latitude = anchor.latitude;
-  const longitude = anchor.longitude;
-  const url = new URL("https://api.open-meteo.com/v1/forecast");
-  url.searchParams.set("latitude", String(latitude));
-  url.searchParams.set("longitude", String(longitude));
-  url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_probability_max");
-  url.searchParams.set("timezone", "auto");
-  url.searchParams.set("start_date", draft.startDate);
-  url.searchParams.set("end_date", draft.endDate);
-
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("无法获取天气。");
-  const payload = (await response.json()) as {
-    daily?: {
-      time?: string[];
-      temperature_2m_max?: number[];
-      temperature_2m_min?: number[];
-      precipitation_probability_max?: number[];
-    };
-  };
-
-  return draft.days.map((day) => {
-    const index = payload.daily?.time?.indexOf(day.date) ?? -1;
-    const rain = index >= 0 ? payload.daily?.precipitation_probability_max?.[index] : undefined;
-    return {
-      dayId: day.id,
-      date: day.date,
-      locationName: draft.destination,
-      temperatureMaxC: index >= 0 ? payload.daily?.temperature_2m_max?.[index] : undefined,
-      temperatureMinC: index >= 0 ? payload.daily?.temperature_2m_min?.[index] : undefined,
-      precipitationProbability: rain,
-      summary: typeof rain === "number" && rain >= 50 ? "可能下雨" : "正常安排即可",
-      fetchedAt: new Date().toISOString()
-    };
-  });
-}
-
 export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [draft, setDraft] = useState<TripDraft>(() => createEmptyTripDraft());
   const [trips, setTrips] = useState<TripSummary[]>([]);
@@ -1011,10 +948,6 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     hasTripDeepLink && !initialTripIdConsumed
   );
   const routebookNeedsMeta = false;
-  const itemCount = draft.days.reduce((count, day) => count + day.items.length, 0);
-  const packedCount = draft.packingItems.filter((item) => item.packed).length;
-  const selectedWeather = draft.weather.find((item) => item.dayId === selectedDay.id);
-  const offlineReadiness = useMemo(() => getOfflineReadiness(draft), [draft]);
   const settlements = useMemo(() => calculateBudgetSettlements(draft.budgetMembers, draft.budgetItems), [draft.budgetMembers, draft.budgetItems]);
   const shareUrl = shareInfo ? buildShareUrl(shareInfo.token) : null;
   const destinationTheme = useMemo(() => getDestinationTheme(draft.destination), [draft.destination]);
@@ -1676,37 +1609,6 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     markDirty();
   }
 
-  async function refreshWeather() {
-    setIsSyncing(true);
-    setSyncError(null);
-    try {
-      const weather = await fetchWeatherForDraft(draft);
-      setDraft((current) => ({ ...current, weather }));
-      setIsSaved(false);
-    } catch (error) {
-      setSyncError(error instanceof Error ? error.message : "无法刷新天气");
-    } finally {
-      setIsSyncing(false);
-    }
-  }
-
-  function prepareOfflineBundle() {
-    const offlineBundle = buildOfflineBundle(draft);
-    const bundledTrip = { ...draft, offlineBundle };
-    setDraft(bundledTrip);
-    const savedBundles = JSON.parse(window.localStorage.getItem(offlineStorageKey) ?? "{}") as Record<string, TripDraft>;
-    savedBundles[draft.id] = bundledTrip;
-    window.localStorage.setItem(offlineStorageKey, JSON.stringify(savedBundles));
-    const blob = new Blob([JSON.stringify(bundledTrip, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${draft.title.replace(/[^a-zA-Z0-9_-]/g, "-")}-offline.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    setIsSaved(false);
-  }
-
   async function requestAiDraft(mode: "plan" | "import") {
     setIsAiRunning(true);
     setAiError(null);
@@ -1868,7 +1770,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   }
 
   return (
-    <section id="editor" className="workspace">
+    <section id="editor" className={showPlanHome ? "workspace workspace-plan-home" : "workspace workspace-editor"}>
       <aside className="rail" aria-label="行程模块">
         {showPlanHome ? (
           <button className="rail-item active" type="button" title="Account routebooks" aria-pressed="true">
@@ -2834,57 +2736,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
         )}
       </div>
 
-      <div className="panel side-panel">
-        {showPlanHome ? (
+      {showPlanHome ? (
+        <div className="panel side-panel">
           <div className="plan-summary-card">
             <strong>{trips.length}</strong>
             <span>{trips.length === 1 ? "本账号 1 本路书" : `本账号 ${trips.length} 本路书`}</span>
           </div>
-        ) : (
-          <>
-            <div className="weather-card">
-              <div>
-                <p className="eyebrow">天气</p>
-                <strong>{selectedWeather?.temperatureMinC ?? "--"} / {selectedWeather?.temperatureMaxC ?? "--"} C</strong>
-                <span>{selectedWeather?.summary ?? "先设置地点再获取天气预报。"}</span>
-              </div>
-              <button className="icon-button" type="button" onClick={refreshWeather} title="获取天气">
-                <CloudSun size={18} />
-              </button>
-            </div>
-            <div className="map-card">
-              {draft.places.slice(0, 4).map((place) => {
-                const position = calculateMapPosition(place, draft.places);
-                return <div key={place.id} className="pin" style={position} />;
-              })}
-              <span>{draft.destination} 路线图</span>
-            </div>
-            <div className="quick-grid">
-              <div><strong>{draft.days.length}</strong><span>天</span></div>
-              <div><strong>{itemCount}</strong><span>项</span></div>
-              <div><strong>{draft.bookings.length}</strong><span>项预订</span></div>
-              <div><strong>{packedCount}/{draft.packingItems.length}</strong><span>已打包</span></div>
-            </div>
-            <div className="offline-readiness">
-              <div className="offline-readiness-heading">
-                <p className="eyebrow">出发缓存</p>
-                <strong>{offlineReadiness.readyCount}/{offlineReadiness.totalCount}</strong>
-              </div>
-              {offlineReadiness.items.map((item) => (
-                <div key={item.key} className={item.ready ? "offline-readiness-row ready" : "offline-readiness-row"}>
-                  <span>{item.label}</span>
-                  <em>{item.ready ? "已就绪" : "缺失"} · {item.count}</em>
-                </div>
-              ))}
-              {draft.offlineBundle ? <small>最近打包： {new Date(draft.offlineBundle.generatedAt).toLocaleString()}</small> : null}
-            </div>
-            <button className="offline-button" type="button" onClick={prepareOfflineBundle}>
-              <Download size={18} />
-              <span>{draft.offlineBundle ? "刷新离线包" : "准备离线包"}</span>
-            </button>
-          </>
-        )}
-      </div>
+        </div>
+      ) : null}
     </section>
   );
 }
