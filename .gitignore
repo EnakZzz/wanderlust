@@ -39,3 +39,4 @@ apps/server/wrangler.jsonc
 .DS_Store
 Thumbs.db
 *.log
+.superpowers/
