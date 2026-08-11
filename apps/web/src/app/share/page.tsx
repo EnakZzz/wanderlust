@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, CheckSquare, Clock, MapPin, Navigation, Plane, Share2, Ticket } from "lucide-react";
 import { buildMapsUrl, productBrand, sortItineraryItems, type ItineraryItem, type Place, type Trip } from "@wanderlust/domain";
+import { MotionDiv, MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
 import { getItineraryTypeVisual, heroVisuals } from "@/lib/travel-visuals";
 import { readPublicShare } from "@/lib/web-api";
@@ -85,12 +86,12 @@ export default function SharePage() {
   if (status !== "ready" || !payload) {
     return (
       <main className="share-page">
-        <section className="share-state">
+        <MotionSection className="share-state">
           <Share2 size={30} />
           <h1>{status === "loading" ? "打开路书" : "分享不可用"}</h1>
           <p>{message}</p>
           <a href="/">{productBrand.name}</a>
-        </section>
+        </MotionSection>
       </main>
     );
   }
@@ -103,7 +104,7 @@ export default function SharePage() {
 
   return (
     <main className="share-page">
-      <section className="share-hero">
+      <MotionSection className="share-hero" transition={{ duration: 0.58, ease: [0.22, 1, 0.36, 1] }}>
         <TravelImage src={heroVisuals.share} alt="" className="share-hero-image" overlayClassName="share-hero-image-overlay" sizes="100vw" priority />
         <div className="share-hero-copy">
           <p className="eyebrow">只读分享路书</p>
@@ -114,20 +115,20 @@ export default function SharePage() {
             <span><CalendarDays size={16} /> {trip.timezone}</span>
           </div>
         </div>
-      </section>
+      </MotionSection>
 
-      <section className="share-body">
-        <div className="share-stat-grid">
+      <MotionSection className="share-body" transition={{ delay: 0.08, duration: 0.44, ease: [0.22, 1, 0.36, 1] }}>
+        <MotionDiv className="share-stat-grid" transition={{ delay: 0.12, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}>
           {stats.map((stat) => (
             <div key={stat.label}>
               <strong>{stat.value}</strong>
               <span>{stat.label}</span>
             </div>
           ))}
-        </div>
+        </MotionDiv>
 
         <div className="share-layout">
-          <section className="share-route">
+          <MotionSection className="share-route" transition={{ delay: 0.16, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}>
             {days.map((day, dayIndex) => (
               <article key={day.id} className="share-day">
                 <div className="share-day-marker"><span>{String(dayIndex + 1).padStart(2, "0")}</span></div>
@@ -175,9 +176,9 @@ export default function SharePage() {
                 </div>
               </article>
             ))}
-          </section>
+          </MotionSection>
 
-          <aside className="share-sidebar">
+          <MotionDiv className="share-sidebar" transition={{ delay: 0.2, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}>
             <section className="share-side-card">
               <p className="eyebrow">地点清单</p>
               <h2>{places.length} 个地点</h2>
@@ -220,9 +221,9 @@ export default function SharePage() {
                 {packingItems.length === 0 ? <span>暂未整理打包清单。</span> : null}
               </div>
             </section>
-          </aside>
+          </MotionDiv>
         </div>
-      </section>
+      </MotionSection>
     </main>
   );
 }

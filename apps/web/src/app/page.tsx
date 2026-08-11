@@ -1,5 +1,6 @@
 import { Plane } from "lucide-react";
 import { productBrand } from "@wanderlust/domain";
+import { MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
 import { heroVisuals } from "@/lib/travel-visuals";
 import { ProductNav } from "./ProductNav";
@@ -8,7 +9,7 @@ import { RoutebookEditor } from "./RoutebookEditor";
 export default function HomePage() {
   return (
     <main>
-      <section className="hero-shell">
+      <MotionSection className="hero-shell" transition={{ duration: 0.58, ease: [0.22, 1, 0.36, 1] }}>
         <TravelImage src={heroVisuals.home} alt="" className="hero-image" overlayClassName="hero-image-overlay" sizes="100vw" priority />
         <ProductNav tone="dark" active="home" />
         <div className="hero-copy">
@@ -22,7 +23,7 @@ export default function HomePage() {
             <a className="secondary" href="#editor"><Plane size={17} /> 直接编辑路书</a>
           </div>
         </div>
-      </section>
+      </MotionSection>
 
       <RoutebookEditor />
     </main>
