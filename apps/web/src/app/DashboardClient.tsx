@@ -1,28 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { FileUp, MapPinned, PlaneTakeoff, Plus, Route, Sparkles } from "lucide-react";
 import { buildTripEditorPath } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
 import { MotionDiv, MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
 import { discoveryCards } from "@/lib/travel-visuals";
+import { useDashboardData } from "@/lib/web-api";
 import { DestinationSearchPanel, editorHref } from "./DestinationSearchPanel";
-import type { SessionUser, TripSummary } from "./routebook/types";
-
-type DashboardState = {
-  user: SessionUser | null;
-  trips: TripSummary[];
-  loaded: boolean;
-  error?: string;
-};
-
-async function readSession(): Promise<SessionUser | null> {
-  const response = await fetch("/auth/session", { credentials: "include" });
-  if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return null;
-  const session = (await response.json()) as { user?: SessionUser | null };
-  return session.user ?? null;
-}
+import type { TripSummary } from "./routebook/types";
 
 function formatTripDates(trip: TripSummary): string {
   if (!trip.startDate || !trip.endDate) return "日期未设置";
@@ -35,39 +22,7 @@ function tripEditorHref(tripId: string): string {
 }
 
 export function DashboardClient() {
-  const [state, setState] = useState<DashboardState>({ user: null, trips: [], loaded: false });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadDashboard() {
-      const user = await readSession();
-      if (!user) {
-        if (!cancelled) setState({ user: null, trips: [], loaded: true });
-        return;
-      }
-
-      const tripsResponse = await fetch("/api/trips", { credentials: "include" });
-      if (!tripsResponse.ok) throw new Error("无法加载路书");
-      const tripsPayload = (await tripsResponse.json()) as { trips: TripSummary[] };
-      if (!cancelled) setState({ user, trips: tripsPayload.trips, loaded: true });
-    }
-
-    loadDashboard().catch((error) => {
-      if (!cancelled) {
-        setState({
-          user: null,
-          trips: [],
-          loaded: true,
-          error: error instanceof Error ? error.message : "无法加载控制台"
-        });
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const state = useDashboardData();
 
   const stats = useMemo(() => {
     const upcoming = state.trips.filter((trip) => trip.startDate && trip.startDate >= new Date().toISOString().slice(0, 10)).length;
@@ -105,7 +60,7 @@ export function DashboardClient() {
         </div>
       </div>
 
-      {state.error ? <div className="sync-error">{state.error}</div> : null}
+      {state.errorMessage ? <div className="sync-error">{state.errorMessage}</div> : null}
 
       <DestinationSearchPanel className="dashboard-destination-panel" />
 

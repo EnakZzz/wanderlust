@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState, type CSSProperties, type ChangeEvent, type DragEvent } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import JSZip from "jszip";
 import { AnimatePresence, motion } from "motion/react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import {
   CalendarDays,
   CheckSquare,
@@ -183,8 +186,6 @@ type AiPatchContext = {
   label: string;
 };
 
-type RoutebookMetaForm = Pick<TripDraft, "title" | "destination" | "startDate" | "endDate" | "timezone" | "destinationMeta">;
-
 type DestinationSearchResponse = {
   candidates: DestinationMeta[];
   providerError?: string;
@@ -197,6 +198,17 @@ type ShareResponse = {
 type RoutebookEditorProps = {
   initialTripId?: string;
 };
+
+const routebookMetaSchema = z.object({
+  title: z.string(),
+  destination: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+  timezone: z.string(),
+  destinationMeta: z.custom<DestinationMeta>().optional()
+});
+
+type RoutebookMetaForm = z.infer<typeof routebookMetaSchema>;
 
 function createEmptyTripDraft(id = "local_draft", ownerId = "local"): TripDraft {
   const startDate = "2026-10-12";
@@ -782,7 +794,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [googleImportText, setGoogleImportText] = useState("");
   const [routebookDrawerOpen, setRoutebookDrawerOpen] = useState(false);
   const [metaDialogMode, setMetaDialogMode] = useState<"create" | "edit" | null>(null);
-  const [metaForm, setMetaForm] = useState<RoutebookMetaForm>(() => createInitialMetaForm());
+  const metaForm = useForm<RoutebookMetaForm>({
+    resolver: zodResolver(routebookMetaSchema),
+    defaultValues: createInitialMetaForm()
+  });
+  const watchedDestination = metaForm.watch("destination");
+  const watchedDestinationMeta = metaForm.watch("destinationMeta");
   const [destinationCandidates, setDestinationCandidates] = useState<DestinationMeta[]>([]);
   const [isSearchingDestination, setIsSearchingDestination] = useState(false);
   const [destinationSearchError, setDestinationSearchError] = useState<string | null>(null);
@@ -864,13 +881,13 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     }
 
     const nextForm = createMetaFormFromDestination(destination);
-    setMetaForm(nextForm);
+    metaForm.reset(nextForm);
     setDestinationCandidates([]);
     setDestinationSearchError(null);
     setMetaDialogMode("create");
     setRoutebookDrawerOpen(false);
     setInitialDestinationConsumed(true);
-  }, [initialDestinationConsumed, initialTripId, isAuthChecked]);
+  }, [initialDestinationConsumed, initialTripId, isAuthChecked, metaForm]);
 
   useEffect(() => {
     if (!isAuthChecked || initialTripIdConsumed) return;
@@ -939,7 +956,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     if (!routebookNeedsMeta || metaDialogMode) return;
     const mode = isAccountTripPersisted ? "edit" : "create";
     const destination = new URLSearchParams(window.location.search).get("destination")?.trim();
-    setMetaForm(destination && mode === "create"
+    metaForm.reset(destination && mode === "create"
       ? createMetaFormFromDestination(destination)
       : {
           title: isPlaceholderText(draft.title, "新路书") ? "" : draft.title,
@@ -950,12 +967,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
           timezone: draft.timezone
         });
     setMetaDialogMode(mode);
-  }, [draft.destination, draft.endDate, draft.startDate, draft.timezone, draft.title, isAccountTripPersisted, metaDialogMode, routebookNeedsMeta]);
+  }, [draft.destination, draft.endDate, draft.startDate, draft.timezone, draft.title, isAccountTripPersisted, metaDialogMode, metaForm, routebookNeedsMeta]);
 
   useEffect(() => {
     if (!metaDialogMode) return;
-    const query = metaForm.destination.trim();
-    if (query.length < 2 || metaForm.destinationMeta?.fullName === query) {
+    const query = watchedDestination.trim();
+    if (query.length < 2 || watchedDestinationMeta?.fullName === query) {
       setDestinationCandidates([]);
       setDestinationSearchError(null);
       setIsSearchingDestination(false);
@@ -990,7 +1007,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [metaDialogMode, metaForm.destination, metaForm.destinationMeta?.fullName]);
+  }, [metaDialogMode, watchedDestination, watchedDestinationMeta?.fullName]);
 
   if (!isAuthChecked) {
     return (
@@ -1025,7 +1042,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
   function openCreateTripDialog() {
     const destination = new URLSearchParams(window.location.search).get("destination")?.trim();
-    setMetaForm(destination ? createMetaFormFromDestination(destination) : createInitialMetaForm());
+    metaForm.reset(destination ? createMetaFormFromDestination(destination) : createInitialMetaForm());
     setDestinationCandidates([]);
     setDestinationSearchError(null);
     setMetaDialogMode("create");
@@ -1033,25 +1050,22 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   }
 
   function openEditTripMetaDialog() {
-    setMetaForm(createMetaFormFromDraft(draft));
+    metaForm.reset(createMetaFormFromDraft(draft));
     setDestinationCandidates([]);
     setDestinationSearchError(null);
     setMetaDialogMode("edit");
   }
 
   function selectDestinationCandidate(candidate: DestinationMeta) {
-    setMetaForm((current) => ({
-      ...current,
-      destination: candidate.fullName,
-      destinationMeta: candidate,
-      timezone: candidate.timezone ?? current.timezone
-    }));
+    metaForm.setValue("destination", candidate.fullName, { shouldDirty: true });
+    metaForm.setValue("destinationMeta", candidate, { shouldDirty: true });
+    if (candidate.timezone) metaForm.setValue("timezone", candidate.timezone, { shouldDirty: true });
     setDestinationCandidates([]);
     setDestinationSearchError(null);
   }
 
-  async function submitRoutebookMeta() {
-    const normalized = normalizeMetaForm(metaForm);
+  async function submitRoutebookMeta(values: RoutebookMetaForm) {
+    const normalized = normalizeMetaForm(values);
     if (metaDialogMode === "create") {
       const nextDraft = createBlankTripDraft();
       const nextTrip = hydrateDraft({
@@ -1823,8 +1837,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   <Input
                     aria-label="路书标题"
                     placeholder="东京夏季路书"
-                    value={metaForm.title}
-                    onChange={(event) => setMetaForm((current) => ({ ...current, title: event.target.value }))}
+                    {...metaForm.register("title")}
                   />
                 </label>
                 <label>
@@ -1833,15 +1846,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <Input
                       aria-label="目的地"
                       placeholder="Tokyo, Japan"
-                      value={metaForm.destination}
                       autoComplete="off"
-                      onChange={(event) =>
-                        setMetaForm((current) => ({
-                          ...current,
-                          destination: event.target.value,
-                          destinationMeta: current.destinationMeta?.fullName === event.target.value ? current.destinationMeta : undefined
-                        }))
-                      }
+                      {...metaForm.register("destination", {
+                        onChange: (event) => {
+                          const currentMeta = metaForm.getValues("destinationMeta");
+                          if (currentMeta?.fullName !== event.target.value) {
+                            metaForm.setValue("destinationMeta", undefined);
+                          }
+                        }
+                      })}
                     />
                     {isSearchingDestination ? <span className="destination-search-state">搜索中...</span> : null}
                     {destinationCandidates.length > 0 ? (
@@ -1864,11 +1877,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       </div>
                     ) : null}
                   </div>
-                  {metaForm.destinationMeta ? (
+                  {watchedDestinationMeta ? (
                     <small className="destination-standardized">
-                      Standardized as {metaForm.destinationMeta.fullName}
-                      {metaForm.destinationMeta.countryCode ? ` · ${metaForm.destinationMeta.countryCode}` : ""}
-                      {metaForm.destinationMeta.timezone ? ` · ${metaForm.destinationMeta.timezone}` : ""}
+                      Standardized as {watchedDestinationMeta.fullName}
+                      {watchedDestinationMeta.countryCode ? ` · ${watchedDestinationMeta.countryCode}` : ""}
+                      {watchedDestinationMeta.timezone ? ` · ${watchedDestinationMeta.timezone}` : ""}
                     </small>
                   ) : destinationSearchError ? (
                     <small className="destination-standardized warning">{destinationSearchError}</small>
@@ -1876,18 +1889,17 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 </label>
                 <label>
                   <span>Start</span>
-                  <Input type="date" value={metaForm.startDate} onChange={(event) => setMetaForm((current) => ({ ...current, startDate: event.target.value }))} />
+                  <Input type="date" {...metaForm.register("startDate")} />
                 </label>
                 <label>
                   <span>End</span>
-                  <Input type="date" value={metaForm.endDate} onChange={(event) => setMetaForm((current) => ({ ...current, endDate: event.target.value }))} />
+                  <Input type="date" {...metaForm.register("endDate")} />
                 </label>
                 <label>
                   <span>时区</span>
                   <Input
                     aria-label="时区"
-                    value={metaForm.timezone}
-                    onChange={(event) => setMetaForm((current) => ({ ...current, timezone: event.target.value }))}
+                    {...metaForm.register("timezone")}
                   />
                 </label>
               </div>
@@ -1897,7 +1909,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     取消
                   </Button>
                 ) : null}
-                <Button type="button" onClick={() => void submitRoutebookMeta()}>
+                <Button type="button" onClick={metaForm.handleSubmit((values) => void submitRoutebookMeta(values))}>
                   <Save size={18} />
                   <span>{routebookNeedsMeta || metaDialogMode === "create" ? "创建路书" : "保存修改"}</span>
                 </Button>

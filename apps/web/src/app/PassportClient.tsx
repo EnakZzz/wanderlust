@@ -1,18 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Compass, Flag, MapPinned, Plus, Route } from "lucide-react";
 import { buildTripEditorPath } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
 import { MotionSection } from "@/components/MotionShell";
-import type { SessionUser, TripSummary } from "./routebook/types";
-
-type PassportState = {
-  user: SessionUser | null;
-  trips: TripSummary[];
-  loaded: boolean;
-  error?: string;
-};
+import { useDashboardData } from "@/lib/web-api";
+import type { TripSummary } from "./routebook/types";
 
 type Footprint = {
   city: string;
@@ -21,13 +15,6 @@ type Footprint = {
 };
 
 const worldCountryCount = 195;
-
-async function readSession(): Promise<SessionUser | null> {
-  const response = await fetch("/auth/session", { credentials: "include" });
-  if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return null;
-  const session = (await response.json()) as { user?: SessionUser | null };
-  return session.user ?? null;
-}
 
 function parseDestination(destination: string): { city: string; country: string } {
   const parts = destination.split(",").map((part) => part.trim()).filter(Boolean);
@@ -49,41 +36,7 @@ function tripEditorHref(tripId: string): string {
 }
 
 export function PassportClient() {
-  const [state, setState] = useState<PassportState>({ user: null, trips: [], loaded: false });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadPassport() {
-      const user = await readSession();
-      if (!user) {
-        if (!cancelled) setState({ user: null, trips: [], loaded: true });
-        return;
-      }
-
-      const tripsResponse = await fetch("/api/trips", { credentials: "include" });
-      if (!tripsResponse.ok || !tripsResponse.headers.get("content-type")?.includes("application/json")) {
-        throw new Error("API Worker 运行后才能同步旅行足迹。");
-      }
-      const tripsPayload = (await tripsResponse.json()) as { trips: TripSummary[] };
-      if (!cancelled) setState({ user, trips: tripsPayload.trips, loaded: true });
-    }
-
-    loadPassport().catch((error) => {
-      if (!cancelled) {
-        setState({
-          user: null,
-          trips: [],
-          loaded: true,
-          error: error instanceof Error ? error.message : "无法加载旅行足迹"
-        });
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const state = useDashboardData();
 
   const footprint = useMemo<Footprint[]>(() => {
     return state.trips.map((trip) => {
@@ -120,7 +73,7 @@ export function PassportClient() {
         </div>
       </div>
 
-      {state.error ? <div className="sync-error">{state.error}</div> : null}
+      {state.errorMessage ? <div className="sync-error">{state.errorMessage}</div> : null}
 
       <div className="passport-grid">
         <section className="passport-score-card">

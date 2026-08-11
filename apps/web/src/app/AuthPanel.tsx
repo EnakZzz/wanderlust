@@ -1,56 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Apple, CircleUserRound, LogOut, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-type ProviderStatus = {
-  google: { configured: boolean };
-  apple: { configured: boolean };
-};
-
-type SessionUser = {
-  id: string;
-  provider: "google" | "apple";
-  email?: string;
-  name?: string;
-  avatarUrl?: string;
-};
-
-const fallbackProviders: ProviderStatus = {
-  google: { configured: false },
-  apple: { configured: false }
-};
+import { IconButton } from "@/components/IconButton";
+import { fallbackProviders, useAuthConfigQuery, useSessionQuery } from "@/lib/web-api";
 
 export function AuthPanel() {
-  const [providers, setProviders] = useState<ProviderStatus>(fallbackProviders);
-  const [user, setUser] = useState<SessionUser | null>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadAuthState() {
-      const [configResponse, sessionResponse] = await Promise.all([
-        fetch("/auth/config"),
-        fetch("/auth/session", { credentials: "include" })
-      ]);
-
-      const config = (await configResponse.json()) as { providers?: ProviderStatus };
-      const session = (await sessionResponse.json()) as { user?: SessionUser | null };
-
-      if (!cancelled) {
-        setProviders(config.providers ?? fallbackProviders);
-        setUser(session.user ?? null);
-        setLoaded(true);
-      }
-    }
-
-    loadAuthState().catch(() => setLoaded(true));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const session = useSessionQuery();
+  const authConfig = useAuthConfigQuery();
+  const user = session.data ?? null;
+  const providers = authConfig.data ?? fallbackProviders;
+  const loaded = !session.isLoading && !authConfig.isLoading;
 
   const returnTo = useMemo(() => {
     if (typeof window === "undefined") {
@@ -69,9 +30,9 @@ export function AuthPanel() {
         <CircleUserRound size={18} />
         <span>{user.name || user.email || user.provider}</span>
         <form action="/auth/session" method="post">
-          <Button size="icon" variant="icon" type="submit" title="Sign out" aria-label="Sign out">
+          <IconButton type="submit" label="退出登录">
             <LogOut size={16} />
-          </Button>
+          </IconButton>
         </form>
       </div>
     );

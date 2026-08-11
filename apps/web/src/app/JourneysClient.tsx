@@ -1,25 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { CalendarDays, MapPin, Plus, Route, Ticket } from "lucide-react";
 import { buildTripEditorPath } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
 import { MotionSection } from "@/components/MotionShell";
-import type { SessionUser, TripSummary } from "./routebook/types";
-
-type JourneysState = {
-  user: SessionUser | null;
-  trips: TripSummary[];
-  loaded: boolean;
-  error?: string;
-};
-
-async function readSession(): Promise<SessionUser | null> {
-  const response = await fetch("/auth/session", { credentials: "include" });
-  if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return null;
-  const session = (await response.json()) as { user?: SessionUser | null };
-  return session.user ?? null;
-}
+import { useDashboardData } from "@/lib/web-api";
+import type { TripSummary } from "./routebook/types";
 
 function formatTripDates(trip: TripSummary): string {
   if (!trip.startDate || !trip.endDate) return "日期未设置";
@@ -31,39 +17,7 @@ function tripEditorHref(tripId: string): string {
 }
 
 export function JourneysClient() {
-  const [state, setState] = useState<JourneysState>({ user: null, trips: [], loaded: false });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadJourneys() {
-      const user = await readSession();
-      if (!user) {
-        if (!cancelled) setState({ user: null, trips: [], loaded: true });
-        return;
-      }
-
-      const tripsResponse = await fetch("/api/trips", { credentials: "include" });
-      if (!tripsResponse.ok) throw new Error("无法加载路书");
-      const tripsPayload = (await tripsResponse.json()) as { trips: TripSummary[] };
-      if (!cancelled) setState({ user, trips: tripsPayload.trips, loaded: true });
-    }
-
-    loadJourneys().catch((error) => {
-      if (!cancelled) {
-        setState({
-          user: null,
-          trips: [],
-          loaded: true,
-          error: error instanceof Error ? error.message : "无法加载路书列表"
-        });
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const state = useDashboardData();
 
   return (
     <MotionSection className="journeys-shell">
@@ -80,7 +34,7 @@ export function JourneysClient() {
         </Button>
       </div>
 
-      {state.error ? <div className="sync-error">{state.error}</div> : null}
+      {state.errorMessage ? <div className="sync-error">{state.errorMessage}</div> : null}
 
       <div className="journeys-grid">
         {state.trips.map((trip) => (

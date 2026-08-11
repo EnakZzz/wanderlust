@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Compass, LayoutDashboard, LogOut, MapPinned, Plane, Route, Search, Sparkles } from "lucide-react";
 import { productBrand } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { SessionUser } from "./routebook/types";
+import { IconButton } from "@/components/IconButton";
+import { useAuthConfigQuery, useSessionQuery } from "@/lib/web-api";
 
 type ProductNavProps = {
   tone?: "light" | "dark";
@@ -21,40 +21,11 @@ const navItems = [
 ] as const;
 
 export function ProductNav({ tone = "light", active = "home" }: ProductNavProps) {
-  const [user, setUser] = useState<SessionUser | null>(null);
-  const [googleConfigured, setGoogleConfigured] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    Promise.all([
-      fetch("/auth/session", { credentials: "include" }).then(async (response) => {
-        if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return { user: null };
-        return (await response.json()) as { user?: SessionUser | null };
-      }),
-      fetch("/auth/config").then(async (response) => {
-        if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return { providers: { google: { configured: false } } };
-        return (await response.json()) as { providers?: { google?: { configured?: boolean } } };
-      })
-    ])
-      .then(([session, config]) => {
-        if (!cancelled) {
-          setUser(session.user ?? null);
-          setGoogleConfigured(Boolean(config.providers?.google?.configured));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setUser(null);
-      })
-      .finally(() => {
-        if (!cancelled) setLoaded(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const session = useSessionQuery();
+  const authConfig = useAuthConfigQuery();
+  const user = session.data ?? null;
+  const googleConfigured = Boolean(authConfig.data?.google.configured);
+  const loaded = !session.isLoading && !authConfig.isLoading;
 
   const returnTo = active === "home" ? "/dashboard" : `/${active}`;
   const authHref = googleConfigured ? `/auth/google/login?returnTo=${encodeURIComponent(returnTo)}` : "/#editor";
@@ -97,9 +68,9 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
               <span>{user.name || user.email || "旅行者"}</span>
             </a>
             <form action="/auth/session" method="post">
-              <Button variant="icon" size="icon" type="submit" title="退出登录" aria-label="退出登录">
+              <IconButton type="submit" label="退出登录">
                 <LogOut size={16} />
-              </Button>
+              </IconButton>
             </form>
           </>
         ) : (

@@ -45,6 +45,80 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   pointer-events: none;
 }
 
+.command-dialog-content {
+  width: min(620px, calc(100vw - 28px));
+  padding: 14px;
+  gap: 12px;
+}
+
+.command-dialog-heading {
+  padding: 6px 48px 0 6px;
+}
+
+.command-menu {
+  display: grid;
+  gap: 10px;
+}
+
+.command-input {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 900;
+  outline: none;
+  padding: 0 16px;
+}
+
+.command-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(139, 115, 91, 0.14);
+}
+
+.command-list {
+  max-height: min(46vh, 420px);
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
+}
+
+.command-item,
+.command-empty {
+  min-height: 50px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border-radius: 16px;
+  padding: 0 12px;
+}
+
+.command-item {
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.command-item[data-selected="true"] {
+  background: var(--paper-deep);
+}
+
+.command-item svg {
+  color: var(--accent);
+}
+
+.command-item span {
+  font-weight: 950;
+}
+
+.command-item small,
+.command-empty {
+  color: var(--muted);
+  font-weight: 850;
+}
+
 button, input, textarea, select {
   font: inherit;
 }
