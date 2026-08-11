@@ -809,6 +809,7 @@ test("deleting the current routebook uses a clear confirmation and leaves the de
   });
 
   await page.getByRole("button", { name: /^当前路书 东京商业路书/ }).click();
+  await expectVisibleTapTargetsAtLeast44(page, ".trip-delete-button");
   await page.getByRole("button", { name: "删除 东京商业路书" }).click();
 
   await expect(page).toHaveURL(/\/journeys\/edit#editor$/);

@@ -1958,8 +1958,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .trip-card-footer {
   position: relative;
   z-index: 1;
-  min-height: 0;
-  height: 42px;
+  min-height: 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1981,8 +1980,8 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   text-transform: uppercase;
 }
 .trip-delete-button {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border: 0;
