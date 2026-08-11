@@ -219,7 +219,22 @@ const routebookMetaSchema = z.object({
   destinationMeta: z.custom<DestinationMeta>().optional()
 });
 
+const aiPlanSchema = z.object({
+  prompt: z.string().trim().min(1)
+});
+
+const aiImportSchema = z.object({
+  text: z.string().trim().min(1)
+});
+
+const aiPatchSchema = z.object({
+  prompt: z.string().trim().min(1)
+});
+
 type RoutebookMetaForm = z.infer<typeof routebookMetaSchema>;
+type AiPlanForm = z.infer<typeof aiPlanSchema>;
+type AiImportForm = z.infer<typeof aiImportSchema>;
+type AiPatchForm = z.infer<typeof aiPatchSchema>;
 
 function createEmptyTripDraft(id = "local_draft", ownerId = "local"): TripDraft {
   const startDate = "2026-10-12";
@@ -817,15 +832,24 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [destinationCandidates, setDestinationCandidates] = useState<DestinationMeta[]>([]);
   const [isSearchingDestination, setIsSearchingDestination] = useState(false);
   const [destinationSearchError, setDestinationSearchError] = useState<string | null>(null);
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [aiImportText, setAiImportText] = useState("");
+  const aiPlanForm = useForm<AiPlanForm>({
+    resolver: zodResolver(aiPlanSchema),
+    defaultValues: { prompt: "" }
+  });
+  const aiImportForm = useForm<AiImportForm>({
+    resolver: zodResolver(aiImportSchema),
+    defaultValues: { text: "" }
+  });
   const [aiDraftPreview, setAiDraftPreview] = useState<AiDraftResponse | null>(null);
   const [isAiRunning, setIsAiRunning] = useState(false);
   const [isOcrRunning, setIsOcrRunning] = useState(false);
   const [aiScreenshotNames, setAiScreenshotNames] = useState<string[]>([]);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
-  const [aiPatchPrompt, setAiPatchPrompt] = useState("");
+  const aiPatchForm = useForm<AiPatchForm>({
+    resolver: zodResolver(aiPatchSchema),
+    defaultValues: { prompt: "" }
+  });
   const [aiPatchContext, setAiPatchContext] = useState<AiPatchContext>({ source: "global", label: "整份路书" });
   const [aiPatchPreview, setAiPatchPreview] = useState<AiPatchResponse | null>(null);
   const [selectedAiPatchOperationIds, setSelectedAiPatchOperationIds] = useState<string[]>([]);
@@ -903,6 +927,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   }, [initialTripId, initialTripIdConsumed, isAuthChecked, user]);
 
   const selectedDay = useMemo(() => draft.days.find((day) => day.id === selectedDayId) ?? draft.days[0]!, [draft.days, selectedDayId]);
+  const aiPrompt = aiPlanForm.watch("prompt");
+  const aiImportText = aiImportForm.watch("text");
+  const aiPatchPrompt = aiPatchForm.watch("prompt");
   const isAccountTripPersisted = Boolean(user && trips.some((trip) => trip.id === draft.id));
   const showPlanHome = Boolean(user && !isAccountTripPersisted);
   const activeTripSummary = useMemo(() => trips.find((trip) => trip.id === draft.id), [draft.id, trips]);
@@ -1534,14 +1561,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     markDirty();
   }
 
-  async function requestAiDraft(mode: "plan" | "import") {
+  async function requestAiDraft(mode: "plan" | "import", values: AiPlanForm | AiImportForm) {
     setIsAiRunning(true);
     setAiError(null);
     try {
       const payload = await requestAiDraftPayload<AiDraftResponse>(mode, {
         trip: draft,
-        prompt: mode === "plan" ? aiPrompt : undefined,
-        text: mode === "import" ? aiImportText : undefined
+        prompt: mode === "plan" ? (values as AiPlanForm).prompt : undefined,
+        text: mode === "import" ? (values as AiImportForm).text : undefined
       });
       setAiDraftPreview(payload);
     } catch (error) {
@@ -1553,23 +1580,22 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
   function openAiAssistant(context: AiPatchContext, suggestedPrompt = "") {
     setAiPatchContext(context);
-    if (suggestedPrompt) setAiPatchPrompt(suggestedPrompt);
+    if (suggestedPrompt) aiPatchForm.setValue("prompt", suggestedPrompt, { shouldDirty: true, shouldValidate: true });
     setAiPatchError(null);
     setAiAssistantOpen(true);
   }
 
-  async function requestAiPatch() {
+  async function requestAiPatch(values: AiPatchForm) {
     if (!user) {
       setAiPatchError("运行 AI 修改前请先用 Google 或 Apple 登录。");
       return;
     }
-    if (!aiPatchPrompt.trim()) return;
     setIsAiPatchRunning(true);
     setAiPatchError(null);
     try {
       const payload = await requestAiPatchPayload<AiPatchResponse>({
         trip: draft,
-        prompt: aiPatchPrompt,
+        prompt: values.prompt,
         context: {
           source: aiPatchContext.source,
           dayId: aiPatchContext.dayId,
@@ -1601,7 +1627,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     }
     setAiPatchPreview(null);
     setSelectedAiPatchOperationIds([]);
-    setAiPatchPrompt("");
+    aiPatchForm.reset({ prompt: "" });
     markDirty();
   }
 
@@ -1626,7 +1652,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
         }))
       );
       const payload = await requestAiOcrPayload<AiOcrResponse>({ images });
-      setAiImportText((current) => [current.trim(), payload.text.trim()].filter(Boolean).join("\n\n"));
+      const currentText = aiImportForm.getValues("text");
+      aiImportForm.setValue("text", [currentText.trim(), payload.text.trim()].filter(Boolean).join("\n\n"), {
+        shouldDirty: true,
+        shouldValidate: true
+      });
     } catch (error) {
       setAiError(error instanceof Error ? error.message : "截图识别失败");
     } finally {
@@ -2505,11 +2535,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </div>
                   </div>
                   <Textarea
-                    value={aiPrompt}
                     placeholder="东京 5 天，第一次去，美食和建筑，节奏轻松，避免长距离转场。"
-                    onChange={(event) => setAiPrompt(event.target.value)}
+                    {...aiPlanForm.register("prompt")}
                   />
-                  <Button type="button" onClick={() => requestAiDraft("plan")} disabled={isAiRunning || !aiPrompt.trim() || !user}>
+                  <Button type="button" onClick={aiPlanForm.handleSubmit((values) => void requestAiDraft("plan", values))} disabled={isAiRunning || !aiPrompt.trim() || !user}>
                     <Sparkles size={18} />
                     <span>{isAiRunning ? "生成中" : "生成草稿"}</span>
                   </Button>
@@ -2524,9 +2553,8 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </div>
                   </div>
                   <Textarea
-                    value={aiImportText}
                     placeholder="粘贴订票邮件、备注、复制的行程文本、景点票券或文件 OCR 文本。"
-                    onChange={(event) => setAiImportText(event.target.value)}
+                    {...aiImportForm.register("text")}
                   />
                   <div className="ai-import-actions">
                     <Button asChild variant="secondary">
@@ -2542,7 +2570,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         />
                       </label>
                     </Button>
-                    <Button variant="secondary" type="button" onClick={() => requestAiDraft("import")} disabled={isAiRunning || isOcrRunning || !aiImportText.trim() || !user}>
+                    <Button variant="secondary" type="button" onClick={aiImportForm.handleSubmit((values) => void requestAiDraft("import", values))} disabled={isAiRunning || isOcrRunning || !aiImportText.trim() || !user}>
                       <FileUp size={18} />
                       <span>{isAiRunning ? "读取中" : "导入草稿"}</span>
                     </Button>
@@ -2623,11 +2651,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
             </div>
             <div className="ai-assistant-prompt">
               <Textarea
-                value={aiPatchPrompt}
                 placeholder="例如：把今天上午排松一点，午餐换成附近更有当地特色的餐厅。"
-                onChange={(event) => setAiPatchPrompt(event.target.value)}
+                {...aiPatchForm.register("prompt")}
               />
-              <Button type="button" onClick={requestAiPatch} disabled={isAiPatchRunning || !aiPatchPrompt.trim() || !user}>
+              <Button type="button" onClick={aiPatchForm.handleSubmit((values) => void requestAiPatch(values))} disabled={isAiPatchRunning || !aiPatchPrompt.trim() || !user}>
                 <Sparkles size={17} />
                 <span>{isAiPatchRunning ? "生成预览..." : "生成修改预览"}</span>
               </Button>
