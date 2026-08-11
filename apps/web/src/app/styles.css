@@ -438,16 +438,19 @@ label span {
 }
 .product-nav-actions .product-nav-signin,
 .product-nav-actions .product-nav-primary {
-  min-height: auto;
-  padding: 0;
-  background: transparent;
-  color: inherit;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 14px;
 }
 
 .product-nav-dark .product-nav-primary,
 .product-nav-dark .product-nav-user {
   background: #fff8ee;
   color: #27231f;
+}
+
+.product-nav-dark .product-nav-signin {
+  color: #fff8ee;
 }
 
 .product-nav-user span {

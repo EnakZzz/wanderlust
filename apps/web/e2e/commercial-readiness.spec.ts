@@ -352,6 +352,39 @@ for (const pageSpec of shellPages) {
   });
 }
 
+for (const path of ["/", "/dashboard"] as const) {
+  test(`top navigation auth actions keep usable tap targets at ${path}`, async ({ page }) => {
+    await page.goto(path, { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(page.locator(path === "/" ? ".hero-shell .product-nav" : ".product-nav").first()).toBeVisible();
+    await expect(page.locator(".product-nav-actions a").first()).toBeVisible();
+
+    const actions = await page.locator(".product-nav-actions a").evaluateAll((links) =>
+      links
+        .filter((link) => {
+          const style = getComputedStyle(link);
+          const rect = link.getBoundingClientRect();
+          return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden";
+        })
+        .map((link) => {
+          const rect = link.getBoundingClientRect();
+          return {
+            text: link.textContent?.trim() ?? "",
+            width: Math.round(rect.width),
+            height: Math.round(rect.height)
+          };
+        })
+    );
+
+    expect(actions.length).toBeGreaterThan(0);
+    for (const action of actions) {
+      expect(action.width, `${path} ${action.text} width`).toBeGreaterThanOrEqual(44);
+      expect(action.height, `${path} ${action.text} height`).toBeGreaterThanOrEqual(44);
+    }
+    await expectNoHorizontalOverflow(page);
+  });
+}
+
 test("global AI prompt routes into the routebook preview assistant", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
