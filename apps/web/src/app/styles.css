@@ -3863,6 +3863,13 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     display: inline-flex;
     padding: 0 8px;
   }
+  .global-ai-launcher {
+    left: auto;
+    right: 16px;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    width: 48px;
+    height: 48px;
+  }
   .hero-copy {
     max-width: 100%;
   }

@@ -271,6 +271,33 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expectNoHorizontalOverflow(page);
 });
 
+test("global AI launcher does not cover mobile editor forms", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "地点" }).click();
+  await page.getByRole("button", { name: "添加地点" }).click();
+
+  if ((page.viewportSize()?.width ?? 0) <= 500) {
+    const layout = await page.evaluate(() => {
+      const launcher = document.querySelector<HTMLElement>(".global-ai-launcher")?.getBoundingClientRect();
+      const input = Array.from(document.querySelectorAll<HTMLInputElement>("input")).find((item) => item.value === "新的收藏地点")?.getBoundingClientRect();
+      if (!launcher || !input) return null;
+      const overlaps = !(launcher.right < input.left || launcher.left > input.right || launcher.bottom < input.top || launcher.top > input.bottom);
+      return {
+        launcherLeft: Math.round(launcher.left),
+        viewport: document.documentElement.clientWidth,
+        overlaps
+      };
+    });
+
+    expect(layout).not.toBeNull();
+    expect(layout!.launcherLeft).toBeGreaterThan(layout!.viewport / 2);
+    expect(layout!.overlaps).toBe(false);
+  }
+
+  await expectNoHorizontalOverflow(page);
+});
+
 test("anonymous users can create a named local routebook and keep it after refresh", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
