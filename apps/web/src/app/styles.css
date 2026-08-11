@@ -2095,8 +2095,9 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .row-ai-button {
   flex: 0 0 auto;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
   align-self: end;
   background: #fffdf8;
   color: var(--accent);
@@ -3510,7 +3511,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .check-row {
   display: grid;
-  grid-template-columns: 22px 58px minmax(0, 1fr);
+  grid-template-columns: 44px 58px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   padding: 14px;
@@ -3524,7 +3525,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   gap: 8px;
 }
 .packing-row {
-  grid-template-columns: 22px minmax(120px, 0.52fr) minmax(180px, 1fr) 72px 42px;
+  grid-template-columns: 44px minmax(120px, 0.52fr) minmax(180px, 1fr) 72px 44px;
 }
 .check-row input[type="checkbox"] {
   width: 18px;

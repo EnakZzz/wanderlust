@@ -643,6 +643,21 @@ test("budget member toggles keep mobile tap targets", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("packing checklist controls keep usable tap targets", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "打包" }).click();
+  await page.locator(".packing-template-bar button").first().click();
+
+  const checkbox = page.locator(".packing-row [role='checkbox']").first();
+  await expect(checkbox).toHaveAttribute("aria-checked", "false");
+  await expectVisibleTapTargetsAtLeast44(page, ".packing-row [role='checkbox'], .packing-row .row-ai-button");
+
+  await checkbox.click();
+  await expect(checkbox).toHaveAttribute("aria-checked", "true");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("global AI launcher does not cover mobile editor forms", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
