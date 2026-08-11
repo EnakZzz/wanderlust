@@ -967,6 +967,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     return parseTripIdFromEditorPath(window.location.pathname) ?? (new URLSearchParams(window.location.search).get("tripId")?.trim() || null);
   }
 
+  function clearAiDeepLink() {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("ai")) return;
+    params.delete("ai");
+    const nextSearch = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash || "#editor"}`);
+  }
+
   function updateTripRoute(tripId: string, mode: "push" | "replace" = "push") {
     if (typeof window === "undefined") return;
     const nextPath = buildTripEditorPath(tripId);
@@ -1026,6 +1035,23 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       controller.abort();
     };
   }, [metaDialogMode, watchedDestination, watchedDestinationMeta?.fullName]);
+
+  useEffect(() => {
+    if (!isAuthChecked) return;
+
+    function openGlobalAiAssistant() {
+      document.getElementById("editor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      openAiAssistant({ source: "global", label: "整份路书" });
+      clearAiDeepLink();
+    }
+
+    window.addEventListener("wanderlust:open-ai-assistant", openGlobalAiAssistant);
+    if (new URLSearchParams(window.location.search).get("ai") === "1") {
+      window.setTimeout(openGlobalAiAssistant, 80);
+    }
+
+    return () => window.removeEventListener("wanderlust:open-ai-assistant", openGlobalAiAssistant);
+  }, [isAuthChecked]);
 
   if (!isAuthChecked) {
     return (

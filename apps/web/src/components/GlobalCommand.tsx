@@ -10,7 +10,7 @@ const commandItems = [
   { label: "查看全部路书", hint: "Journeys", href: "/journeys", icon: Route },
   { label: "打开旅行足迹", hint: "Passport", href: "/passport", icon: MapPinned },
   { label: "搜索目的地", hint: "Search", href: "/search", icon: Search },
-  { label: "进入 AI 路书编辑", hint: "Prompt", href: "/#editor", icon: Sparkles }
+  { label: "AI 修改当前路书", hint: "Prompt", href: "/?ai=1#editor", icon: Sparkles, action: "open-ai" }
 ];
 
 export function GlobalCommand() {
@@ -28,9 +28,14 @@ export function GlobalCommand() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  function runCommand(href: string) {
+  function runCommand(item: (typeof commandItems)[number]) {
     setOpen(false);
-    window.location.href = href;
+    if (item.action === "open-ai" && document.getElementById("editor")) {
+      window.location.hash = "editor";
+      window.dispatchEvent(new CustomEvent("wanderlust:open-ai-assistant"));
+      return;
+    }
+    window.location.href = item.href;
   }
 
   return (
@@ -45,7 +50,7 @@ export function GlobalCommand() {
           <Command.Empty className="command-empty">没有匹配结果</Command.Empty>
           <Command.List className="command-list">
             {commandItems.map((item) => (
-              <Command.Item key={item.href} className="command-item" value={`${item.label} ${item.hint}`} onSelect={() => runCommand(item.href)}>
+              <Command.Item key={item.href} className="command-item" value={`${item.label} ${item.hint}`} onSelect={() => runCommand(item)}>
                 <item.icon size={17} />
                 <span>{item.label}</span>
                 <small>{item.hint}</small>
