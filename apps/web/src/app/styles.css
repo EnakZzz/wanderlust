@@ -2287,7 +2287,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   color: var(--muted);
 }
 .journey-date-control input {
-  min-height: 0;
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -3783,7 +3783,9 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .workspace:not(.workspace-loading) .journey-day-tools {
   align-items: center;
 }
-.workspace:not(.workspace-loading) .journey-date-control,
+.workspace:not(.workspace-loading) .journey-date-control {
+  min-height: 44px;
+}
 .workspace:not(.workspace-loading) .ai-inline-button {
   min-height: 40px;
 }

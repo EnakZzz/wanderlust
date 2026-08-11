@@ -609,6 +609,14 @@ test("expanded itinerary editor inputs keep usable tap targets", async ({ page }
   await expectNoHorizontalOverflow(page);
 });
 
+test("journey date control keeps usable tap target", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.locator(".journey-date-control").scrollIntoViewIfNeeded();
+  await expectVisibleTapTargetsAtLeast44(page, ".journey-date-control input");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("core routebook modules allow adding places and bookings", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
