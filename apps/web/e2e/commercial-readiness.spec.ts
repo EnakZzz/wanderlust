@@ -10,6 +10,10 @@ const shellPages = [
   { path: "/search", heading: "先确定一个城市，再把它变成可执行路书。" }
 ] as const;
 
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function mockAnonymousRuntime(page: Page) {
   await page.route("**/auth/session", (route) =>
     route.fulfill({
@@ -34,7 +38,7 @@ async function mockAnonymousRuntime(page: Page) {
   );
 }
 
-async function mockSignedInRuntime(page: Page) {
+async function mockSignedInRuntime(page: Page, options: { saveDelayMs?: number } = {}) {
   const tripId = "trip_11111111-1111-4111-8111-111111111111";
   const trip = {
     id: tripId,
@@ -102,6 +106,7 @@ async function mockSignedInRuntime(page: Page) {
   await page.route("**/api/trips", async (route) => {
     if (route.request().method() === "POST") {
       calls.saves += 1;
+      if (options.saveDelayMs) await delay(options.saveDelayMs);
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ trip }) });
     }
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ trips: [summary] }) });
@@ -110,6 +115,7 @@ async function mockSignedInRuntime(page: Page) {
     if (route.request().method() === "PUT") {
       calls.saves += 1;
       const nextTrip = await route.request().postDataJSON();
+      if (options.saveDelayMs) await delay(options.saveDelayMs);
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ trip: nextTrip }) });
     }
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ trip }) });
@@ -715,6 +721,22 @@ test("signed-in users can save and create a share link for a routebook", async (
   await expect
     .poll(async () => page.evaluate(async () => (window as unknown as { getCommercialApiCalls: () => Promise<{ saves: number; shares: number }> }).getCommercialApiCalls()))
     .toMatchObject({ saves: 1, shares: 1 });
+});
+
+test("signed-in routebook save stays single-flight on slow networks", async ({ page }) => {
+  await mockSignedInRuntime(page, { saveDelayMs: 350 });
+  await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.getByRole("button", { name: "保存" }).click();
+
+  await expect(page.getByRole("button", { name: "保存中" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "分享" })).toBeDisabled();
+  await expect
+    .poll(async () => page.evaluate(async () => (window as unknown as { getCommercialApiCalls: () => Promise<{ saves: number; shares: number }> }).getCommercialApiCalls()))
+    .toMatchObject({ saves: 1, shares: 0 });
+  await expect(page.getByRole("button", { name: "保存" })).toBeEnabled();
+  await expectNoHorizontalOverflow(page);
 });
 
 test("public share routebook renders safely with legacy itinerary types", async ({ page }) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties, type ChangeEvent, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent, type DragEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import JSZip from "jszip";
@@ -953,6 +953,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [shareInfo, setShareInfo] = useState<RoutebookShare | null>(null);
   const [isSharing, setIsSharing] = useState(false);
+  const isPersistingRef = useRef(false);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const [placeSearch, setPlaceSearch] = useState("");
   const [googleImportText, setGoogleImportText] = useState("");
@@ -1537,6 +1538,8 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       return target;
     }
 
+    if (isPersistingRef.current) return null;
+    isPersistingRef.current = true;
     setIsSyncing(true);
     try {
       const hydrated = hydrateDraft(await saveTrip(target, existing));
@@ -1553,6 +1556,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       setSyncError(error instanceof Error ? error.message : "无法保存路书");
       return null;
     } finally {
+      isPersistingRef.current = false;
       setIsSyncing(false);
     }
   }
@@ -1984,11 +1988,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               <IconButton type="button" onClick={openEditTripMetaDialog} disabled={routebookNeedsMeta} label="编辑路书信息">
                 <PencilLine size={18} />
               </IconButton>
-              <Button className="trip-save-button" type="button" onClick={() => persistDraft()} disabled={routebookNeedsMeta} title="保存路书">
+              <Button className="trip-save-button" type="button" onClick={() => persistDraft()} disabled={routebookNeedsMeta || isSyncing} title="保存路书">
                 <Save size={18} />
                 <span>{isSyncing ? "保存中" : "保存"}</span>
               </Button>
-              <Button variant="secondary" type="button" onClick={createOrCopyShare} disabled={routebookNeedsMeta || isSharing || !user} title="分享只读路书">
+              <Button variant="secondary" type="button" onClick={createOrCopyShare} disabled={routebookNeedsMeta || isSyncing || isSharing || !user} title="分享只读路书">
                 <Share2 size={17} />
                 <span>{isSharing ? "生成中" : shareUrl ? "复制分享" : "分享"}</span>
               </Button>
