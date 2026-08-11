@@ -232,6 +232,22 @@ const AiPatchItemUpdateSchema = ItineraryItemSchema.partial().omit({ id: true, d
   id: z.never().optional(),
   dayId: z.never().optional()
 });
+const AiPatchPlaceUpdateSchema = PlaceSchema.partial().omit({ id: true, tripId: true }).extend({
+  id: z.never().optional(),
+  tripId: z.never().optional()
+});
+const AiPatchBookingUpdateSchema = BookingSchema.partial().omit({ id: true, tripId: true }).extend({
+  id: z.never().optional(),
+  tripId: z.never().optional()
+});
+const AiPatchPackingUpdateSchema = PackingItemSchema.partial().omit({ id: true, tripId: true }).extend({
+  id: z.never().optional(),
+  tripId: z.never().optional()
+});
+const AiPatchBudgetItemUpdateSchema = BudgetItemSchema.partial().omit({ id: true, tripId: true }).extend({
+  id: z.never().optional(),
+  tripId: z.never().optional()
+});
 
 export const AiAddItineraryItemOperationSchema = z.object({
   id: z.string().min(1),
@@ -279,12 +295,52 @@ export const AiUpdateItineraryDayOperationSchema = z.object({
   after: AiPatchDayUpdateSchema
 });
 
+export const AiUpdatePlaceOperationSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("update_place"),
+  summary: z.string().min(1),
+  placeId: z.string().min(1),
+  before: AiPatchPlaceUpdateSchema.optional(),
+  after: AiPatchPlaceUpdateSchema
+});
+
+export const AiUpdateBookingOperationSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("update_booking"),
+  summary: z.string().min(1),
+  bookingId: z.string().min(1),
+  before: AiPatchBookingUpdateSchema.optional(),
+  after: AiPatchBookingUpdateSchema
+});
+
+export const AiUpdatePackingOperationSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("update_packing"),
+  summary: z.string().min(1),
+  packingItemId: z.string().min(1),
+  before: AiPatchPackingUpdateSchema.optional(),
+  after: AiPatchPackingUpdateSchema
+});
+
+export const AiUpdateBudgetItemOperationSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("update_budget_item"),
+  summary: z.string().min(1),
+  budgetItemId: z.string().min(1),
+  before: AiPatchBudgetItemUpdateSchema.optional(),
+  after: AiPatchBudgetItemUpdateSchema
+});
+
 export const AiItineraryPatchOperationSchema = z.discriminatedUnion("type", [
   AiAddItineraryItemOperationSchema,
   AiUpdateItineraryItemOperationSchema,
   AiDeleteItineraryItemOperationSchema,
   AiMoveItineraryItemOperationSchema,
-  AiUpdateItineraryDayOperationSchema
+  AiUpdateItineraryDayOperationSchema,
+  AiUpdatePlaceOperationSchema,
+  AiUpdateBookingOperationSchema,
+  AiUpdatePackingOperationSchema,
+  AiUpdateBudgetItemOperationSchema
 ]);
 
 export const AiItineraryPatchProposalSchema = z.object({
@@ -481,9 +537,37 @@ function applyItineraryPatchOperation(trip: AppliedTrip, operation: AiItineraryP
     return true;
   }
 
-  const day = trip.days.find((item) => item.id === operation.dayId);
-  if (!day) return false;
-  Object.assign(day, operation.after);
+  if (operation.type === "update_day") {
+    const day = trip.days.find((item) => item.id === operation.dayId);
+    if (!day) return false;
+    Object.assign(day, operation.after);
+    return true;
+  }
+
+  if (operation.type === "update_place") {
+    const placeIndex = trip.places.findIndex((item) => item.id === operation.placeId);
+    if (placeIndex < 0) return false;
+    trip.places[placeIndex] = PlaceSchema.parse({ ...trip.places[placeIndex], ...operation.after, id: operation.placeId, tripId: trip.id });
+    return true;
+  }
+
+  if (operation.type === "update_booking") {
+    const bookingIndex = trip.bookings.findIndex((item) => item.id === operation.bookingId);
+    if (bookingIndex < 0) return false;
+    trip.bookings[bookingIndex] = BookingSchema.parse({ ...trip.bookings[bookingIndex], ...operation.after, id: operation.bookingId, tripId: trip.id });
+    return true;
+  }
+
+  if (operation.type === "update_packing") {
+    const packingIndex = trip.packingItems.findIndex((item) => item.id === operation.packingItemId);
+    if (packingIndex < 0) return false;
+    trip.packingItems[packingIndex] = PackingItemSchema.parse({ ...trip.packingItems[packingIndex], ...operation.after, id: operation.packingItemId, tripId: trip.id });
+    return true;
+  }
+
+  const budgetIndex = trip.budgetItems.findIndex((item) => item.id === operation.budgetItemId);
+  if (budgetIndex < 0) return false;
+  trip.budgetItems[budgetIndex] = BudgetItemSchema.parse({ ...trip.budgetItems[budgetIndex], ...operation.after, id: operation.budgetItemId, tripId: trip.id });
   return true;
 }
 

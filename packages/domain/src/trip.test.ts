@@ -243,9 +243,52 @@ describe("applyItineraryPatchOperations", () => {
           ]
         }
       ],
-      places: [],
-      bookings: [],
-      attachments: []
+      places: [
+        {
+          id: "place_hotel",
+          tripId: "trip_patch",
+          name: "Old Hotel",
+          category: "hotel",
+          latitude: 35.01,
+          longitude: 135.76,
+          tags: [],
+          isFavorite: false
+        }
+      ],
+      bookings: [
+        {
+          id: "booking_hotel",
+          tripId: "trip_patch",
+          type: "hotel",
+          title: "Hotel booking",
+          status: "todo",
+          attachmentIds: [],
+          segments: []
+        }
+      ],
+      attachments: [],
+      packingItems: [
+        {
+          id: "pack_passport",
+          tripId: "trip_patch",
+          title: "Passport",
+          category: "documents",
+          quantity: 1,
+          packed: false
+        }
+      ],
+      budgetItems: [
+        {
+          id: "budget_hotel",
+          tripId: "trip_patch",
+          title: "Hotel deposit",
+          category: "accommodation",
+          amount: 120,
+          currency: "USD",
+          paidByMemberIds: [],
+          splitWithMemberIds: []
+        }
+      ]
     });
   }
 
@@ -339,6 +382,58 @@ describe("applyItineraryPatchOperations", () => {
       "item_temple:day_2:0",
       "item_dinner:day_2:1"
     ]);
+  });
+
+  it("applies selected module patch operations", () => {
+    const trip = createPatchTrip();
+    const result = applyItineraryPatchOperations(
+      trip,
+      [
+        {
+          id: "op_place",
+          type: "update_place",
+          summary: "补充酒店地址",
+          placeId: "place_hotel",
+          after: { name: "Ace Hotel Kyoto", address: "Nakagyo Ward", isFavorite: true }
+        },
+        {
+          id: "op_booking",
+          type: "update_booking",
+          summary: "确认酒店预订",
+          bookingId: "booking_hotel",
+          after: { status: "confirmed", confirmationCode: "ABC123" }
+        },
+        {
+          id: "op_pack",
+          type: "update_packing",
+          summary: "护照已确认",
+          packingItemId: "pack_passport",
+          after: { packed: true, notes: "Checked before departure." }
+        },
+        {
+          id: "op_budget",
+          type: "update_budget_item",
+          summary: "更新酒店订金",
+          budgetItemId: "budget_hotel",
+          after: { amount: 180, currency: "JPY" }
+        },
+        {
+          id: "op_missing_place",
+          type: "update_place",
+          summary: "修改不存在地点",
+          placeId: "missing",
+          after: { name: "Missing" }
+        }
+      ],
+      ["op_place", "op_booking", "op_pack", "op_budget", "op_missing_place"]
+    );
+
+    expect(result.appliedOperationIds).toEqual(["op_place", "op_booking", "op_pack", "op_budget"]);
+    expect(result.skippedOperationIds).toEqual(["op_missing_place"]);
+    expect(result.trip.places[0]).toMatchObject({ id: "place_hotel", tripId: "trip_patch", name: "Ace Hotel Kyoto", address: "Nakagyo Ward", isFavorite: true });
+    expect(result.trip.bookings[0]).toMatchObject({ id: "booking_hotel", tripId: "trip_patch", status: "confirmed", confirmationCode: "ABC123" });
+    expect(result.trip.packingItems[0]).toMatchObject({ id: "pack_passport", tripId: "trip_patch", packed: true, notes: "Checked before departure." });
+    expect(result.trip.budgetItems[0]).toMatchObject({ id: "budget_hotel", tripId: "trip_patch", amount: 180, currency: "JPY" });
   });
 });
 

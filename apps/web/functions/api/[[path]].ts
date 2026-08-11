@@ -259,6 +259,111 @@ const aiItineraryPatchJsonSchema = {
               }
             },
             required: ["id", "type", "summary", "dayId", "after"]
+          },
+          {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              type: { const: "update_place" },
+              summary: { type: "string" },
+              placeId: { type: "string" },
+              before: { type: "object" },
+              after: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  category: { enum: ["nature", "culture", "food", "architecture", "hotel", "transport", "shopping", "other"] },
+                  latitude: { type: "number" },
+                  longitude: { type: "number" },
+                  address: { type: "string" },
+                  notes: { type: "string" },
+                  tags: { type: "array", items: { type: "string" } },
+                  website: { type: "string" },
+                  phone: { type: "string" },
+                  imageUrl: { type: "string" },
+                  googlePlaceId: { type: "string" },
+                  osmId: { type: "string" },
+                  isFavorite: { type: "boolean" }
+                }
+              }
+            },
+            required: ["id", "type", "summary", "placeId", "after"]
+          },
+          {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              type: { const: "update_booking" },
+              summary: { type: "string" },
+              bookingId: { type: "string" },
+              before: { type: "object" },
+              after: {
+                type: "object",
+                properties: {
+                  dayId: { type: "string" },
+                  placeId: { type: "string" },
+                  type: { enum: ["flight", "hotel", "train", "restaurant", "ticket", "car", "other"] },
+                  title: { type: "string" },
+                  confirmationCode: { type: "string" },
+                  startsAt: { type: "string" },
+                  endsAt: { type: "string" },
+                  address: { type: "string" },
+                  provider: { type: "string" },
+                  status: { enum: ["todo", "confirmed", "checked_in", "cancelled"] },
+                  notes: { type: "string" },
+                  attachmentIds: { type: "array", items: { type: "string" } }
+                }
+              }
+            },
+            required: ["id", "type", "summary", "bookingId", "after"]
+          },
+          {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              type: { const: "update_packing" },
+              summary: { type: "string" },
+              packingItemId: { type: "string" },
+              before: { type: "object" },
+              after: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  category: { enum: ["documents", "clothing", "electronics", "health", "money", "toiletries", "other"] },
+                  assignedTo: { type: "string" },
+                  quantity: { type: "integer", minimum: 1 },
+                  packed: { type: "boolean" },
+                  notes: { type: "string" }
+                }
+              }
+            },
+            required: ["id", "type", "summary", "packingItemId", "after"]
+          },
+          {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              type: { const: "update_budget_item" },
+              summary: { type: "string" },
+              budgetItemId: { type: "string" },
+              before: { type: "object" },
+              after: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  category: { enum: ["accommodation", "transport", "food", "tickets", "shopping", "other"] },
+                  amount: { type: "number", minimum: 0 },
+                  currency: { type: "string" },
+                  paidByMemberIds: { type: "array", items: { type: "string" } },
+                  splitWithMemberIds: { type: "array", items: { type: "string" } },
+                  bookingId: { type: "string" },
+                  placeId: { type: "string" },
+                  date: { type: "string" },
+                  notes: { type: "string" }
+                }
+              }
+            },
+            required: ["id", "type", "summary", "budgetItemId", "after"]
           }
         ]
       }
@@ -543,6 +648,10 @@ async function createAiItineraryPatch(request: Request, env: AuthEnv): Promise<R
   const model = env.WORKERS_AI_TEXT_MODEL?.trim() || defaultWorkersAiTextModel;
   const existingDayIds = trip.days.map((day) => day.id);
   const existingItemIds = trip.days.flatMap((day) => day.items.map((item) => item.id));
+  const existingPlaceIds = trip.places.map((place) => place.id);
+  const existingBookingIds = trip.bookings.map((booking) => booking.id);
+  const existingPackingItemIds = trip.packingItems.map((item) => item.id);
+  const existingBudgetItemIds = trip.budgetItems.map((item) => item.id);
   const compactTrip = {
     id: trip.id,
     title: trip.title,
@@ -567,16 +676,64 @@ async function createAiItineraryPatch(request: Request, env: AuthEnv): Promise<R
         notes: item.notes,
         sortOrder: item.sortOrder
       }))
+    })),
+    places: trip.places.map((place) => ({
+      id: place.id,
+      name: place.name,
+      category: place.category,
+      latitude: place.latitude,
+      longitude: place.longitude,
+      address: place.address,
+      notes: place.notes,
+      tags: place.tags,
+      isFavorite: place.isFavorite
+    })),
+    bookings: trip.bookings.map((booking) => ({
+      id: booking.id,
+      dayId: booking.dayId,
+      placeId: booking.placeId,
+      type: booking.type,
+      title: booking.title,
+      confirmationCode: booking.confirmationCode,
+      startsAt: booking.startsAt,
+      endsAt: booking.endsAt,
+      address: booking.address,
+      provider: booking.provider,
+      status: booking.status,
+      notes: booking.notes
+    })),
+    packingItems: trip.packingItems.map((item) => ({
+      id: item.id,
+      title: item.title,
+      category: item.category,
+      assignedTo: item.assignedTo,
+      quantity: item.quantity,
+      packed: item.packed,
+      notes: item.notes
+    })),
+    budgetItems: trip.budgetItems.map((item) => ({
+      id: item.id,
+      title: item.title,
+      category: item.category,
+      amount: item.amount,
+      currency: item.currency,
+      paidByMemberIds: item.paidByMemberIds,
+      splitWithMemberIds: item.splitWithMemberIds,
+      bookingId: item.bookingId,
+      placeId: item.placeId,
+      date: item.date,
+      notes: item.notes
     }))
   };
 
   const systemPrompt = [
     "You are Pocket Routebook AI. Return only strict JSON, no markdown.",
-    "Create a reviewable itinerary patch proposal. Do not return a full trip.",
-    "Allowed operation types: add_item, update_item, delete_item, move_item, update_day.",
+    "Create a reviewable routebook patch proposal. Do not return a full trip.",
+    "Allowed operation types: add_item, update_item, delete_item, move_item, update_day, update_place, update_booking, update_packing, update_budget_item.",
     "Use only existing dayId values for dayId/toDayId. Use only existing itemId values for update_item/delete_item/move_item.",
+    "Use only existing placeId, bookingId, packingItemId, and budgetItemId values for module update operations.",
     "For add_item, generate id values with prefix ai_item_ and keep dayId equal to the target day.",
-    "For update_item, after must include only changed editable fields. Never include id or dayId in after.",
+    "For every update operation, after must include only changed editable fields. Never include id or tripId in after. Never include id or dayId in update_item after.",
     "Prefer small, concrete changes. If the request is ambiguous, return an empty operations array with a short summary."
   ].join("\n");
 
@@ -584,6 +741,10 @@ async function createAiItineraryPatch(request: Request, env: AuthEnv): Promise<R
     `Current routebook: ${JSON.stringify(compactTrip)}`,
     `Valid day ids: ${JSON.stringify(existingDayIds)}`,
     `Valid item ids: ${JSON.stringify(existingItemIds)}`,
+    `Valid place ids: ${JSON.stringify(existingPlaceIds)}`,
+    `Valid booking ids: ${JSON.stringify(existingBookingIds)}`,
+    `Valid packing item ids: ${JSON.stringify(existingPackingItemIds)}`,
+    `Valid budget item ids: ${JSON.stringify(existingBudgetItemIds)}`,
     `Edit context: ${JSON.stringify(payload.context ?? { source: "global" })}`,
     `User prompt: ${prompt}`
   ].join("\n");

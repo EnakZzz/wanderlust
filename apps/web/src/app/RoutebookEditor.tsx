@@ -404,6 +404,46 @@ function applyAiTripDraft(current: TripDraft, aiTrip: Partial<TripDraft>): TripD
 }
 
 function describeAiPatchOperation(operation: AiItineraryPatchOperation, trip: TripDraft): { before: string; after: string; dayTitle: string } {
+  if (operation.type === "update_place") {
+    const place = trip.places.find((entry) => entry.id === operation.placeId);
+    return {
+      dayTitle: "地点模块",
+      before: place ? [place.name, place.address, place.notes].filter(Boolean).join(" · ") : "未找到",
+      after: [operation.after.name ?? place?.name, operation.after.address ?? place?.address, operation.after.notes ?? place?.notes].filter(Boolean).join(" · ") || "更新地点"
+    };
+  }
+
+  if (operation.type === "update_booking") {
+    const booking = trip.bookings.find((entry) => entry.id === operation.bookingId);
+    return {
+      dayTitle: "预订模块",
+      before: booking ? [booking.title, booking.provider, booking.status].filter(Boolean).join(" · ") : "未找到",
+      after: [operation.after.title ?? booking?.title, operation.after.provider ?? booking?.provider, operation.after.status ?? booking?.status].filter(Boolean).join(" · ") || "更新预订"
+    };
+  }
+
+  if (operation.type === "update_packing") {
+    const item = trip.packingItems.find((entry) => entry.id === operation.packingItemId);
+    return {
+      dayTitle: "打包模块",
+      before: item ? [item.title, item.category, item.packed ? "已打包" : "未打包"].filter(Boolean).join(" · ") : "未找到",
+      after: [
+        operation.after.title ?? item?.title,
+        operation.after.category ?? item?.category,
+        typeof operation.after.packed === "boolean" ? (operation.after.packed ? "已打包" : "未打包") : item ? item.packed ? "已打包" : "未打包" : undefined
+      ].filter(Boolean).join(" · ") || "更新打包项"
+    };
+  }
+
+  if (operation.type === "update_budget_item") {
+    const item = trip.budgetItems.find((entry) => entry.id === operation.budgetItemId);
+    return {
+      dayTitle: "预算模块",
+      before: item ? [item.title, item.amount, item.currency].filter(Boolean).join(" · ") : "未找到",
+      after: [operation.after.title ?? item?.title, operation.after.amount ?? item?.amount, operation.after.currency ?? item?.currency].filter(Boolean).join(" · ") || "更新预算"
+    };
+  }
+
   const day = trip.days.find((item) => item.id === operation.dayId);
   const dayTitle = day ? `${day.title} · ${day.date}` : "未找到的日期";
   if (operation.type === "add_item") {
@@ -449,7 +489,12 @@ function describeAiPatchOperation(operation: AiItineraryPatchOperation, trip: Tr
 
 function getAiPatchTouchedDayIds(proposal: AiItineraryPatchProposal | null, fallbackDayId: string): string[] {
   if (!proposal?.operations.length) return [fallbackDayId];
-  return Array.from(new Set(proposal.operations.flatMap((operation) => operation.type === "move_item" ? [operation.dayId, operation.toDayId] : [operation.dayId])));
+  const dayIds = proposal.operations.flatMap((operation) => {
+    if (operation.type === "move_item") return [operation.dayId, operation.toDayId];
+    if (operation.type === "add_item" || operation.type === "update_item" || operation.type === "delete_item" || operation.type === "update_day") return [operation.dayId];
+    return [];
+  });
+  return dayIds.length ? Array.from(new Set(dayIds)) : [fallbackDayId];
 }
 
 function formatTripSummaryLine(trip: TripSummary): string {
