@@ -96,6 +96,7 @@ import {
   placeCategories,
   storageKey
 } from "./routebook/constants";
+import { formatTripStatus } from "./routebook/labels";
 import type { DestinationMeta, DragPayload, EditorModule, ImportedPlaceInput, RoutebookShare, SessionUser, TripDraft, TripSummary } from "./routebook/types";
 
 const modules = [
@@ -1935,7 +1936,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
           </span>
         </button>
         <div className="trip-card-footer">
-          <span>{trip.status}</span>
+          <span>{formatTripStatus(trip.status)}</span>
           <IconButton
             className="trip-delete-button"
             type="button"

@@ -9,6 +9,7 @@ import { TravelImage } from "@/components/TravelImage";
 import { discoveryCards } from "@/lib/travel-visuals";
 import { useDashboardData } from "@/lib/web-api";
 import { DestinationSearchPanel, editorHref } from "./DestinationSearchPanel";
+import { formatTripStatus } from "./routebook/labels";
 import type { TripSummary } from "./routebook/types";
 
 function formatTripDates(trip: TripSummary): string {
@@ -90,7 +91,7 @@ export function DashboardClient() {
           <div className="dashboard-trip-list">
             {recentTrips.map((trip) => (
               <a key={trip.id} className="dashboard-trip-card" href={tripEditorHref(trip.id)}>
-                <span>{trip.status}</span>
+                <span>{formatTripStatus(trip.status)}</span>
                 <strong>{trip.title}</strong>
                 <em>{trip.destination}</em>
                 <small>{formatTripDates(trip)} · {trip.dayCount} 天 · {trip.placeCount} 个地点</small>

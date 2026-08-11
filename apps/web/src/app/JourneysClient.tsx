@@ -8,6 +8,7 @@ import { MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
 import { getDestinationTheme } from "@/lib/travel-visuals";
 import { useDashboardData } from "@/lib/web-api";
+import { formatTripStatus } from "./routebook/labels";
 import type { TripSummary } from "./routebook/types";
 
 function formatTripDates(trip: TripSummary): string {
@@ -54,7 +55,7 @@ export function JourneysClient() {
             >
               <TravelImage src={theme.image} alt="" className="journey-card-image" overlayClassName="journey-card-image-overlay" sizes="(max-width: 760px) 100vw, 33vw" />
               <div className="journey-card-topline">
-                <span>{trip.status}</span>
+                <span>{formatTripStatus(trip.status)}</span>
                 <small><CalendarDays size={14} />{formatTripDates(trip)}</small>
               </div>
               <div className="journey-card-copy">

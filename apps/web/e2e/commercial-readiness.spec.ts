@@ -135,6 +135,57 @@ async function mockSignedInRuntime(page: Page) {
   await page.exposeFunction("getCommercialApiCalls", () => calls);
 }
 
+async function mockSignedInTripListRuntime(page: Page) {
+  await page.route("**/auth/session", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ user: { id: "google:test-user", provider: "google", email: "test@example.com", name: "Test Traveler" } })
+    })
+  );
+  await page.route("**/auth/config", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ providers: { google: { configured: true }, apple: { configured: false } } })
+    })
+  );
+  await page.route("**/api/trips", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        trips: [
+          {
+            id: "trip_tokyo",
+            title: "东京亲子路书",
+            destination: "Tokyo, Japan",
+            status: "draft",
+            startDate: "2026-09-01",
+            endDate: "2026-09-05",
+            dayCount: 5,
+            placeCount: 12,
+            bookingCount: 3,
+            updatedAt: "2026-08-12T00:00:00.000Z"
+          },
+          {
+            id: "trip_legacy_published",
+            title: "埃及红海路书",
+            destination: "Egypt Cairo Red Sea",
+            status: "published",
+            startDate: "2026-10-01",
+            endDate: "2026-10-09",
+            dayCount: 9,
+            placeCount: 18,
+            bookingCount: 6,
+            updatedAt: "2026-08-11T00:00:00.000Z"
+          }
+        ]
+      })
+    })
+  );
+}
+
 async function mockPublicShareRuntime(page: Page) {
   const tripId = "trip_public_readable";
   await page.route("**/api/share/public_tokyo_test", (route) =>
@@ -380,6 +431,18 @@ test("global AI launcher does not cover mobile editor forms", async ({ page }) =
     expect(layout!.overlaps).toBe(false);
   }
 
+  await expectNoHorizontalOverflow(page);
+});
+
+test("signed-in routebook lists show customer-facing status labels", async ({ page }) => {
+  await mockSignedInTripListRuntime(page);
+
+  await page.goto("/journeys", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByText("草稿").first()).toBeVisible();
+  await expect(page.getByText("已发布").first()).toBeVisible();
+  await expect(page.getByText("draft", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("published", { exact: true })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 
