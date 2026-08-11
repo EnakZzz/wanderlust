@@ -236,6 +236,27 @@ test("local routebook editing supports a first itinerary item without login", as
   await expectNoHorizontalOverflow(page);
 });
 
+test("expanded itinerary cards stay readable on mobile", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.getByRole("button", { name: "编辑 新的行程项" }).click();
+
+  if ((page.viewportSize()?.width ?? 0) <= 500) {
+    const layout = await page.locator(".route-step-card").first().evaluate((card) => {
+      const body = card.querySelector<HTMLElement>(".route-step-body");
+      return {
+        columns: getComputedStyle(card).gridTemplateColumns.split(" ").length,
+        bodyWidth: Math.round(body?.getBoundingClientRect().width ?? 0)
+      };
+    });
+    expect(layout.columns).toBe(1);
+    expect(layout.bodyWidth).toBeGreaterThan(260);
+  }
+
+  await expectNoHorizontalOverflow(page);
+});
+
 test("core routebook modules allow adding places and bookings", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

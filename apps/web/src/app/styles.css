@@ -4005,8 +4005,14 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .journey-day-tools { justify-content: flex-start; }
   .journey-date-control,
   .ai-inline-button { width: 100%; justify-content: center; }
-  .route-step-card { grid-template-columns: 1fr; border-radius: 22px; }
-  .route-step-date-panel {
+  .route-step-card,
+  .workspace:not(.workspace-loading) .route-step-card {
+    min-height: 0;
+    grid-template-columns: 1fr;
+    border-radius: 22px;
+  }
+  .route-step-date-panel,
+  .workspace:not(.workspace-loading) .route-step-date-panel {
     min-height: 112px;
     grid-template-columns: repeat(5, auto);
     justify-content: start;
@@ -4015,14 +4021,17 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     border-bottom: 1px dashed var(--journey-line);
     text-align: left;
   }
-  .route-step-date-panel::after { display: none; }
+  .route-step-date-panel::after,
+  .workspace:not(.workspace-loading) .route-step-date-panel::after { display: none; }
   .route-step-date-panel em {
     width: 44px;
     height: 44px;
     font-size: 18px;
   }
-  .route-step-image { min-height: 180px; }
-  .route-step-body { padding: 18px; }
+  .route-step-image,
+  .workspace:not(.workspace-loading) .route-step-image { min-height: 180px; }
+  .route-step-body,
+  .workspace:not(.workspace-loading) .route-step-body { padding: 18px; }
   .route-step-topline { align-items: flex-start; flex-direction: column; }
   .route-step-actions { align-items: stretch; }
   .route-link-button { min-width: 0; flex: 1 1 120px; }
