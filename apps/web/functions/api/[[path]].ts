@@ -96,9 +96,12 @@ type AiPatchRequest = {
   trip?: unknown;
   prompt?: string;
   context?: {
-    source?: "global" | "day" | "item";
+    source?: "global" | "day" | "item" | "module" | "entity";
     dayId?: string;
     itemId?: string;
+    moduleId?: "itinerary" | "places" | "map" | "bookings" | "files" | "packing" | "budget" | "ai";
+    entityType?: "place" | "booking" | "attachment" | "packingItem" | "budgetItem";
+    entityId?: string;
   };
 };
 type AiVisionResult =
@@ -783,6 +786,7 @@ async function createAiItineraryPatch(request: Request, env: AuthEnv): Promise<R
     "Prefer small, concrete changes. If the request is ambiguous, return an empty operations array with a short summary."
   ].join("\n");
 
+  const contextRules = getAiPatchContextRules(payload.context);
   const taskPrompt = [
     `Current routebook: ${JSON.stringify(compactTrip)}`,
     `Valid day ids: ${JSON.stringify(existingDayIds)}`,
@@ -793,6 +797,7 @@ async function createAiItineraryPatch(request: Request, env: AuthEnv): Promise<R
     `Valid budget item ids: ${JSON.stringify(existingBudgetItemIds)}`,
     `Valid attachment ids: ${JSON.stringify(existingAttachmentIds)}`,
     `Edit context: ${JSON.stringify(payload.context ?? { source: "global" })}`,
+    `Context rules: ${contextRules}`,
     `User prompt: ${prompt}`
   ].join("\n");
 
@@ -815,6 +820,34 @@ async function createAiItineraryPatch(request: Request, env: AuthEnv): Promise<R
   } catch (error) {
     return json({ error: "ai_patch_failed", message: error instanceof Error ? error.message : "Could not create AI patch" }, 502);
   }
+}
+
+function getAiPatchContextRules(context: AiPatchRequest["context"]): string {
+  if (!context || context.source === "global") return "The user is editing the whole routebook. Keep changes minimal and relevant to the prompt.";
+  if (context.source === "day") return `Only change itinerary content for dayId ${context.dayId}. Do not emit module update operations unless directly required by that day.`;
+  if (context.source === "item") return `Only change itinerary itemId ${context.itemId} on dayId ${context.dayId}. Use update_item, delete_item, or move_item for that item unless the prompt clearly asks to add a supporting item.`;
+  if (context.source === "module") {
+    const moduleRules: Record<string, string> = {
+      itinerary: "Only emit itinerary operations: add_item, update_item, delete_item, move_item, update_day.",
+      places: "Only emit update_place operations for existing place ids.",
+      map: "Only emit update_place operations that improve coordinates, addresses, or map-related place metadata.",
+      bookings: "Only emit update_booking operations for existing booking ids.",
+      files: "Only emit update_attachment operations for existing attachment ids. Never change storagePath or localUri.",
+      packing: "Only emit update_packing operations for existing packing item ids.",
+      budget: "Only emit update_budget_item operations for existing budget item ids.",
+      ai: "Only produce a small patch proposal relevant to the routebook data. Do not describe AI settings."
+    };
+    return moduleRules[context.moduleId ?? ""] ?? "Only change the active editor module.";
+  }
+
+  const entityRules: Record<string, string> = {
+    place: `Only emit update_place for placeId ${context.entityId}.`,
+    booking: `Only emit update_booking for bookingId ${context.entityId}.`,
+    attachment: `Only emit update_attachment for attachmentId ${context.entityId}. Never change storagePath or localUri.`,
+    packingItem: `Only emit update_packing for packingItemId ${context.entityId}.`,
+    budgetItem: `Only emit update_budget_item for budgetItemId ${context.entityId}.`
+  };
+  return entityRules[context.entityType ?? ""] ?? "Only update the explicitly selected entity.";
 }
 
 async function extractAiTripTextFromImages(request: Request, env: AuthEnv): Promise<Response> {
