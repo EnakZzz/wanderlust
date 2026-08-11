@@ -947,6 +947,8 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [selectedDayId, setSelectedDayId] = useState(() => draft.days[0]!.id);
   const [activeModule, setActiveModule] = useState<EditorModule>("itinerary");
+  const moduleHeadingRef = useRef<HTMLDivElement | null>(null);
+  const shouldScrollModuleOnChangeRef = useRef(false);
   const [isSaved, setIsSaved] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [deletingTripId, setDeletingTripId] = useState<string | null>(null);
@@ -996,6 +998,21 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [initialDestinationConsumed, setInitialDestinationConsumed] = useState(false);
   const [initialTripIdConsumed, setInitialTripIdConsumed] = useState(false);
   const [initialModuleConsumed, setInitialModuleConsumed] = useState(false);
+
+  function selectEditorModule(module: EditorModule, options: { scrollIntoView?: boolean } = {}) {
+    shouldScrollModuleOnChangeRef.current = Boolean(options.scrollIntoView);
+    setActiveModule(module);
+  }
+
+  useEffect(() => {
+    if (!shouldScrollModuleOnChangeRef.current) return;
+    shouldScrollModuleOnChangeRef.current = false;
+    if (!window.matchMedia("(max-width: 500px)").matches) return;
+
+    window.requestAnimationFrame(() => {
+      moduleHeadingRef.current?.scrollIntoView({ block: "start", inline: "nearest" });
+    });
+  }, [activeModule]);
 
   useEffect(() => {
     if (sessionQuery.isLoading) return;
@@ -2025,7 +2042,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 value={activeModule}
                 aria-label="行程模块"
                 onValueChange={(value) => {
-                  if (value) setActiveModule(value as EditorModule);
+                  if (value) selectEditorModule(value as EditorModule, { scrollIntoView: true });
                 }}
               >
                 {modules.map((module) => (
@@ -2191,7 +2208,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
             {shareStatus ? <div className="share-status">{shareStatus}{shareUrl ? <a href={shareUrl} target="_blank" rel="noreferrer">打开只读页</a> : null}</div> : null}
             {syncError ? <div className="sync-error">{syncError}</div> : null}
 
-            <div className="module-heading">
+            <div ref={moduleHeadingRef} className="module-heading">
               <div>
                 <p>{activeModuleMeta.title}</p>
                 <span>{moduleCopy[activeModule]}</span>
@@ -2524,7 +2541,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   {draft.places.map((place) => {
                     const position = calculateMapPosition(place, draft.places);
                     return (
-                      <button key={place.id} className="map-pin" style={position} type="button" onClick={() => setActiveModule("places")} title={place.name}>
+                      <button key={place.id} className="map-pin" style={position} type="button" onClick={() => selectEditorModule("places", { scrollIntoView: true })} title={place.name}>
                         <MapPin size={16} />
                       </button>
                     );

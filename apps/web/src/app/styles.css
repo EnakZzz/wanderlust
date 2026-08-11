@@ -4111,21 +4111,20 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .rail-item { min-width: 0; min-height: 50px; flex: 1 0 48px; }
   .rail-item span { font-size: 8px; letter-spacing: 0.04em; }
   .workspace:not(.workspace-loading) .editor-module-rail {
-    flex-wrap: nowrap;
-    gap: 8px;
-    padding: 6px 64px 6px 6px;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
+    align-items: stretch;
+    padding: 6px;
+    overflow: visible;
   }
   .workspace:not(.workspace-loading) .editor-module-toggle {
-    width: max-content;
-    flex-wrap: nowrap;
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
   }
   .workspace:not(.workspace-loading) .editor-module-rail .rail-item {
-    flex: 0 0 52px;
-    min-width: 52px;
+    width: 100%;
+    min-width: 0;
     min-height: 52px;
-    scroll-snap-align: start;
   }
   .trip-library, .trip-card-grid, .plan-home-list { grid-template-columns: 1fr; }
   .trip-library-actions { justify-content: flex-start; }

@@ -580,12 +580,14 @@ test("editor module rail and module AI actions keep usable tap targets", async (
   await expectNoHorizontalOverflow(page);
 });
 
-test("mobile editor module rail stays single row clear of the floating AI launcher", async ({ page }) => {
+test("mobile editor module rail shows all modules without horizontal overflow", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
   if ((page.viewportSize()?.width ?? 0) <= 500) {
     const layout = await page.locator(".editor-module-rail").evaluate((rail) => {
       const launcher = document.querySelector<HTMLElement>(".global-ai-launcher")?.getBoundingClientRect();
+      const railBox = rail.getBoundingClientRect();
+      const toggle = rail.querySelector<HTMLElement>(".editor-module-toggle");
       const items = Array.from(rail.querySelectorAll<HTMLElement>(".rail-item")).map((item) => item.getBoundingClientRect());
       const rows = new Set(items.map((item) => Math.round(item.top)));
       const overlappedItems = launcher
@@ -593,16 +595,22 @@ test("mobile editor module rail stays single row clear of the floating AI launch
         : 0;
 
       return {
+        railWidth: Math.round(railBox.width),
+        toggleColumns: toggle ? getComputedStyle(toggle).gridTemplateColumns.split(" ").length : 0,
         rows: rows.size,
         overlappedItems,
-        scrollsHorizontally: rail.scrollWidth > rail.clientWidth,
+        scrollsHorizontally: rail.scrollWidth > rail.clientWidth + 2,
+        escapedItems: items.filter((item) => item.left < railBox.left - 1 || item.right > railBox.right + 1).length,
         itemCount: items.length
       };
     });
 
     expect(layout.itemCount).toBeGreaterThan(5);
-    expect(layout.rows).toBe(1);
-    expect(layout.scrollsHorizontally).toBe(true);
+    expect(layout.railWidth, JSON.stringify(layout)).toBeGreaterThan(320);
+    expect(layout.toggleColumns).toBe(4);
+    expect(layout.rows).toBe(2);
+    expect(layout.scrollsHorizontally).toBe(false);
+    expect(layout.escapedItems).toBe(0);
     expect(layout.overlappedItems).toBe(0);
   }
 
