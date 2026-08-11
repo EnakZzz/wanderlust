@@ -61,7 +61,8 @@ export default function SharePage() {
   const shareQuery = useQuery({
     queryKey: ["share", token],
     queryFn: () => readPublicShare(token!),
-    enabled: typeof token === "string" && token.length > 0
+    enabled: typeof token === "string" && token.length > 0,
+    retry: false
   });
 
   const payload = shareQuery.data ?? null;

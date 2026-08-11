@@ -28,8 +28,17 @@ export const fallbackProviders: ProviderStatus = {
 };
 
 async function readJson<T>(response: Response, fallbackMessage: string): Promise<T> {
-  const payload = await response.json() as T & { error?: string; message?: string };
-  if (!response.ok) throw new Error(payload.message || payload.error || fallbackMessage);
+  let payload: (T & { error?: string; message?: string }) | null = null;
+  if (response.headers.get("content-type")?.includes("application/json")) {
+    try {
+      payload = await response.json() as T & { error?: string; message?: string };
+    } catch {
+      payload = null;
+    }
+  }
+
+  if (!response.ok) throw new Error(payload?.message || payload?.error || fallbackMessage);
+  if (!payload) throw new Error(fallbackMessage);
   return payload;
 }
 

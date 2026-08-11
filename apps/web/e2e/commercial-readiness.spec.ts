@@ -559,6 +559,23 @@ test("public share routebook renders safely with legacy itinerary types", async 
   await expectNoHorizontalOverflow(page);
 });
 
+test("invalid public share links show a customer-facing error", async ({ page }) => {
+  await page.route("**/api/share/missing_share", (route) =>
+    route.fulfill({
+      status: 404,
+      contentType: "text/html",
+      body: "<!DOCTYPE html><title>Not found</title>"
+    })
+  );
+
+  await page.goto("/share?token=missing_share", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "分享不可用" })).toBeVisible();
+  await expect(page.getByText("无法打开分享路书")).toBeVisible();
+  await expect(page.getByText(/Unexpected token|DOCTYPE|JSON/i)).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("id based journey URL has a browser fallback in static-compatible routing", async ({ page }) => {
   const tripId = "trip_00000000-0000-4000-8000-000000000000";
   await page.goto(`/journeys/${tripId}`, { waitUntil: "domcontentloaded" });
