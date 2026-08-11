@@ -1313,7 +1313,7 @@ h1, h2, h3 {
   letter-spacing: 0;
 }
 
-h1 { font-size: clamp(38px, 5.6vw, 72px); font-style: italic; font-weight: 500; line-height: 1; max-width: 860px; }
+h1 { font-size: clamp(38px, 5.6vw, 72px); font-style: italic; font-weight: 500; line-height: 1.12; max-width: 860px; }
 h2 { font-size: clamp(28px, 4vw, 46px); font-style: italic; font-weight: 500; line-height: 1.06; }
 h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 
@@ -1512,7 +1512,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .routebook-current > span:last-child {
   min-width: 0;
   display: grid;
-  gap: 3px;
+  gap: 5px;
 }
 .routebook-current .eyebrow {
   margin: 0;
@@ -1523,7 +1523,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   font-size: clamp(22px, 2vw, 30px);
   font-style: italic;
   font-weight: 500;
-  line-height: 1.05;
+  line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

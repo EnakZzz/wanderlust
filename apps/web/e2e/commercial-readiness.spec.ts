@@ -546,6 +546,30 @@ test("home page brings the routebook editor into the first viewport", async ({ p
   await expectNoHorizontalOverflow(page);
 });
 
+test("mobile hero and current routebook titles avoid vertical clipping", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  if ((page.viewportSize()?.width ?? 0) <= 500) {
+    const overflow = await page.evaluate(() => {
+      const selectors = ["h1", ".routebook-current strong"];
+      return selectors.map((selector) => {
+        const element = document.querySelector<HTMLElement>(selector);
+        if (!element) return { selector, overflowY: 0 };
+        return {
+          selector,
+          overflowY: element.scrollHeight - element.clientHeight
+        };
+      });
+    });
+
+    for (const item of overflow) {
+      expect(item.overflowY, `${item.selector} should not clip vertically`).toBeLessThanOrEqual(2);
+    }
+  }
+
+  await expectNoHorizontalOverflow(page);
+});
+
 test("editor module rail and module AI actions keep usable tap targets", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
