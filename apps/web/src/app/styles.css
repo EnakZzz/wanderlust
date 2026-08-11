@@ -265,11 +265,11 @@ label span {
 }
 
 .hero-shell {
-  min-height: clamp(620px, 78vh, 820px);
+  min-height: clamp(310px, 36vh, 430px);
   position: relative;
   display: grid;
-  align-items: center;
-  padding: clamp(132px, 14vw, 170px) clamp(20px, 5vw, 96px) clamp(64px, 8vw, 94px);
+  align-items: end;
+  padding: clamp(104px, 10vw, 132px) clamp(20px, 5vw, 96px) clamp(28px, 4vw, 46px);
   overflow: hidden;
   background: #111;
 }
@@ -281,8 +281,8 @@ label span {
 }
 .hero-image-overlay {
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.38) 48%, rgba(0, 0, 0, 0.16)),
-    linear-gradient(to top, rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.14) 48%, rgba(0, 0, 0, 0.34));
+    linear-gradient(90deg, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.42) 52%, rgba(0, 0, 0, 0.2)),
+    linear-gradient(to top, rgba(0, 0, 0, 0.46), rgba(0, 0, 0, 0.12) 48%, rgba(0, 0, 0, 0.34));
 }
 
 .topbar {
@@ -1246,7 +1246,7 @@ label span {
 .hero-copy {
   position: relative;
   z-index: 1;
-  max-width: 760px;
+  max-width: 980px;
   color: #fff8ee;
 }
 
@@ -1267,18 +1267,18 @@ h1, h2, h3 {
   letter-spacing: 0;
 }
 
-h1 { font-size: clamp(42px, 7vw, 86px); font-style: italic; font-weight: 500; line-height: 1; max-width: 860px; }
+h1 { font-size: clamp(38px, 5.6vw, 72px); font-style: italic; font-weight: 500; line-height: 1; max-width: 860px; }
 h2 { font-size: clamp(28px, 4vw, 46px); font-style: italic; font-weight: 500; line-height: 1.06; }
 h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 
 .hero-copy p:not(.eyebrow) {
-  max-width: 590px;
-  font-size: clamp(16px, 2vw, 20px);
+  max-width: 680px;
+  font-size: clamp(15px, 1.6vw, 18px);
   line-height: 1.45;
   color: rgba(255, 248, 238, 0.88);
 }
 
-.hero-buttons { gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+.hero-buttons { gap: 12px; flex-wrap: wrap; margin-top: 18px; }
 
 .icon-button {
   border: 1px solid rgba(255,255,255,0.35);
@@ -2033,10 +2033,17 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .module-ai-button {
   flex: 0 0 auto;
-  background: var(--accent);
-  color: #fff8ee;
-  border-color: rgba(255, 248, 238, 0.6);
-  box-shadow: 0 12px 26px rgba(148, 111, 71, 0.18);
+  width: 42px;
+  height: 42px;
+  min-height: 42px;
+  background: #fffdf8;
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+  box-shadow: none;
+}
+.module-ai-button:hover {
+  background: var(--paper-deep);
+  box-shadow: 0 8px 20px rgba(45, 45, 45, 0.08);
 }
 .row-ai-button {
   flex: 0 0 auto;
@@ -3216,18 +3223,6 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   bottom: 24px;
   z-index: 40;
 }
-.ai-assistant-launcher {
-  width: 58px;
-  height: 58px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.52);
-  border-radius: 999px;
-  background: var(--accent);
-  color: #fff8ee;
-  box-shadow: 0 18px 48px rgba(68, 56, 45, 0.28);
-  cursor: pointer;
-}
 .ai-assistant-panel {
   width: min(720px, calc(100vw - 48px));
   max-height: min(760px, calc(100vh - 48px));
@@ -3825,9 +3820,9 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 
 @media (max-width: 900px) {
   .hero-shell {
-    min-height: clamp(620px, 88vh, 780px);
+    min-height: clamp(410px, 52vh, 500px);
     align-items: end;
-    padding: 132px 20px 46px;
+    padding: 128px 20px 34px;
   }
   .product-nav {
     width: calc(100% - 24px);
@@ -4041,9 +4036,6 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     right: 10px;
     bottom: 10px;
     left: 10px;
-  }
-  .ai-assistant-launcher {
-    margin-left: auto;
   }
   .ai-assistant-panel {
     width: 100%;

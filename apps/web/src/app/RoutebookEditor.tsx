@@ -3044,22 +3044,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               </div>
             ) : null}
           </motion.section>
-        ) : (
-          <motion.button
-            className="ai-assistant-launcher"
-            type="button"
-            onClick={() => openAiAssistant({ source: "global", label: "整份路书" })}
-            title="AI 修改路书"
-            aria-label="AI 修改路书"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            whileHover={{ y: -2, scale: 1.03 }}
-            whileTap={{ scale: 0.96 }}
-          >
-            <Sparkles size={22} />
-          </motion.button>
-        )}
+        ) : null}
         </AnimatePresence>
       </div>
 

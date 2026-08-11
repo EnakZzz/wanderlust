@@ -208,6 +208,20 @@ test("global AI prompt routes into the routebook preview assistant", async ({ pa
   await expect(page.getByText("登录后可使用 AI 修改行程。")).toBeVisible();
 });
 
+test("home page brings the routebook editor into the first viewport", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  const currentRoutebook = page.locator(".routebook-current");
+  await expect(currentRoutebook).toBeVisible();
+
+  const editorPosition = await currentRoutebook.boundingBox();
+  const viewport = page.viewportSize();
+  expect(editorPosition?.y ?? Number.POSITIVE_INFINITY).toBeLessThan((viewport?.height ?? 0) - 96);
+  await expect(page.locator(".global-ai-launcher")).toHaveCount(1);
+  await expect(page.locator(".ai-assistant-launcher")).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("local routebook editing supports a first itinerary item without login", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
