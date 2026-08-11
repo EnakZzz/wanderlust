@@ -5,6 +5,8 @@ import { Command } from "cmdk";
 import { LayoutDashboard, MapPinned, Route, Search, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+const aiPromptStorageKey = "wanderlust:pending-ai-prompt";
+
 const commandItems = [
   { label: "打开控制台", hint: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "查看全部路书", hint: "Journeys", href: "/journeys", icon: Route },
@@ -15,6 +17,7 @@ const commandItems = [
 
 export function GlobalCommand() {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -29,11 +32,16 @@ export function GlobalCommand() {
   }, []);
 
   function runCommand(item: (typeof commandItems)[number]) {
+    const prompt = query.trim();
     setOpen(false);
     if (item.action === "open-ai" && document.getElementById("editor")) {
       window.location.hash = "editor";
-      window.dispatchEvent(new CustomEvent("wanderlust:open-ai-assistant"));
+      window.dispatchEvent(new CustomEvent("wanderlust:open-ai-assistant", { detail: { prompt } }));
+      setQuery("");
       return;
+    }
+    if (item.action === "open-ai" && prompt) {
+      window.sessionStorage.setItem(aiPromptStorageKey, prompt);
     }
     window.location.href = item.href;
   }
@@ -46,14 +54,24 @@ export function GlobalCommand() {
           <DialogDescription>搜索页面和常用路书动作。</DialogDescription>
         </DialogHeader>
         <Command className="command-menu" loop>
-          <Command.Input className="command-input" placeholder="搜索控制台、路书、AI..." />
+          <Command.Input
+            className="command-input"
+            placeholder="搜索页面，或输入一句话让 AI 修改当前路书..."
+            value={query}
+            onValueChange={setQuery}
+          />
           <Command.Empty className="command-empty">没有匹配结果</Command.Empty>
           <Command.List className="command-list">
             {commandItems.map((item) => (
-              <Command.Item key={item.href} className="command-item" value={`${item.label} ${item.hint}`} onSelect={() => runCommand(item)}>
+              <Command.Item
+                key={item.href}
+                className="command-item"
+                value={`${item.label} ${item.hint}${item.action === "open-ai" ? ` ${query}` : ""}`}
+                onSelect={() => runCommand(item)}
+              >
                 <item.icon size={17} />
                 <span>{item.label}</span>
-                <small>{item.hint}</small>
+                <small>{item.action === "open-ai" && query.trim() ? "使用当前输入" : item.hint}</small>
               </Command.Item>
             ))}
           </Command.List>

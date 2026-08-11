@@ -52,6 +52,7 @@ import {
   type TripDay,
 } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
+import { FileUploadButton } from "@/components/FileUploadButton";
 import { IconButton } from "@/components/IconButton";
 import { TravelImage } from "@/components/TravelImage";
 import {
@@ -205,6 +206,12 @@ type AiPatchContext = {
   itemId?: string;
   label: string;
 };
+
+type OpenAiAssistantEventDetail = {
+  prompt?: string;
+};
+
+const pendingAiPromptStorageKey = "wanderlust:pending-ai-prompt";
 
 type RoutebookEditorProps = {
   initialTripId?: string;
@@ -1039,9 +1046,16 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   useEffect(() => {
     if (!isAuthChecked) return;
 
-    function openGlobalAiAssistant() {
+    function openGlobalAiAssistant(event?: Event) {
+      const promptFromEvent =
+        event instanceof CustomEvent
+          ? (event.detail as OpenAiAssistantEventDetail | undefined)?.prompt?.trim()
+          : undefined;
+      const promptFromStorage = window.sessionStorage.getItem(pendingAiPromptStorageKey)?.trim() || undefined;
+      if (promptFromStorage) window.sessionStorage.removeItem(pendingAiPromptStorageKey);
+
       document.getElementById("editor")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      openAiAssistant({ source: "global", label: "整份路书" });
+      openAiAssistant({ source: "global", label: "整份路书" }, promptFromEvent || promptFromStorage || "");
       clearAiDeepLink();
     }
 
@@ -2192,20 +2206,16 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       <MapPin size={16} />
                       <span>导入链接</span>
                     </Button>
-                    <Button asChild variant="secondary">
-                      <label className="file-upload-button">
-                        <FileUp size={17} />
-                        <span>导入 GeoJSON / GPX / KML / KMZ</span>
-                        <input
-                          type="file"
-                          accept=".geojson,.json,.gpx,.kml,.kmz,application/geo+json,application/json"
-                          onChange={(event) => {
-                            const file = event.target.files?.[0];
-                            if (file) importPlaceFile(file);
-                          }}
-                        />
-                      </label>
-                    </Button>
+                    <FileUploadButton
+                      accept=".geojson,.json,.gpx,.kml,.kmz,application/geo+json,application/json"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) importPlaceFile(file);
+                      }}
+                    >
+                      <FileUp size={17} />
+                      <span>导入 GeoJSON / GPX / KML / KMZ</span>
+                    </FileUploadButton>
                   </div>
                 </div>
                 {draft.places.map((place) => (
@@ -2297,20 +2307,16 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <strong>把确认单直接导入为预订草稿</strong>
                     <span>目前 PDF 只会作为附件挂上，且先按文件名解析。文本和邮件会解析确认号与航班号。</span>
                   </div>
-                  <Button asChild variant="secondary">
-                    <label className="file-upload-button">
-                      <FileUp size={17} />
-                      <span>导入 PDF / 邮件 / 文本</span>
-                      <input
-                        type="file"
-                        accept=".pdf,.eml,.txt,.ics,application/pdf,text/plain,message/rfc822,text/calendar"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) importBookingFile(file);
-                        }}
-                      />
-                    </label>
-                  </Button>
+                  <FileUploadButton
+                    accept=".pdf,.eml,.txt,.ics,application/pdf,text/plain,message/rfc822,text/calendar"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) importBookingFile(file);
+                    }}
+                  >
+                    <FileUp size={17} />
+                    <span>导入 PDF / 邮件 / 文本</span>
+                  </FileUploadButton>
                 </div>
                 {draft.bookings.map((booking) => (
                   <article key={booking.id} className="module-row booking-row-editor">
@@ -2356,16 +2362,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         ))}
                       </div>
                     ) : null}
-                    <Button asChild variant="secondary">
-                      <label className="file-upload-button">
-                        <FileUp size={17} />
-                        <span>上传文件</span>
-                        <input type="file" onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) uploadAttachment(file, booking.id).catch((error) => setSyncError(error instanceof Error ? error.message : "上传失败"));
-                        }} />
-                      </label>
-                    </Button>
+                    <FileUploadButton
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) uploadAttachment(file, booking.id).catch((error) => setSyncError(error instanceof Error ? error.message : "上传失败"));
+                      }}
+                    >
+                      <FileUp size={17} />
+                      <span>上传文件</span>
+                    </FileUploadButton>
                     <div className="attachment-list">
                       {(booking.attachmentIds ?? []).map((id) => {
                         const attachment = draft.attachments.find((item) => item.id === id);
@@ -2389,19 +2394,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <strong>旅行证件和收据</strong>
                     <span>上传护照、签证、酒店确认单、景点门票、交通票券、保险和电子收据。</span>
                   </div>
-                  <Button asChild variant="secondary">
-                    <label className="file-upload-button">
-                      <FileUp size={17} />
-                      <span>上传文件</span>
-                      <input
-                        type="file"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) uploadAttachment(file).catch((error) => setSyncError(error instanceof Error ? error.message : "上传失败"));
-                        }}
-                      />
-                    </label>
-                  </Button>
+                  <FileUploadButton
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) uploadAttachment(file).catch((error) => setSyncError(error instanceof Error ? error.message : "上传失败"));
+                    }}
+                  >
+                    <FileUp size={17} />
+                    <span>上传文件</span>
+                  </FileUploadButton>
                 </div>
                 {draft.attachments.map((attachment) => (
                   <article key={attachment.id} className="module-row file-row-editor">
@@ -2583,19 +2584,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     {...aiImportForm.register("text")}
                   />
                   <div className="ai-import-actions">
-                    <Button asChild variant="secondary">
-                      <label className="file-upload-button">
-                        <ImageUp size={18} />
-                        <span>{isOcrRunning ? "识别中" : "上传截图识别"}</span>
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp"
-                          multiple
-                          disabled={isOcrRunning || isAiRunning || !user}
-                          onChange={requestScreenshotOcr}
-                        />
-                      </label>
-                    </Button>
+                    <FileUploadButton
+                      accept="image/png,image/jpeg,image/webp"
+                      disabled={isOcrRunning || isAiRunning || !user}
+                      multiple
+                      onChange={requestScreenshotOcr}
+                    >
+                      <ImageUp size={18} />
+                      <span>{isOcrRunning ? "识别中" : "上传截图识别"}</span>
+                    </FileUploadButton>
                     <Button variant="secondary" type="button" onClick={aiImportForm.handleSubmit((values) => void requestAiDraft("import", values))} disabled={isAiRunning || isOcrRunning || !aiImportText.trim() || !user}>
                       <FileUp size={18} />
                       <span>{isAiRunning ? "读取中" : "导入草稿"}</span>
