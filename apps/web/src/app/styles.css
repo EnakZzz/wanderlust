@@ -4147,8 +4147,8 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .trip-card { aspect-ratio: 1.85 / 1; }
   .plan-home-list .trip-card {
     aspect-ratio: auto;
-    min-height: 216px;
-    grid-template-rows: minmax(150px, 1fr) 58px;
+    min-height: 236px;
+    grid-template-rows: minmax(170px, 1fr) 58px;
   }
   .plan-home-list .trip-card-open {
     grid-template-columns: 64px minmax(0, 1fr);
@@ -4164,6 +4164,9 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   }
   .plan-home-list .trip-card-copy small {
     margin-top: 10px;
+    align-self: start;
+    min-height: 48px;
+    -webkit-line-clamp: 3;
   }
   .new-trip-button { justify-self: start; }
   .plan-home-heading { align-items: stretch; flex-direction: column; }

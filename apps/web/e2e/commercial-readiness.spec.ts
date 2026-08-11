@@ -622,10 +622,13 @@ test("mobile routebook library keeps trip cards readable", async ({ page }) => {
         const cardBox = card.getBoundingClientRect();
         const title = card.querySelector<HTMLElement>(".trip-card-copy strong");
         const titleBox = title?.getBoundingClientRect();
+        const summary = card.querySelector<HTMLElement>(".trip-card-copy small");
         return {
           cardWidth: cardBox.width,
           titleWidth: titleBox?.width ?? 0,
-          titleOverflowY: title ? title.scrollHeight - title.clientHeight : 0
+          titleOverflowY: title ? title.scrollHeight - title.clientHeight : 0,
+          summaryHeight: summary?.getBoundingClientRect().height ?? 0,
+          summaryOverflowY: summary ? summary.scrollHeight - summary.clientHeight : 0
         };
       });
 
@@ -642,6 +645,8 @@ test("mobile routebook library keeps trip cards readable", async ({ page }) => {
       expect(card.cardWidth, JSON.stringify(layout)).toBeGreaterThan(280);
       expect(card.titleWidth, JSON.stringify(layout)).toBeGreaterThan(150);
       expect(card.titleOverflowY, JSON.stringify(layout)).toBeLessThanOrEqual(2);
+      expect(card.summaryHeight, JSON.stringify(layout)).toBeGreaterThanOrEqual(44);
+      expect(card.summaryOverflowY, JSON.stringify(layout)).toBeLessThanOrEqual(2);
     }
   }
 
