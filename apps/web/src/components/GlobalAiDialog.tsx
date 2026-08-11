@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Send, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,8 +15,10 @@ type OpenGlobalAiDialogEventDetail = {
 };
 
 export function GlobalAiDialog() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
+  const hiddenOnThisRoute = pathname === "/share";
 
   useEffect(() => {
     function openFromEvent(event: Event) {
@@ -30,6 +33,8 @@ export function GlobalAiDialog() {
     window.addEventListener(openGlobalAiDialogEvent, openFromEvent);
     return () => window.removeEventListener(openGlobalAiDialogEvent, openFromEvent);
   }, []);
+
+  if (hiddenOnThisRoute) return null;
 
   function submitPrompt() {
     const nextPrompt = prompt.trim();
@@ -86,4 +91,3 @@ export function GlobalAiDialog() {
     </>
   );
 }
-

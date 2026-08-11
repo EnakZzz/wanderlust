@@ -585,6 +585,7 @@ test("public share routebook renders safely with legacy itinerary types", async 
   await expect(page.getByRole("heading", { name: "东京公开路书" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "浅草寺散步" })).toBeVisible();
   await expect(page.getByText("活动").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "打开 AI 修改窗口" })).toHaveCount(0);
   const routePosition = await page.locator(".share-route").boundingBox();
   const viewport = page.viewportSize();
   expect(routePosition?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(viewport?.height ?? 0);
@@ -606,6 +607,7 @@ test("invalid public share links show a customer-facing error", async ({ page })
   await expect(page.getByRole("heading", { name: "分享不可用" })).toBeVisible();
   await expect(page.getByText("无法打开分享路书")).toBeVisible();
   await expect(page.getByText(/Unexpected token|DOCTYPE|JSON/i)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "打开 AI 修改窗口" })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 
