@@ -4035,7 +4035,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .ai-assistant {
     right: 12px;
     bottom: 12px;
-    left: 12px;
+    left: auto;
   }
   .ai-assistant.open {
     right: 10px;

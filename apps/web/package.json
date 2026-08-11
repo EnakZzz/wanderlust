@@ -7,6 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "deploy": "powershell -ExecutionPolicy Bypass -File ../../scripts/deploy-cloudflare-web.ps1",
+    "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -40,9 +41,11 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260719.1",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^22.19.2",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "serve": "^14.2.6",
     "tailwindcss": "^4.1.18",
     "wrangler": "^4.112.0"
   }

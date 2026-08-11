@@ -5,6 +5,8 @@ node_modules/
 # Web
 apps/web/.next/
 apps/web/out/
+apps/web/playwright-report/
+apps/web/test-results/
 
 # Expo / React Native
 apps/mobile/.expo/
