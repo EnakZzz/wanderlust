@@ -442,6 +442,56 @@ test("global AI prompt routes into the routebook preview assistant", async ({ pa
   await expect(page.getByText("登录后可使用 AI 修改行程。")).toBeVisible();
 });
 
+test("AI itinerary changes render a confirmable preview before applying", async ({ page }) => {
+  await mockSignedInRuntime(page);
+  await page.route("**/api/ai/patch", async (route) => {
+    const body = await route.request().postDataJSON();
+    const day = body.trip.days[0];
+    const item = day.items[0];
+
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        provider: "workers-ai",
+        model: "@cf/test-model",
+        proposal: {
+          id: "proposal_relaxed_morning",
+          summary: "上午节奏调整预览",
+          operations: [
+            {
+              id: "op_relax_first_item",
+              type: "update_item",
+              summary: "把上午行程改成浅草寺慢游",
+              dayId: day.id,
+              itemId: item.id,
+              before: { title: item.title },
+              after: { title: "浅草寺慢游" }
+            }
+          ]
+        }
+      })
+    });
+  });
+
+  await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "添加行程项" }).click();
+  await expect(page.getByRole("heading", { name: "新的行程项" })).toBeVisible();
+
+  await page.getByRole("button", { name: "打开 AI 修改窗口" }).click();
+  await page.getByPlaceholder("例如：把第三天节奏放松一点，晚餐换成更有当地特色的选择。").fill("把第一天上午节奏放松一点");
+  await page.getByRole("button", { name: "进入预览" }).click();
+  await page.getByRole("button", { name: "生成修改预览" }).click();
+
+  await expect(page.getByText("上午节奏调整预览")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "浅草寺慢游" })).toHaveCount(0);
+  await expectVisibleTapTargetsAtLeast44(page, ".ai-operation-checkbox, .ai-patch-preview-heading button");
+
+  await page.getByRole("button", { name: "应用勾选修改" }).click();
+  await expect(page.getByRole("heading", { name: "浅草寺慢游" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("home page brings the routebook editor into the first viewport", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

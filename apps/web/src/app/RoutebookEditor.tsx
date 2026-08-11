@@ -2988,6 +2988,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     return (
                       <label key={operation.id} className="ai-operation-row">
                         <Checkbox
+                          className="ai-operation-checkbox"
                           checked={selectedAiPatchOperationIds.includes(operation.id)}
                           onCheckedChange={() => toggleAiPatchOperation(operation.id)}
                         />
