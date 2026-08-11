@@ -2969,7 +2969,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .share-hero-actions a,
 .share-hero-actions span {
-  min-height: 42px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
