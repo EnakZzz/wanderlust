@@ -554,6 +554,35 @@ test("editor module rail and module AI actions keep usable tap targets", async (
   await expectNoHorizontalOverflow(page);
 });
 
+test("mobile editor module rail stays single row clear of the floating AI launcher", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  if ((page.viewportSize()?.width ?? 0) <= 500) {
+    const layout = await page.locator(".editor-module-rail").evaluate((rail) => {
+      const launcher = document.querySelector<HTMLElement>(".global-ai-launcher")?.getBoundingClientRect();
+      const items = Array.from(rail.querySelectorAll<HTMLElement>(".rail-item")).map((item) => item.getBoundingClientRect());
+      const rows = new Set(items.map((item) => Math.round(item.top)));
+      const overlappedItems = launcher
+        ? items.filter((item) => !(launcher.right < item.left || launcher.left > item.right || launcher.bottom < item.top || launcher.top > item.bottom)).length
+        : 0;
+
+      return {
+        rows: rows.size,
+        overlappedItems,
+        scrollsHorizontally: rail.scrollWidth > rail.clientWidth,
+        itemCount: items.length
+      };
+    });
+
+    expect(layout.itemCount).toBeGreaterThan(5);
+    expect(layout.rows).toBe(1);
+    expect(layout.scrollsHorizontally).toBe(true);
+    expect(layout.overlappedItems).toBe(0);
+  }
+
+  await expectNoHorizontalOverflow(page);
+});
+
 test("local routebook editing supports a first itinerary item without login", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
