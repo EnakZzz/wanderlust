@@ -1382,6 +1382,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 
 .rail-item {
+  min-width: 44px;
   min-height: 54px;
   height: auto;
   flex: 1 1 0;
@@ -2080,9 +2081,9 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .module-ai-button {
   flex: 0 0 auto;
-  width: 42px;
-  height: 42px;
-  min-height: 42px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
   background: #fffdf8;
   color: var(--accent);
   border-color: color-mix(in srgb, var(--accent) 28%, var(--line));

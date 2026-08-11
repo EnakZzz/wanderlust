@@ -546,6 +546,14 @@ test("home page brings the routebook editor into the first viewport", async ({ p
   await expectNoHorizontalOverflow(page);
 });
 
+test("editor module rail and module AI actions keep usable tap targets", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.locator(".editor-module-rail").scrollIntoViewIfNeeded();
+  await expectVisibleTapTargetsAtLeast44(page, ".editor-module-rail .rail-item, .module-ai-button");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("local routebook editing supports a first itinerary item without login", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
