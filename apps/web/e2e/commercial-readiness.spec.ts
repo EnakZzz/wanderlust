@@ -605,6 +605,22 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expectNoHorizontalOverflow(page);
 });
 
+test("budget member toggles keep mobile tap targets", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "预算" }).click();
+  await page.getByRole("button", { name: "添加账单" }).click();
+
+  const memberPill = page.locator(".member-toggle-group").first().locator(".member-pill").first();
+  await memberPill.scrollIntoViewIfNeeded();
+  await expect(memberPill).toHaveClass(/active/);
+  await expectVisibleTapTargetsAtLeast44(page, ".member-toggle-group .member-pill");
+
+  await memberPill.click();
+  await expect(memberPill).not.toHaveClass(/active/);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("global AI launcher does not cover mobile editor forms", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

@@ -2743,10 +2743,10 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   text-transform: uppercase;
 }
 .member-pill {
-  min-height: 34px;
+  min-height: 44px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 0 12px;
+  padding: 0 14px;
   background: var(--surface);
   color: var(--muted);
   font-weight: 900;
