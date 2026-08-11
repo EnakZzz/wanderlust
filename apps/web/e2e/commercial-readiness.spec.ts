@@ -605,6 +605,20 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expectNoHorizontalOverflow(page);
 });
 
+test("map pins keep mobile tap targets and return to places", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "地点" }).click();
+  await page.getByRole("button", { name: "添加地点" }).click();
+  await page.getByRole("radio", { name: "地图" }).click();
+
+  await expectVisibleTapTargetsAtLeast44(page, ".map-pin");
+  await page.locator(".map-pin").first().click();
+
+  await expect(page.getByPlaceholder("搜索或粘贴地点名称")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("budget member toggles keep mobile tap targets", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
