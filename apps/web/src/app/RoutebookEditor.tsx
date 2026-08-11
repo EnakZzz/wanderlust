@@ -1561,8 +1561,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   }
 
   async function copyShareUrl(url: string) {
-    await navigator.clipboard.writeText(url);
-    setShareStatus("分享链接已复制。");
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareStatus("分享链接已复制。");
+    } catch {
+      setShareStatus("分享链接已生成，可手动复制。");
+    }
   }
 
   async function createOrCopyShare() {

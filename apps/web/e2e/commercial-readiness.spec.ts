@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+const localDraftStorageKey = "wanderlust.editorDraft.v2";
+
 const shellPages = [
   { path: "/", heading: "随身路书" },
   { path: "/dashboard", headingPattern: /旅行|规划|旅程/ },
@@ -30,6 +32,107 @@ async function mockAnonymousRuntime(page: Page) {
       body: JSON.stringify({ error: "unauthorized" })
     })
   );
+}
+
+async function mockSignedInRuntime(page: Page) {
+  const tripId = "trip_11111111-1111-4111-8111-111111111111";
+  const trip = {
+    id: tripId,
+    ownerId: "google:test-user",
+    title: "东京商业路书",
+    destination: "Tokyo, Japan",
+    startDate: "2026-09-01",
+    endDate: "2026-09-02",
+    timezone: "Asia/Tokyo",
+    status: "draft",
+    days: [
+      {
+        id: `${tripId}-2026-09-01`,
+        tripId,
+        date: "2026-09-01",
+        title: "抵达东京",
+        sortOrder: 0,
+        items: []
+      },
+      {
+        id: `${tripId}-2026-09-02`,
+        tripId,
+        date: "2026-09-02",
+        title: "城市探索",
+        sortOrder: 1,
+        items: []
+      }
+    ],
+    places: [],
+    bookings: [],
+    attachments: [],
+    packingItems: [],
+    weather: [],
+    budgetMembers: [],
+    budgetItems: []
+  };
+  const summary = {
+    id: tripId,
+    title: trip.title,
+    destination: trip.destination,
+    status: trip.status,
+    startDate: trip.startDate,
+    endDate: trip.endDate,
+    dayCount: 2,
+    placeCount: 0,
+    bookingCount: 0,
+    updatedAt: "2026-08-12T00:00:00.000Z"
+  };
+  const calls = { saves: 0, shares: 0 };
+
+  await page.route("**/auth/session", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ user: { id: "google:test-user", provider: "google", email: "test@example.com", name: "Test Traveler" } })
+    })
+  );
+  await page.route("**/auth/config", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ providers: { google: { configured: true }, apple: { configured: false } } })
+    })
+  );
+  await page.route("**/api/trips", async (route) => {
+    if (route.request().method() === "POST") {
+      calls.saves += 1;
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ trip }) });
+    }
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ trips: [summary] }) });
+  });
+  await page.route(`**/api/trips/${encodeURIComponent(tripId)}`, async (route) => {
+    if (route.request().method() === "PUT") {
+      calls.saves += 1;
+      const nextTrip = await route.request().postDataJSON();
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ trip: nextTrip }) });
+    }
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ trip }) });
+  });
+  await page.route(`**/api/trips/${encodeURIComponent(tripId)}/share`, (route) => {
+    calls.shares += 1;
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        share: {
+          id: "share_test",
+          tripId,
+          token: "public_tokyo_test",
+          visibility: "public",
+          allowCopy: true,
+          revokedAt: null,
+          expiresAt: null
+        }
+      })
+    });
+  });
+  await page.exposeFunction("getCommercialApiCalls", () => calls);
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -131,6 +234,50 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await page.getByRole("button", { name: "添加预订" }).click();
   await expectAnyInputValue(page, "新的预订");
   await expectNoHorizontalOverflow(page);
+});
+
+test("anonymous users can create a named local routebook and keep it after refresh", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("button", { name: "编辑路书信息" }).click();
+  await expect(page.getByRole("dialog", { name: "更新路书信息" })).toBeVisible();
+  await page.getByLabel("路书标题").fill("东京亲子路书");
+  await page.getByLabel("目的地").fill("Tokyo, Japan");
+  await page.getByLabel("时区").fill("Asia/Tokyo");
+  await page.locator(".routebook-meta-form input[type='date']").first().fill("2026-09-01");
+  await page.locator(".routebook-meta-form input[type='date']").nth(1).fill("2026-09-03");
+  await page.getByRole("button", { name: "保存修改" }).click();
+
+  await expect(page.getByRole("button", { name: /东京亲子路书/ })).toBeVisible();
+  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.getByRole("button", { name: "保存" }).click();
+
+  const storedTitle = await page.evaluate((storageKey) => {
+    const stored = window.localStorage.getItem(storageKey);
+    return stored ? JSON.parse(stored).title : null;
+  }, localDraftStorageKey);
+  expect(storedTitle).toBe("东京亲子路书");
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("button", { name: /东京亲子路书/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "新的行程项" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("signed-in users can save and create a share link for a routebook", async ({ page }) => {
+  await mockSignedInRuntime(page);
+  await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("button", { name: /^当前路书 东京商业路书/ })).toBeVisible();
+  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.getByRole("button", { name: "保存" }).click();
+  await page.getByRole("button", { name: "分享" }).click();
+
+  await expect(page.getByText(/分享链接已(复制|生成)/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "打开只读页" })).toHaveAttribute("href", /token=public_tokyo_test/);
+  await expect
+    .poll(async () => page.evaluate(async () => (window as unknown as { getCommercialApiCalls: () => Promise<{ saves: number; shares: number }> }).getCommercialApiCalls()))
+    .toMatchObject({ saves: 1, shares: 1 });
 });
 
 test("id based journey URL has a browser fallback in static-compatible routing", async ({ page }) => {
