@@ -364,16 +364,16 @@ label span {
 }
 
 .product-nav-links a {
-  min-height: 34px;
+  min-height: 44px;
   gap: 6px;
-  padding: 0 11px;
+  padding: 0 12px;
   border-radius: 999px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 900;
 }
 .product-nav-icon-links a {
-  min-width: 38px;
+  min-width: 44px;
   justify-content: center;
 }
 .product-nav-icon-links a svg {

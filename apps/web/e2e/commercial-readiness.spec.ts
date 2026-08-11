@@ -353,13 +353,13 @@ for (const pageSpec of shellPages) {
 }
 
 for (const path of ["/", "/dashboard"] as const) {
-  test(`top navigation auth actions keep usable tap targets at ${path}`, async ({ page }) => {
+  test(`top navigation keeps usable tap targets at ${path}`, async ({ page }) => {
     await page.goto(path, { waitUntil: "domcontentloaded" });
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect(page.locator(path === "/" ? ".hero-shell .product-nav" : ".product-nav").first()).toBeVisible();
     await expect(page.locator(".product-nav-actions a").first()).toBeVisible();
 
-    const actions = await page.locator(".product-nav-actions a").evaluateAll((links) =>
+    const actions = await page.locator(".product-nav-links a, .product-nav-actions a").evaluateAll((links) =>
       links
         .filter((link) => {
           const style = getComputedStyle(link);
