@@ -1,5 +1,6 @@
 "use client";
 
+import type { MouseEvent } from "react";
 import { Compass, LayoutDashboard, LogOut, MapPinned, Plane, Route, Search, Sparkles } from "lucide-react";
 import { productBrand } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,13 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
 
   const className = tone === "dark" ? "product-nav product-nav-dark" : "product-nav";
 
+  function openAssistantInCurrentEditor(event: MouseEvent<HTMLAnchorElement>) {
+    if (!document.getElementById("editor")) return;
+    event.preventDefault();
+    window.location.hash = "editor";
+    window.dispatchEvent(new CustomEvent("wanderlust:open-ai-assistant"));
+  }
+
   return (
     <nav className={className} aria-label="Primary">
       <a className="product-nav-brand" href="/">
@@ -46,7 +54,12 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
             return (
               <Tooltip key={item.id}>
                 <TooltipTrigger asChild>
-                  <a className={active === item.id ? "active" : undefined} href={item.href} aria-label={item.label}>
+                  <a
+                    className={active === item.id ? "active" : undefined}
+                    href={item.href}
+                    aria-label={item.label}
+                    onClick={item.id === "assistant" ? openAssistantInCurrentEditor : undefined}
+                  >
                     <Icon size={16} />
                     <span>{item.label}</span>
                   </a>
