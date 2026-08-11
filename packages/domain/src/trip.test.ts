@@ -3,8 +3,10 @@ import {
   applyItineraryPatchOperations,
   buildTripEditorPath,
   buildMapsUrl,
+  createPersistedTripId,
   createTripDays,
   getTodayTripDay,
+  isPersistedTripId,
   parseTripIdFromEditorPath,
   removeItineraryItem,
   sortItineraryItems,
@@ -200,6 +202,14 @@ describe("getTodayTripDay", () => {
 });
 
 describe("routebook editor routes", () => {
+  it("creates persisted trip ids with a UUID payload", () => {
+    const id = createPersistedTripId(() => "123e4567-e89b-42d3-a456-426614174000");
+    expect(id).toBe("trip_123e4567-e89b-42d3-a456-426614174000");
+    expect(isPersistedTripId(id)).toBe(true);
+    expect(isPersistedTripId("local_draft")).toBe(false);
+    expect(isPersistedTripId("trip_ai_draft")).toBe(false);
+  });
+
   it("uses a path segment containing the trip id for saved trip editor URLs", () => {
     expect(buildTripEditorPath("trip_abc/123")).toBe("/journeys/trip_abc%2F123");
   });

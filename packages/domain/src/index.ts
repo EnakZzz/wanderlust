@@ -416,6 +416,26 @@ export type AiItineraryPatchProposal = z.infer<typeof AiItineraryPatchProposalSc
 export type AppliedTrip = z.output<typeof TripSchema>;
 type AppliedItineraryItem = z.output<typeof ItineraryItemSchema>;
 
+const persistedTripIdPattern = /^trip_[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function fallbackRandomUUID(): string {
+  const random = globalThis.crypto?.randomUUID?.();
+  if (random) return random;
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (token) => {
+    const value = Math.floor(Math.random() * 16);
+    const nibble = token === "x" ? value : (value & 0x3) | 0x8;
+    return nibble.toString(16);
+  });
+}
+
+export function createPersistedTripId(randomUUID: () => string = fallbackRandomUUID): string {
+  return `trip_${randomUUID()}`;
+}
+
+export function isPersistedTripId(id: string): boolean {
+  return persistedTripIdPattern.test(id);
+}
+
 export type GateResult =
   | { allowed: true }
   | {

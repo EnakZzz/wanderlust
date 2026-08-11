@@ -35,6 +35,7 @@ import {
   buildTripEditorPath,
   buildMapsUrl,
   applyItineraryPatchOperations,
+  createPersistedTripId,
   createTripDays,
   parseTripIdFromEditorPath,
   removeItineraryItem,
@@ -271,7 +272,7 @@ function createDraftId(prefix: string): string {
 }
 
 function createBlankTripDraft(): TripDraft {
-  const id = `trip_${crypto.randomUUID()}`;
+  const id = createPersistedTripId();
   return createEmptyTripDraft(id, "account");
 }
 

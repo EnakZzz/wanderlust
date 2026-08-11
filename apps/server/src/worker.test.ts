@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { isPersistedTripId } from "@wanderlust/domain";
 import worker, { type Env } from "./worker";
 
 class MemoryD1 {
@@ -107,10 +108,13 @@ describe("wanderlust worker", () => {
     );
 
     expect(createResponse.status).toBe(201);
+    const created = (await createResponse.json()) as { trip: typeof trip };
+    expect(isPersistedTripId(created.trip.id)).toBe(true);
+    expect(created.trip.id).not.toBe(trip.id);
 
-    const getResponse = await worker.fetch(new Request("https://api.example.com/trips/trip_test"), env);
+    const getResponse = await worker.fetch(new Request(`https://api.example.com/trips/${created.trip.id}`), env);
     expect(getResponse.status).toBe(200);
-    await expect(getResponse.json()).resolves.toEqual({ trip });
+    await expect(getResponse.json()).resolves.toEqual({ trip: created.trip });
   });
 
   test("stores and reads attachment bytes through R2", async () => {
