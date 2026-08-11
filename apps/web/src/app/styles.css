@@ -4098,7 +4098,14 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .brand { max-width: 138px; }
   .auth-panel { flex-wrap: wrap; justify-content: flex-end; max-width: calc(100vw - 178px); }
   .provider-button { padding: 0 8px; }
-  .workspace { grid-template-columns: 1fr; }
+  .workspace,
+  .workspace:not(.workspace-loading),
+  .workspace.workspace-editor,
+  .workspace.workspace-editor:not(.workspace-loading),
+  .workspace.workspace-plan-home:not(.workspace-loading) {
+    width: calc(100% - 32px);
+    grid-template-columns: minmax(0, 1fr);
+  }
   .rail { top: 8px; width: 100%; overflow-x: auto; justify-content: flex-start; padding: 5px; scrollbar-width: none; transform: none; left: auto; }
   .rail::-webkit-scrollbar { display: none; }
   .rail-item { min-width: 0; min-height: 50px; flex: 1 0 48px; }
@@ -4171,7 +4178,18 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .new-trip-button { justify-self: start; }
   .plan-home-heading { align-items: stretch; flex-direction: column; }
   .editor-heading { grid-template-columns: 1fr; }
-  .journey-day-shell { grid-template-columns: 24px minmax(0, 1fr); gap: 10px; }
+  .journey-day-shell,
+  .workspace:not(.workspace-loading) .journey-day-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .journey-day-rail { display: none; }
+  .journey-day-content,
+  .workspace:not(.workspace-loading) .journey-day-content,
+  .journey-timeline,
+  .workspace:not(.workspace-loading) .journey-timeline {
+    width: 100%;
+  }
   .journey-day-hero { align-items: stretch; flex-direction: column; }
   .journey-day-tools { justify-content: flex-start; }
   .journey-date-control,

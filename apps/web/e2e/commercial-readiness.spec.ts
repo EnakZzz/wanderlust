@@ -727,12 +727,19 @@ test("expanded itinerary cards stay readable on mobile", async ({ page }) => {
   if ((page.viewportSize()?.width ?? 0) <= 500) {
     const layout = await page.locator(".route-step-card").first().evaluate((card) => {
       const body = card.querySelector<HTMLElement>(".route-step-body");
+      const content = card.closest<HTMLElement>(".journey-day-content");
+      const cardBox = card.getBoundingClientRect();
+      const contentBox = content?.getBoundingClientRect();
       return {
         columns: getComputedStyle(card).gridTemplateColumns.split(" ").length,
+        cardWidth: Math.round(cardBox.width),
+        contentWidth: Math.round(contentBox?.width ?? 0),
         bodyWidth: Math.round(body?.getBoundingClientRect().width ?? 0)
       };
     });
     expect(layout.columns).toBe(1);
+    expect(layout.cardWidth, JSON.stringify(layout)).toBeGreaterThan(320);
+    expect(layout.cardWidth, JSON.stringify(layout)).toBeGreaterThanOrEqual(layout.contentWidth - 2);
     expect(layout.bodyWidth).toBeGreaterThan(260);
   }
 
