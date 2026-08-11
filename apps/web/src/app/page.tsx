@@ -1,5 +1,7 @@
 import { Plane } from "lucide-react";
 import { productBrand } from "@wanderlust/domain";
+import { TravelImage } from "@/components/TravelImage";
+import { heroVisuals } from "@/lib/travel-visuals";
 import { ProductNav } from "./ProductNav";
 import { RoutebookEditor } from "./RoutebookEditor";
 
@@ -7,7 +9,7 @@ export default function HomePage() {
   return (
     <main>
       <section className="hero-shell">
-        <div className="hero-image" />
+        <TravelImage src={heroVisuals.home} alt="" className="hero-image" overlayClassName="hero-image-overlay" sizes="100vw" priority />
         <ProductNav tone="dark" active="home" />
         <div className="hero-copy">
           <p className="eyebrow">离线优先的旅行路书</p>

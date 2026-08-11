@@ -48,6 +48,7 @@ import {
   type TripDay,
 } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
+import { TravelImage } from "@/components/TravelImage";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +61,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { getDestinationTheme, getItineraryTypeVisual } from "@/lib/travel-visuals";
 import {
   attachmentCategories,
   bookingTypes,
@@ -101,64 +103,6 @@ const itineraryTypeLabels: Record<ItineraryItem["type"], string> = {
   activity: "活动",
   note: "备注",
   booking: "预订"
-};
-
-const itineraryTypeVisuals: Record<ItineraryItem["type"], { image: string; color: string }> = {
-  place: { image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80", color: "#6f7b66" },
-  food: { image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80", color: "#8b735b" },
-  hotel: { image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=900&q=80", color: "#617986" },
-  transport: { image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=900&q=80", color: "#4f6f7f" },
-  activity: { image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=900&q=80", color: "#7b6f58" },
-  note: { image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80", color: "#726b63" },
-  booking: { image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=900&q=80", color: "#8a6f59" }
-};
-
-const destinationThemes = [
-  {
-    keywords: ["kyoto", "京都", "japan", "日本", "tokyo", "东京", "大阪", "osaka"],
-    accent: "#cf7483",
-    ink: "#8f4f5e",
-    wash: "#fff5f7",
-    line: "#f3d4da",
-    glow: "rgba(207, 116, 131, 0.2)",
-    image: "https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=1600&q=80"
-  },
-  {
-    keywords: ["sea", "island", "beach", "bali", "maldives", "海", "岛", "巴厘", "马尔代夫", "红海"],
-    accent: "#3f95a3",
-    ink: "#2e6f7b",
-    wash: "#eefbfb",
-    line: "#c6e7e8",
-    glow: "rgba(63, 149, 163, 0.2)",
-    image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80"
-  },
-  {
-    keywords: ["egypt", "cairo", "desert", "埃及", "开罗", "沙漠", "摩洛哥", "morocco"],
-    accent: "#bd7a45",
-    ink: "#8a5636",
-    wash: "#fff6ec",
-    line: "#ecd2b8",
-    glow: "rgba(189, 122, 69, 0.2)",
-    image: "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=1600&q=80"
-  },
-  {
-    keywords: ["forest", "mountain", "swiss", "alps", "森林", "山", "瑞士", "阿尔卑斯"],
-    accent: "#66845c",
-    ink: "#4d6846",
-    wash: "#f3f9ef",
-    line: "#d5e5cf",
-    glow: "rgba(102, 132, 92, 0.2)",
-    image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1600&q=80"
-  }
-] satisfies Array<{ keywords: string[]; accent: string; ink: string; wash: string; line: string; glow: string; image: string }>;
-
-const defaultDestinationTheme = {
-  accent: "#8b735b",
-  ink: "#6f5d49",
-  wash: "#fbf7ef",
-  line: "#e7dccd",
-  glow: "rgba(139, 115, 91, 0.18)",
-  image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1600&q=80"
 };
 
 const bookingTypeLabels: Record<Booking["type"], string> = {
@@ -606,11 +550,6 @@ function formatWeekday(date: string): string {
   return new Intl.DateTimeFormat("zh-CN", { weekday: "short" }).format(parsed);
 }
 
-function getDestinationTheme(destination: string) {
-  const normalized = destination.toLowerCase();
-  return destinationThemes.find((theme) => theme.keywords.some((keyword) => normalized.includes(keyword.toLowerCase()))) ?? defaultDestinationTheme;
-}
-
 function getItineraryIconLabel(item: ItineraryItem): string {
   const labels: Record<ItineraryItem["type"], string> = {
     place: "景",
@@ -656,7 +595,7 @@ function getItemDescription(item: ItineraryItem, place?: Place): string {
 }
 
 function getItemImage(item: ItineraryItem, place?: Place): string {
-  return place?.imageUrl || itineraryTypeVisuals[item.type].image;
+  return place?.imageUrl || getItineraryTypeVisual(item.type).image;
 }
 
 function getItemNavigationTarget(item: ItineraryItem, place?: Place): { latitude: number; longitude: number; label: string } | undefined {
@@ -978,8 +917,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     "--journey-ink": destinationTheme.ink,
     "--journey-wash": destinationTheme.wash,
     "--journey-line": destinationTheme.line,
-    "--journey-glow": destinationTheme.glow,
-    "--journey-theme-image": `url(${destinationTheme.image})`
+    "--journey-glow": destinationTheme.glow
   } as CSSProperties;
 
   function getRequestedTripId(): string | null {
@@ -2037,6 +1975,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   </div>
                   <div className="journey-day-content">
                     <div className="journey-day-hero">
+                      <TravelImage
+                        className="journey-day-hero-image"
+                        src={destinationTheme.image}
+                        alt=""
+                        overlayClassName="journey-day-hero-image-overlay"
+                        sizes="(max-width: 900px) 100vw, 900px"
+                        priority={draft.days.findIndex((day) => day.id === selectedDay.id) === 0}
+                      />
                       <div>
                         <p className="eyebrow">DAY {String(draft.days.findIndex((day) => day.id === selectedDay.id) + 1).padStart(2, "0")}</p>
                         <input
@@ -2088,13 +2034,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                               <em>{getItineraryIconLabel(item)}</em>
                               <b>{itineraryTypeLabels[item.type]}</b>
                             </aside>
-                            <div
+                            <TravelImage
                               className="route-step-image"
+                              src={getItemImage(item, linkedPlace)}
+                              alt=""
+                              overlayClassName="route-step-image-overlay"
+                              sizes="(max-width: 720px) 100vw, 420px"
                               style={{
-                                backgroundColor: itineraryTypeVisuals[item.type].color,
-                                backgroundImage: `linear-gradient(90deg, rgba(29, 27, 24, 0.08), rgba(29, 27, 24, 0.02)), url(${getItemImage(item, linkedPlace)})`
+                                backgroundColor: getItineraryTypeVisual(item.type).color
                               }}
-                              aria-hidden="true"
                             />
                             <div className="route-step-body">
                               <div className="route-step-topline">

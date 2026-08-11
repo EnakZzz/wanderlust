@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, CheckSquare, Clock, MapPin, Navigation, Plane, Share2, Ticket } from "lucide-react";
 import { buildMapsUrl, productBrand, sortItineraryItems, type ItineraryItem, type Place, type Trip } from "@wanderlust/domain";
+import { TravelImage } from "@/components/TravelImage";
+import { getItineraryTypeVisual, heroVisuals } from "@/lib/travel-visuals";
 
 type PublicShare = {
   id: string;
@@ -27,16 +29,6 @@ const typeLabels: Record<ItineraryItem["type"], string> = {
   activity: "活动",
   note: "备注",
   booking: "预订"
-};
-
-const typeImages: Record<ItineraryItem["type"], string> = {
-  place: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
-  food: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
-  hotel: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
-  transport: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80",
-  activity: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
-  note: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
-  booking: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80"
 };
 
 function formatDateRange(trip: Trip): string {
@@ -130,7 +122,7 @@ export default function SharePage() {
   return (
     <main className="share-page">
       <section className="share-hero">
-        <div className="share-hero-image" />
+        <TravelImage src={heroVisuals.share} alt="" className="share-hero-image" overlayClassName="share-hero-image-overlay" sizes="100vw" priority />
         <div className="share-hero-copy">
           <p className="eyebrow">只读分享路书</p>
           <h1>{trip.title}</h1>
@@ -169,7 +161,12 @@ export default function SharePage() {
                       const href = getNavigationHref(item, place);
                       return (
                         <article key={item.id} className="share-step">
-                          <div className="share-step-image" style={{ backgroundImage: `url(${place?.imageUrl ?? typeImages[item.type]})` }} aria-hidden="true" />
+                          <TravelImage
+                            className="share-step-image"
+                            src={place?.imageUrl ?? getItineraryTypeVisual(item.type).image}
+                            alt=""
+                            sizes="(max-width: 720px) 100vw, 360px"
+                          />
                           <div className="share-step-copy">
                             <div className="share-step-meta">
                               <span>{typeLabels[item.type]}</span>

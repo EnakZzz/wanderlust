@@ -5,6 +5,8 @@ import { FileUp, MapPinned, PlaneTakeoff, Plus, Route, Sparkles } from "lucide-r
 import { buildTripEditorPath } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
 import { MotionDiv, MotionSection } from "@/components/MotionShell";
+import { TravelImage } from "@/components/TravelImage";
+import { discoveryCards } from "@/lib/travel-visuals";
 import { DestinationSearchPanel, editorHref } from "./DestinationSearchPanel";
 import type { SessionUser, TripSummary } from "./routebook/types";
 
@@ -14,12 +16,6 @@ type DashboardState = {
   loaded: boolean;
   error?: string;
 };
-
-const discoveryCards = [
-  { eyebrow: "茶、寺与庭园", title: "京都", copy: "围绕茶、庭园和建筑，做一条慢节奏路线。", image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1200&q=80" },
-  { eyebrow: "第一次去也稳", title: "里斯本", copy: "电车、观景台、海鲜和一日游都很紧凑。", image: "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=1200&q=80" },
-  { eyebrow: "城市充电", title: "首尔", copy: "街区跳转、深夜小吃、快速交通和山边散步。", image: "https://images.unsplash.com/photo-1538485399081-7c8ed83d3d5c?auto=format&fit=crop&w=1200&q=80" }
-];
 
 async function readSession(): Promise<SessionUser | null> {
   const response = await fetch("/auth/session", { credentials: "include" });
@@ -171,7 +167,8 @@ export function DashboardClient() {
         </div>
         <div className="dashboard-discovery-grid">
           {discoveryCards.map((card) => (
-            <a key={card.title} href={editorHref(card.title)} style={{ backgroundImage: `linear-gradient(180deg, rgba(29,27,24,0.08), rgba(29,27,24,0.68)), url(${card.image})` }}>
+            <a key={card.title} href={editorHref(card.title)}>
+              <TravelImage src={card.image} alt="" className="dashboard-discovery-image" overlayClassName="dashboard-discovery-image-overlay" sizes="(max-width: 720px) 100vw, 33vw" />
               <span>{card.eyebrow}</span>
               <strong>{card.title}</strong>
               <small>{card.copy}</small>

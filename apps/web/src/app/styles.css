@@ -29,6 +29,22 @@ a { color: inherit; text-decoration: none; }
 
 button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
 
+.travel-image {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.travel-image-img {
+  object-fit: cover;
+}
+
+.travel-image-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 button, input, textarea, select {
   font: inherit;
 }
@@ -94,11 +110,12 @@ label span {
 .hero-image {
   position: absolute;
   inset: 0;
+  opacity: 0.92;
+}
+.hero-image-overlay {
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.38) 48%, rgba(0, 0, 0, 0.16)),
-    linear-gradient(to top, rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.14) 48%, rgba(0, 0, 0, 0.34)),
-    url("https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=2200&q=80") center/cover;
-  opacity: 0.92;
+    linear-gradient(to top, rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.14) 48%, rgba(0, 0, 0, 0.34));
 }
 
 .topbar {
@@ -539,6 +556,7 @@ label span {
 .dashboard-trip-card,
 .dashboard-empty-card,
 .dashboard-discovery-grid a {
+  position: relative;
   min-height: 190px;
   display: grid;
   align-content: end;
@@ -629,6 +647,18 @@ label span {
   background-size: cover;
   color: #fff8ee;
   text-shadow: 0 1px 12px rgba(29, 27, 24, 0.28);
+}
+.dashboard-discovery-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.dashboard-discovery-image-overlay {
+  background: linear-gradient(180deg, rgba(29,27,24,0.08), rgba(29,27,24,0.68));
+}
+.dashboard-discovery-grid a > :not(.dashboard-discovery-image) {
+  position: relative;
+  z-index: 1;
 }
 .dashboard-discovery-grid a span {
   background: rgba(255, 248, 238, 0.16);
@@ -1925,10 +1955,20 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   padding: 22px;
   border: 1px solid var(--journey-line);
   border-radius: 24px;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.76)),
-    var(--journey-theme-image) center/cover;
+  background: rgba(255, 255, 255, 0.86);
   box-shadow: 0 18px 48px var(--journey-glow);
+}
+.journey-day-hero-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.journey-day-hero-image-overlay {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.76));
+}
+.journey-day-hero > :not(.journey-day-hero-image) {
+  position: relative;
+  z-index: 1;
 }
 .journey-day-title-input {
   width: min(620px, 100%);
@@ -2015,8 +2055,9 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .route-step-image {
   min-height: 248px;
-  background-position: center;
-  background-size: cover;
+}
+.route-step-image-overlay {
+  background: linear-gradient(90deg, rgba(29, 27, 24, 0.08), rgba(29, 27, 24, 0.02));
 }
 .route-step-date-panel {
   position: relative;
@@ -2600,10 +2641,11 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .share-hero-image {
   position: absolute;
   inset: 0;
+}
+.share-hero-image-overlay {
   background:
     linear-gradient(90deg, rgba(18, 16, 13, 0.86), rgba(18, 16, 13, 0.38) 54%, rgba(18, 16, 13, 0.16)),
-    linear-gradient(to top, rgba(18, 16, 13, 0.72), rgba(18, 16, 13, 0.12)),
-    url("https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=2200&q=80") center/cover;
+    linear-gradient(to top, rgba(18, 16, 13, 0.72), rgba(18, 16, 13, 0.12));
 }
 .share-hero-copy {
   position: relative;
@@ -2757,8 +2799,6 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .share-step-image {
   min-height: 238px;
-  background-position: center;
-  background-size: cover;
 }
 .share-step-copy {
   display: grid;
