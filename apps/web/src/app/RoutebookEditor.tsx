@@ -487,14 +487,69 @@ function describeAiPatchOperation(operation: AiItineraryPatchOperation, trip: Tr
   };
 }
 
-function getAiPatchTouchedDayIds(proposal: AiItineraryPatchProposal | null, fallbackDayId: string): string[] {
-  if (!proposal?.operations.length) return [fallbackDayId];
+function getAiPatchTouchedDayIds(proposal: AiItineraryPatchProposal | null): string[] {
+  if (!proposal?.operations.length) return [];
   const dayIds = proposal.operations.flatMap((operation) => {
     if (operation.type === "move_item") return [operation.dayId, operation.toDayId];
     if (operation.type === "add_item" || operation.type === "update_item" || operation.type === "delete_item" || operation.type === "update_day") return [operation.dayId];
     return [];
   });
-  return dayIds.length ? Array.from(new Set(dayIds)) : [fallbackDayId];
+  return Array.from(new Set(dayIds));
+}
+
+function getAiPatchModuleChanges(
+  proposal: AiItineraryPatchProposal | null,
+  beforeTrip: TripDraft,
+  afterTrip: TripDraft | null,
+  selectedOperationIds: string[]
+): Array<{ id: string; module: string; before: string; after: string }> {
+  if (!proposal || !afterTrip) return [];
+  const selected = new Set(selectedOperationIds);
+  return proposal.operations.flatMap((operation) => {
+    if (!selected.has(operation.id)) return [];
+
+    if (operation.type === "update_place") {
+      const before = beforeTrip.places.find((item) => item.id === operation.placeId);
+      const after = afterTrip.places.find((item) => item.id === operation.placeId);
+      return [{ id: operation.id, module: "地点", before: formatPlacePreview(before), after: formatPlacePreview(after) }];
+    }
+
+    if (operation.type === "update_booking") {
+      const before = beforeTrip.bookings.find((item) => item.id === operation.bookingId);
+      const after = afterTrip.bookings.find((item) => item.id === operation.bookingId);
+      return [{ id: operation.id, module: "预订", before: formatBookingPreview(before), after: formatBookingPreview(after) }];
+    }
+
+    if (operation.type === "update_packing") {
+      const before = beforeTrip.packingItems.find((item) => item.id === operation.packingItemId);
+      const after = afterTrip.packingItems.find((item) => item.id === operation.packingItemId);
+      return [{ id: operation.id, module: "打包", before: formatPackingPreview(before), after: formatPackingPreview(after) }];
+    }
+
+    if (operation.type === "update_budget_item") {
+      const before = beforeTrip.budgetItems.find((item) => item.id === operation.budgetItemId);
+      const after = afterTrip.budgetItems.find((item) => item.id === operation.budgetItemId);
+      return [{ id: operation.id, module: "预算", before: formatBudgetPreview(before), after: formatBudgetPreview(after) }];
+    }
+
+    return [];
+  });
+}
+
+function formatPlacePreview(place?: Place): string {
+  return place ? [place.name, place.address, place.tags?.join(", "), place.isFavorite ? "收藏" : undefined, place.notes].filter(Boolean).join(" · ") : "未找到";
+}
+
+function formatBookingPreview(booking?: Booking): string {
+  return booking ? [booking.title, booking.provider, booking.confirmationCode, booking.status, booking.startsAt, booking.notes].filter(Boolean).join(" · ") : "未找到";
+}
+
+function formatPackingPreview(item?: PackingItem): string {
+  return item ? [item.title, item.category, `x${item.quantity}`, item.packed ? "已打包" : "未打包", item.notes].filter(Boolean).join(" · ") : "未找到";
+}
+
+function formatBudgetPreview(item?: BudgetItem): string {
+  return item ? [item.title, item.category, `${item.amount} ${item.currency}`, item.date, item.notes].filter(Boolean).join(" · ") : "未找到";
 }
 
 function formatTripSummaryLine(trip: TripSummary): string {
@@ -1004,7 +1059,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       return null;
     }
   }, [aiPatchPreview, draft, selectedAiPatchOperationIds]);
-  const aiPatchTouchedDayIds = useMemo(() => getAiPatchTouchedDayIds(aiPatchPreview?.proposal ?? null, selectedDay.id), [aiPatchPreview, selectedDay.id]);
+  const aiPatchTouchedDayIds = useMemo(() => getAiPatchTouchedDayIds(aiPatchPreview?.proposal ?? null), [aiPatchPreview]);
+  const aiPatchModuleChanges = useMemo(
+    () => getAiPatchModuleChanges(aiPatchPreview?.proposal ?? null, draft, aiPatchPreviewTrip, selectedAiPatchOperationIds),
+    [aiPatchPreview, aiPatchPreviewTrip, draft, selectedAiPatchOperationIds]
+  );
   const journeyThemeStyle = {
     "--journey-accent": destinationTheme.accent,
     "--journey-ink": destinationTheme.ink,
@@ -2831,34 +2890,48 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     );
                   })}
                 </div>
-                <div className="ai-before-after">
-                  <div className="ai-route-column">
-                    <strong>修改前</strong>
-                    {aiPatchTouchedDayIds.map((dayId) => {
-                      const day = draft.days.find((item) => item.id === dayId);
-                      if (!day) return null;
-                      return (
-                        <article key={day.id} className="ai-route-mini-day">
-                          <span>{day.title} · {day.date}</span>
-                          {day.items.map((item) => <p key={item.id}><b>{item.startTime ?? "--:--"}</b>{item.title}</p>)}
-                        </article>
-                      );
-                    })}
+                {aiPatchModuleChanges.length ? (
+                  <div className="ai-module-diff">
+                    <strong>模块资料变更</strong>
+                    {aiPatchModuleChanges.map((change) => (
+                      <article key={change.id} className="ai-module-diff-card">
+                        <span>{change.module}</span>
+                        <p><b>修改前</b>{change.before}</p>
+                        <p><b>修改后</b>{change.after}</p>
+                      </article>
+                    ))}
                   </div>
-                  <div className="ai-route-column after">
-                    <strong>修改后</strong>
-                    {aiPatchTouchedDayIds.map((dayId) => {
-                      const day = aiPatchPreviewTrip?.days.find((item) => item.id === dayId);
-                      if (!day) return null;
-                      return (
-                        <article key={day.id} className="ai-route-mini-day">
-                          <span>{day.title} · {day.date}</span>
-                          {day.items.map((item) => <p key={item.id}><b>{item.startTime ?? "--:--"}</b>{item.title}</p>)}
-                        </article>
-                      );
-                    })}
+                ) : null}
+                {aiPatchTouchedDayIds.length ? (
+                  <div className="ai-before-after">
+                    <div className="ai-route-column">
+                      <strong>行程修改前</strong>
+                      {aiPatchTouchedDayIds.map((dayId) => {
+                        const day = draft.days.find((item) => item.id === dayId);
+                        if (!day) return null;
+                        return (
+                          <article key={day.id} className="ai-route-mini-day">
+                            <span>{day.title} · {day.date}</span>
+                            {day.items.map((item) => <p key={item.id}><b>{item.startTime ?? "--:--"}</b>{item.title}</p>)}
+                          </article>
+                        );
+                      })}
+                    </div>
+                    <div className="ai-route-column after">
+                      <strong>行程修改后</strong>
+                      {aiPatchTouchedDayIds.map((dayId) => {
+                        const day = aiPatchPreviewTrip?.days.find((item) => item.id === dayId);
+                        if (!day) return null;
+                        return (
+                          <article key={day.id} className="ai-route-mini-day">
+                            <span>{day.title} · {day.date}</span>
+                            {day.items.map((item) => <p key={item.id}><b>{item.startTime ?? "--:--"}</b>{item.title}</p>)}
+                          </article>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                ) : null}
               </div>
             ) : null}
           </motion.section>

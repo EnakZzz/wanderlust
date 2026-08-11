@@ -3131,6 +3131,48 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
+.ai-module-diff {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fffdf8, var(--paper-deep));
+}
+.ai-module-diff > strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+.ai-module-diff-card {
+  display: grid;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+.ai-module-diff-card span {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eef2ed;
+  color: var(--moss);
+  font-size: 11px;
+  font-weight: 900;
+}
+.ai-module-diff-card p {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 8px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.ai-module-diff-card b {
+  color: var(--ink);
+}
 .ai-route-column {
   display: grid;
   align-content: start;
@@ -3764,7 +3806,8 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     border-radius: 20px;
   }
   .ai-assistant-prompt,
-  .ai-before-after {
+  .ai-before-after,
+  .ai-module-diff-card p {
     grid-template-columns: 1fr;
   }
   .ai-patch-preview-heading {
