@@ -21,6 +21,8 @@ function tripEditorHref(tripId: string): string {
   return buildTripEditorPath(tripId);
 }
 
+const aiWorkbenchHref = "/?module=ai#editor";
+
 export function DashboardClient() {
   const state = useDashboardData();
 
@@ -55,7 +57,7 @@ export function DashboardClient() {
             <a href="/#editor"><Plus size={18} /><span>新建路书</span></a>
           </Button>
           <Button asChild variant="secondary">
-            <a href="/#editor"><Sparkles size={18} /><span>AI 草稿</span></a>
+            <a href={aiWorkbenchHref}><Sparkles size={18} /><span>AI 草稿</span></a>
           </Button>
         </div>
       </div>
@@ -107,8 +109,8 @@ export function DashboardClient() {
         <aside className="dashboard-section dashboard-next-panel">
           <p className="eyebrow">下一步</p>
           <a href="/#editor"><Plus size={17} /><span>创建路书框架</span></a>
-          <a href="/#editor"><FileUp size={17} /><span>导入预订或笔记</span></a>
-          <a href="/#editor"><Sparkles size={17} /><span>生成 AI 路线草稿</span></a>
+          <a href={aiWorkbenchHref}><FileUp size={17} /><span>导入预订或笔记</span></a>
+          <a href={aiWorkbenchHref}><Sparkles size={17} /><span>生成 AI 路线草稿</span></a>
           <a href="/passport"><MapPinned size={17} /><span>查看旅行足迹</span></a>
         </aside>
       </div>

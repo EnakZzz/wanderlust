@@ -17,7 +17,7 @@ const navItems = [
   { id: "journeys", label: "路书", href: "/journeys", icon: Route },
   { id: "passport", label: "足迹", href: "/passport", icon: MapPinned },
   { id: "search", label: "搜索", href: "/search", icon: Search },
-  { id: "assistant", label: "AI", href: "/#editor", icon: Sparkles }
+  { id: "assistant", label: "AI", href: "/?ai=1#editor", icon: Sparkles }
 ] as const;
 
 export function ProductNav({ tone = "light", active = "home" }: ProductNavProps) {

@@ -989,6 +989,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [isAuthChecked, setIsAuthChecked] = useState(false);
   const [initialDestinationConsumed, setInitialDestinationConsumed] = useState(false);
   const [initialTripIdConsumed, setInitialTripIdConsumed] = useState(false);
+  const [initialModuleConsumed, setInitialModuleConsumed] = useState(false);
 
   useEffect(() => {
     if (sessionQuery.isLoading) return;
@@ -1111,6 +1112,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash || "#editor"}`);
   }
 
+  function clearModuleDeepLink() {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("module")) return;
+    params.delete("module");
+    const nextSearch = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash || "#editor"}`);
+  }
+
   function updateTripRoute(tripId: string, mode: "push" | "replace" = "push") {
     if (typeof window === "undefined") return;
     const nextPath = buildTripEditorPath(tripId);
@@ -1194,6 +1204,17 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
     return () => window.removeEventListener("wanderlust:open-ai-assistant", openGlobalAiAssistant);
   }, [isAuthChecked]);
+
+  useEffect(() => {
+    if (!isAuthChecked || initialModuleConsumed) return;
+    const moduleParam = new URLSearchParams(window.location.search).get("module")?.trim();
+    const requestedModule = modules.find((module) => module.id === moduleParam)?.id;
+    setInitialModuleConsumed(true);
+    if (!requestedModule) return;
+    setActiveModule(requestedModule);
+    window.setTimeout(() => document.getElementById("editor")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+    clearModuleDeepLink();
+  }, [initialModuleConsumed, isAuthChecked]);
 
   if (!isAuthChecked) {
     return (
