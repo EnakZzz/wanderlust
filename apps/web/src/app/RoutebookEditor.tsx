@@ -444,6 +444,19 @@ function describeAiPatchOperation(operation: AiItineraryPatchOperation, trip: Tr
     };
   }
 
+  if (operation.type === "update_attachment") {
+    const attachment = trip.attachments.find((entry) => entry.id === operation.attachmentId);
+    return {
+      dayTitle: "文件模块",
+      before: formatAttachmentPreview(attachment),
+      after: [
+        operation.after.title ?? attachment?.title,
+        operation.after.category ?? attachment?.category,
+        operation.after.linkedType ?? attachment?.linkedType
+      ].filter(Boolean).join(" · ") || "更新文件"
+    };
+  }
+
   const day = trip.days.find((item) => item.id === operation.dayId);
   const dayTitle = day ? `${day.title} · ${day.date}` : "未找到的日期";
   if (operation.type === "add_item") {
@@ -532,6 +545,12 @@ function getAiPatchModuleChanges(
       return [{ id: operation.id, module: "预算", before: formatBudgetPreview(before), after: formatBudgetPreview(after) }];
     }
 
+    if (operation.type === "update_attachment") {
+      const before = beforeTrip.attachments.find((item) => item.id === operation.attachmentId);
+      const after = afterTrip.attachments.find((item) => item.id === operation.attachmentId);
+      return [{ id: operation.id, module: "文件", before: formatAttachmentPreview(before), after: formatAttachmentPreview(after) }];
+    }
+
     return [];
   });
 }
@@ -550,6 +569,10 @@ function formatPackingPreview(item?: PackingItem): string {
 
 function formatBudgetPreview(item?: BudgetItem): string {
   return item ? [item.title, item.category, `${item.amount} ${item.currency}`, item.date, item.notes].filter(Boolean).join(" · ") : "未找到";
+}
+
+function formatAttachmentPreview(attachment?: Attachment): string {
+  return attachment ? [attachment.title, attachment.type, attachment.category, attachment.linkedType, attachment.linkedId].filter(Boolean).join(" · ") : "未找到";
 }
 
 function formatTripSummaryLine(trip: TripSummary): string {
@@ -2597,6 +2620,16 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         </SelectContent>
                       </Select>
                     </label>
+                    <IconButton
+                      className="row-ai-button"
+                      type="button"
+                      label={`AI 优化文件 ${attachment.title ?? attachment.id}`}
+                      tooltip={user ? "用 AI 修改这个文件资料，先生成预览" : "登录后使用 AI 修改"}
+                      onClick={() => openEntityAiAssistant(`文件 · ${attachment.title ?? attachment.id}`, `帮我优化文件 ${attachment.title ?? attachment.id}，attachmentId 是 ${attachment.id}，可以调整标题、类型、分类或关联对象，但不要修改 storagePath 或 localUri`)}
+                      disabled={!user}
+                    >
+                      <Sparkles size={16} />
+                    </IconButton>
                   </article>
                 ))}
                 {draft.attachments.length === 0 ? <div className="empty-trip-card">还没有文件。出发前先上传资料。</div> : null}

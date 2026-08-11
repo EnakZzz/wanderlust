@@ -248,6 +248,12 @@ const AiPatchBudgetItemUpdateSchema = BudgetItemSchema.partial().omit({ id: true
   id: z.never().optional(),
   tripId: z.never().optional()
 });
+const AiPatchAttachmentUpdateSchema = AttachmentSchema.partial().omit({ id: true, tripId: true, storagePath: true, localUri: true }).extend({
+  id: z.never().optional(),
+  tripId: z.never().optional(),
+  storagePath: z.never().optional(),
+  localUri: z.never().optional()
+});
 
 export const AiAddItineraryItemOperationSchema = z.object({
   id: z.string().min(1),
@@ -331,6 +337,15 @@ export const AiUpdateBudgetItemOperationSchema = z.object({
   after: AiPatchBudgetItemUpdateSchema
 });
 
+export const AiUpdateAttachmentOperationSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("update_attachment"),
+  summary: z.string().min(1),
+  attachmentId: z.string().min(1),
+  before: AiPatchAttachmentUpdateSchema.optional(),
+  after: AiPatchAttachmentUpdateSchema
+});
+
 export const AiItineraryPatchOperationSchema = z.discriminatedUnion("type", [
   AiAddItineraryItemOperationSchema,
   AiUpdateItineraryItemOperationSchema,
@@ -340,7 +355,8 @@ export const AiItineraryPatchOperationSchema = z.discriminatedUnion("type", [
   AiUpdatePlaceOperationSchema,
   AiUpdateBookingOperationSchema,
   AiUpdatePackingOperationSchema,
-  AiUpdateBudgetItemOperationSchema
+  AiUpdateBudgetItemOperationSchema,
+  AiUpdateAttachmentOperationSchema
 ]);
 
 export const AiItineraryPatchProposalSchema = z.object({
@@ -565,9 +581,23 @@ function applyItineraryPatchOperation(trip: AppliedTrip, operation: AiItineraryP
     return true;
   }
 
-  const budgetIndex = trip.budgetItems.findIndex((item) => item.id === operation.budgetItemId);
-  if (budgetIndex < 0) return false;
-  trip.budgetItems[budgetIndex] = BudgetItemSchema.parse({ ...trip.budgetItems[budgetIndex], ...operation.after, id: operation.budgetItemId, tripId: trip.id });
+  if (operation.type === "update_budget_item") {
+    const budgetIndex = trip.budgetItems.findIndex((item) => item.id === operation.budgetItemId);
+    if (budgetIndex < 0) return false;
+    trip.budgetItems[budgetIndex] = BudgetItemSchema.parse({ ...trip.budgetItems[budgetIndex], ...operation.after, id: operation.budgetItemId, tripId: trip.id });
+    return true;
+  }
+
+  const attachmentIndex = trip.attachments.findIndex((item) => item.id === operation.attachmentId);
+  if (attachmentIndex < 0) return false;
+  trip.attachments[attachmentIndex] = AttachmentSchema.parse({
+    ...trip.attachments[attachmentIndex],
+    ...operation.after,
+    id: operation.attachmentId,
+    tripId: trip.id,
+    storagePath: trip.attachments[attachmentIndex]?.storagePath,
+    localUri: trip.attachments[attachmentIndex]?.localUri
+  });
   return true;
 }
 

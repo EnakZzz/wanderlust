@@ -364,6 +364,27 @@ const aiItineraryPatchJsonSchema = {
               }
             },
             required: ["id", "type", "summary", "budgetItemId", "after"]
+          },
+          {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              type: { const: "update_attachment" },
+              summary: { type: "string" },
+              attachmentId: { type: "string" },
+              before: { type: "object" },
+              after: {
+                type: "object",
+                properties: {
+                  type: { enum: ["image", "pdf", "ticket", "receipt", "document"] },
+                  category: { enum: ["passport", "visa", "hotel", "ticket", "transport", "insurance", "receipt", "other"] },
+                  linkedType: { enum: ["trip", "place", "booking"] },
+                  linkedId: { type: "string" },
+                  title: { type: "string" }
+                }
+              }
+            },
+            required: ["id", "type", "summary", "attachmentId", "after"]
           }
         ]
       }
@@ -652,6 +673,7 @@ async function createAiItineraryPatch(request: Request, env: AuthEnv): Promise<R
   const existingBookingIds = trip.bookings.map((booking) => booking.id);
   const existingPackingItemIds = trip.packingItems.map((item) => item.id);
   const existingBudgetItemIds = trip.budgetItems.map((item) => item.id);
+  const existingAttachmentIds = trip.attachments.map((attachment) => attachment.id);
   const compactTrip = {
     id: trip.id,
     title: trip.title,
@@ -723,16 +745,25 @@ async function createAiItineraryPatch(request: Request, env: AuthEnv): Promise<R
       placeId: item.placeId,
       date: item.date,
       notes: item.notes
+    })),
+    attachments: trip.attachments.map((attachment) => ({
+      id: attachment.id,
+      type: attachment.type,
+      category: attachment.category,
+      linkedType: attachment.linkedType,
+      linkedId: attachment.linkedId,
+      title: attachment.title
     }))
   };
 
   const systemPrompt = [
     "You are Pocket Routebook AI. Return only strict JSON, no markdown.",
     "Create a reviewable routebook patch proposal. Do not return a full trip.",
-    "Allowed operation types: add_item, update_item, delete_item, move_item, update_day, update_place, update_booking, update_packing, update_budget_item.",
+    "Allowed operation types: add_item, update_item, delete_item, move_item, update_day, update_place, update_booking, update_packing, update_budget_item, update_attachment.",
     "Use only existing dayId values for dayId/toDayId. Use only existing itemId values for update_item/delete_item/move_item.",
-    "Use only existing placeId, bookingId, packingItemId, and budgetItemId values for module update operations.",
+    "Use only existing placeId, bookingId, packingItemId, budgetItemId, and attachmentId values for module update operations.",
     "For add_item, generate id values with prefix ai_item_ and keep dayId equal to the target day.",
+    "Never change attachment storagePath or localUri.",
     "For every update operation, after must include only changed editable fields. Never include id or tripId in after. Never include id or dayId in update_item after.",
     "Prefer small, concrete changes. If the request is ambiguous, return an empty operations array with a short summary."
   ].join("\n");
@@ -745,6 +776,7 @@ async function createAiItineraryPatch(request: Request, env: AuthEnv): Promise<R
     `Valid booking ids: ${JSON.stringify(existingBookingIds)}`,
     `Valid packing item ids: ${JSON.stringify(existingPackingItemIds)}`,
     `Valid budget item ids: ${JSON.stringify(existingBudgetItemIds)}`,
+    `Valid attachment ids: ${JSON.stringify(existingAttachmentIds)}`,
     `Edit context: ${JSON.stringify(payload.context ?? { source: "global" })}`,
     `User prompt: ${prompt}`
   ].join("\n");

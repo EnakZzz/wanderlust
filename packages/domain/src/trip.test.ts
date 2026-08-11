@@ -266,7 +266,18 @@ describe("applyItineraryPatchOperations", () => {
           segments: []
         }
       ],
-      attachments: [],
+      attachments: [
+        {
+          id: "file_hotel",
+          tripId: "trip_patch",
+          type: "pdf",
+          category: "hotel",
+          linkedType: "booking",
+          linkedId: "booking_hotel",
+          storagePath: "attachments/hotel.pdf",
+          title: "Hotel PDF"
+        }
+      ],
       packingItems: [
         {
           id: "pack_passport",
@@ -418,6 +429,13 @@ describe("applyItineraryPatchOperations", () => {
           after: { amount: 180, currency: "JPY" }
         },
         {
+          id: "op_attachment",
+          type: "update_attachment",
+          summary: "整理酒店确认单",
+          attachmentId: "file_hotel",
+          after: { title: "Ace Hotel confirmation", category: "hotel", linkedType: "booking", linkedId: "booking_hotel" }
+        },
+        {
           id: "op_missing_place",
           type: "update_place",
           summary: "修改不存在地点",
@@ -425,15 +443,16 @@ describe("applyItineraryPatchOperations", () => {
           after: { name: "Missing" }
         }
       ],
-      ["op_place", "op_booking", "op_pack", "op_budget", "op_missing_place"]
+      ["op_place", "op_booking", "op_pack", "op_budget", "op_attachment", "op_missing_place"]
     );
 
-    expect(result.appliedOperationIds).toEqual(["op_place", "op_booking", "op_pack", "op_budget"]);
+    expect(result.appliedOperationIds).toEqual(["op_place", "op_booking", "op_pack", "op_budget", "op_attachment"]);
     expect(result.skippedOperationIds).toEqual(["op_missing_place"]);
     expect(result.trip.places[0]).toMatchObject({ id: "place_hotel", tripId: "trip_patch", name: "Ace Hotel Kyoto", address: "Nakagyo Ward", isFavorite: true });
     expect(result.trip.bookings[0]).toMatchObject({ id: "booking_hotel", tripId: "trip_patch", status: "confirmed", confirmationCode: "ABC123" });
     expect(result.trip.packingItems[0]).toMatchObject({ id: "pack_passport", tripId: "trip_patch", packed: true, notes: "Checked before departure." });
     expect(result.trip.budgetItems[0]).toMatchObject({ id: "budget_hotel", tripId: "trip_patch", amount: 180, currency: "JPY" });
+    expect(result.trip.attachments[0]).toMatchObject({ id: "file_hotel", tripId: "trip_patch", storagePath: "attachments/hotel.pdf", title: "Ace Hotel confirmation", linkedId: "booking_hotel" });
   });
 });
 

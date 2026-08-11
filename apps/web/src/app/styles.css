@@ -2452,7 +2452,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   justify-self: end;
 }
 .file-row-editor {
-  grid-template-columns: 22px minmax(180px, 1fr) minmax(140px, 0.6fr) minmax(180px, 0.8fr);
+  grid-template-columns: 22px minmax(180px, 1fr) minmax(140px, 0.6fr) minmax(180px, 0.8fr) 42px;
   align-items: end;
 }
 .file-row-editor svg {
