@@ -994,6 +994,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [isAiPatchRunning, setIsAiPatchRunning] = useState(false);
   const [aiPatchError, setAiPatchError] = useState<string | null>(null);
   const [expandedItineraryItemId, setExpandedItineraryItemId] = useState<string | null>(null);
+  const shouldScrollExpandedItemRef = useRef(false);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
   const [initialDestinationConsumed, setInitialDestinationConsumed] = useState(false);
   const [initialTripIdConsumed, setInitialTripIdConsumed] = useState(false);
@@ -1002,6 +1003,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   function selectEditorModule(module: EditorModule, options: { scrollIntoView?: boolean } = {}) {
     shouldScrollModuleOnChangeRef.current = Boolean(options.scrollIntoView);
     setActiveModule(module);
+  }
+
+  function toggleItineraryItemEditor(itemId: string, isExpanded: boolean) {
+    shouldScrollExpandedItemRef.current = !isExpanded;
+    setExpandedItineraryItemId(isExpanded ? null : itemId);
   }
 
   useEffect(() => {
@@ -1013,6 +1019,17 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       moduleHeadingRef.current?.scrollIntoView({ block: "start", inline: "nearest" });
     });
   }, [activeModule]);
+
+  useEffect(() => {
+    if (!shouldScrollExpandedItemRef.current || !expandedItineraryItemId) return;
+    shouldScrollExpandedItemRef.current = false;
+    if (!window.matchMedia("(max-width: 500px)").matches) return;
+
+    window.requestAnimationFrame(() => {
+      const selector = `[data-route-step-editor="${CSS.escape(expandedItineraryItemId)}"]`;
+      document.querySelector<HTMLElement>(selector)?.scrollIntoView({ block: "center", inline: "nearest" });
+    });
+  }, [expandedItineraryItemId]);
 
   useEffect(() => {
     if (sessionQuery.isLoading) return;
@@ -2347,7 +2364,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                                 </div>
                               </div>
                               <div className="route-step-actions">
-                                <button className="route-link-button route-detail-button" type="button" onClick={() => setExpandedItineraryItemId(isExpanded ? null : item.id)}>
+                                <button className="route-link-button route-detail-button" type="button" onClick={() => toggleItineraryItemEditor(item.id, isExpanded)}>
                                   <span>{isExpanded ? "收起" : "详情"}</span>
                                   <ChevronDown size={16} />
                                 </button>
@@ -2362,7 +2379,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                                     <span>待补地点</span>
                                   </span>
                                 )}
-                                <IconButton className="icon-button small" type="button" onClick={() => setExpandedItineraryItemId(isExpanded ? null : item.id)} label={`编辑 ${item.title}`}>
+                                <IconButton className="icon-button small" type="button" onClick={() => toggleItineraryItemEditor(item.id, isExpanded)} label={`编辑 ${item.title}`}>
                                   <PencilLine size={16} />
                                 </IconButton>
                                 <IconButton
@@ -2378,7 +2395,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                                 </IconButton>
                               </div>
                               {isExpanded ? (
-                                <div className="route-step-editor">
+                                <div className="route-step-editor" data-route-step-editor={item.id}>
                                   <label className="time-field">
                                     <span>开始</span>
                                     <Input aria-label={`${item.title} start time`} type="time" value={item.startTime ?? ""} onChange={(event) => updateItem(item.id, { startTime: event.target.value || undefined })} />

@@ -572,6 +572,39 @@ test("mobile hero and current routebook titles avoid vertical clipping", async (
   await expectNoHorizontalOverflow(page);
 });
 
+test("mobile product page headings avoid vertical clipping", async ({ page }) => {
+  if ((page.viewportSize()?.width ?? 0) > 500) return;
+
+  for (const path of ["/dashboard", "/journeys", "/search"] as const) {
+    await page.goto(path, { waitUntil: "domcontentloaded" });
+    await expect(page.locator("h1").first()).toBeVisible();
+
+    if (path === "/journeys") {
+      await expect(page.locator(".journey-empty strong")).toBeVisible();
+    }
+
+    const overflow = await page.locator("h1, .journey-empty strong, .dashboard-empty-card strong").evaluateAll((elements) =>
+      elements
+        .filter((element) => {
+          const rect = element.getBoundingClientRect();
+          const style = getComputedStyle(element);
+          return rect.width > 0 && rect.height > 0 && rect.top < window.innerHeight && style.display !== "none" && style.visibility !== "hidden";
+        })
+        .map((element) => ({
+          text: element.textContent?.trim(),
+          overflowY: element.scrollHeight - element.clientHeight
+        }))
+    );
+
+    expect(overflow.length, path).toBeGreaterThan(0);
+    for (const item of overflow) {
+      expect(item.overflowY, `${path} ${item.text} should not clip vertically`).toBeLessThanOrEqual(2);
+    }
+
+    await expectNoHorizontalOverflow(page);
+  }
+});
+
 test("editor module rail and module AI actions keep usable tap targets", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

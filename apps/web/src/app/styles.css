@@ -535,6 +535,7 @@ label span {
   max-width: 860px;
   font-size: clamp(42px, 6vw, 78px);
   overflow-wrap: anywhere;
+  padding: 0.06em 0.08em 0.08em 0;
 }
 
 .dashboard-hero p:not(.eyebrow),
@@ -4036,12 +4037,12 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     width: 100%;
     max-width: 100%;
     font-size: clamp(32px, 9vw, 42px);
-    line-height: 1.04;
+    line-height: 1.16;
     white-space: normal;
     word-break: break-all;
     overflow-wrap: anywhere;
     text-wrap: balance;
-    padding-right: 0.08em;
+    padding: 0.08em 0.08em 0.1em 0;
   }
   .dashboard-hero p:not(.eyebrow),
   .journeys-heading p,
@@ -4064,6 +4065,11 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     white-space: normal;
     word-break: break-all;
     overflow-wrap: anywhere;
+  }
+  .journey-empty strong,
+  .dashboard-empty-card strong {
+    line-height: 1.28;
+    padding-block: 0.08em 0.1em;
   }
   .dashboard-hero-actions {
     justify-content: flex-start;
