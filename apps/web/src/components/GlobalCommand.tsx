@@ -5,7 +5,7 @@ import { Command } from "cmdk";
 import { LayoutDashboard, MapPinned, Route, Search, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const aiPromptStorageKey = "wanderlust:pending-ai-prompt";
+const openGlobalAiDialogEvent = "wanderlust:open-global-ai-dialog";
 
 const commandItems = [
   { label: "打开控制台", hint: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -34,14 +34,10 @@ export function GlobalCommand() {
   function runCommand(item: (typeof commandItems)[number]) {
     const prompt = query.trim();
     setOpen(false);
-    if (item.action === "open-ai" && document.getElementById("editor")) {
-      window.location.hash = "editor";
-      window.dispatchEvent(new CustomEvent("wanderlust:open-ai-assistant", { detail: { prompt } }));
+    if (item.action === "open-ai") {
+      window.dispatchEvent(new CustomEvent(openGlobalAiDialogEvent, { detail: { prompt } }));
       setQuery("");
       return;
-    }
-    if (item.action === "open-ai" && prompt) {
-      window.sessionStorage.setItem(aiPromptStorageKey, prompt);
     }
     window.location.href = item.href;
   }

@@ -13,6 +13,8 @@ type ProductNavProps = {
   active?: "home" | "dashboard" | "journeys" | "passport" | "search" | "assistant";
 };
 
+const openGlobalAiDialogEvent = "wanderlust:open-global-ai-dialog";
+
 const navItems = [
   { id: "dashboard", label: "控制台", href: "/dashboard", icon: LayoutDashboard },
   { id: "journeys", label: "路书", href: "/journeys", icon: Route },
@@ -34,10 +36,8 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
   const className = tone === "dark" ? "product-nav product-nav-dark" : "product-nav";
 
   function openAssistantInCurrentEditor(event: MouseEvent<HTMLAnchorElement>) {
-    if (!document.getElementById("editor")) return;
     event.preventDefault();
-    window.location.hash = "editor";
-    window.dispatchEvent(new CustomEvent("wanderlust:open-ai-assistant"));
+    window.dispatchEvent(new CustomEvent(openGlobalAiDialogEvent));
   }
 
   return (

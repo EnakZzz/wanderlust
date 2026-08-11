@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { GlobalAiDialog } from "@/components/GlobalAiDialog";
 import { GlobalCommand } from "@/components/GlobalCommand";
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -21,6 +22,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
+      <GlobalAiDialog />
       <GlobalCommand />
     </QueryClientProvider>
   );
