@@ -1099,6 +1099,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   function getRequestedTripId(): string | null {
     const routeTripId = initialTripId?.trim();
     if (routeTripId) return routeTripId;
+    return getTripIdFromLocation();
+  }
+
+  function getTripIdFromLocation(): string | null {
     if (typeof window === "undefined") return null;
     return parseTripIdFromEditorPath(window.location.pathname) ?? (new URLSearchParams(window.location.search).get("tripId")?.trim() || null);
   }
@@ -1128,6 +1132,28 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     if (currentPath === nextPath) return;
     window.history[mode === "replace" ? "replaceState" : "pushState"]({}, "", nextPath);
   }
+
+  useEffect(() => {
+    if (!isAuthChecked || !user) return;
+
+    function handleRouteHistoryChange() {
+      const routeTripId = getTripIdFromLocation();
+      if (!routeTripId || routeTripId === draft.id) return;
+
+      if (!isSaved) {
+        const confirmed = window.confirm("当前路书还有未保存修改，切换路书会丢失这些修改。继续切换吗？");
+        if (!confirmed) {
+          updateTripRoute(draft.id, "replace");
+          return;
+        }
+      }
+
+      void loadTrip(routeTripId, { updateRoute: false });
+    }
+
+    window.addEventListener("popstate", handleRouteHistoryChange);
+    return () => window.removeEventListener("popstate", handleRouteHistoryChange);
+  }, [draft.id, isAuthChecked, isSaved, user]);
 
   useEffect(() => {
     if (!routebookNeedsMeta || metaDialogMode) return;
