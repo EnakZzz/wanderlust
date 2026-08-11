@@ -52,9 +52,11 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -1857,31 +1859,30 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
           </aside>
         ) : null}
         {metaDialogMode ? (
-          <div className="routebook-modal" role="dialog" aria-modal="true" aria-label={metaDialogMode === "create" ? "创建路书" : "编辑路书"}>
-            <button
-              className="routebook-modal-backdrop"
-              type="button"
-              aria-label="关闭路书表单"
-              onClick={() => {
-                if (!routebookNeedsMeta) setMetaDialogMode(null);
-              }}
-            />
-            <div className="routebook-modal-panel">
-              <div className="routebook-modal-heading">
+          <Dialog
+            open={Boolean(metaDialogMode)}
+            onOpenChange={(open) => {
+              if (!open && !routebookNeedsMeta) setMetaDialogMode(null);
+            }}
+          >
+            <DialogContent
+              className="routebook-meta-dialog-content"
+              showClose={!routebookNeedsMeta}
+              aria-label={metaDialogMode === "create" ? "创建路书" : "编辑路书"}
+            >
+              <DialogHeader className="routebook-modal-heading">
                 <div>
                   <p className="eyebrow">{routebookNeedsMeta ? "创建路书" : metaDialogMode === "create" ? "创建路书" : "编辑路书"}</p>
-                  <h2>{routebookNeedsMeta ? "先给这趟旅行命名" : metaDialogMode === "create" ? "开始一个新的路书" : "更新路书信息"}</h2>
+                  <DialogTitle className="routebook-modal-title">
+                    {routebookNeedsMeta ? "先给这趟旅行命名" : metaDialogMode === "create" ? "开始一个新的路书" : "更新路书信息"}
+                  </DialogTitle>
+                  <DialogDescription className="routebook-modal-description">目的地、日期和时区会决定路书主题色、日期结构和后续 AI 规划上下文。</DialogDescription>
                 </div>
-                {!routebookNeedsMeta ? (
-                  <button className="icon-button" type="button" onClick={() => setMetaDialogMode(null)} title="Close" aria-label="Close">
-                    <X size={18} />
-                  </button>
-                ) : null}
-              </div>
+              </DialogHeader>
               <div className="routebook-meta-form">
                 <label>
                   <span>路书</span>
-                  <input
+                  <Input
                     aria-label="路书标题"
                     placeholder="东京夏季路书"
                     value={metaForm.title}
@@ -1891,7 +1892,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 <label>
                   <span>目的地</span>
                   <div className="destination-combobox">
-                    <input
+                    <Input
                       aria-label="目的地"
                       placeholder="Tokyo, Japan"
                       value={metaForm.destination}
@@ -1937,34 +1938,34 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 </label>
                 <label>
                   <span>Start</span>
-                  <input type="date" value={metaForm.startDate} onChange={(event) => setMetaForm((current) => ({ ...current, startDate: event.target.value }))} />
+                  <Input type="date" value={metaForm.startDate} onChange={(event) => setMetaForm((current) => ({ ...current, startDate: event.target.value }))} />
                 </label>
                 <label>
                   <span>End</span>
-                  <input type="date" value={metaForm.endDate} onChange={(event) => setMetaForm((current) => ({ ...current, endDate: event.target.value }))} />
+                  <Input type="date" value={metaForm.endDate} onChange={(event) => setMetaForm((current) => ({ ...current, endDate: event.target.value }))} />
                 </label>
                 <label>
                   <span>时区</span>
-                  <input
+                  <Input
                     aria-label="时区"
                     value={metaForm.timezone}
                     onChange={(event) => setMetaForm((current) => ({ ...current, timezone: event.target.value }))}
                   />
                 </label>
               </div>
-              <div className="routebook-modal-actions">
+              <DialogFooter className="routebook-modal-actions">
                 {!routebookNeedsMeta ? (
-                  <button className="sample-button" type="button" onClick={() => setMetaDialogMode(null)}>
-                    Cancel
-                  </button>
+                  <Button variant="secondary" type="button" onClick={() => setMetaDialogMode(null)}>
+                    取消
+                  </Button>
                 ) : null}
-                <button className="save-button" type="button" onClick={() => void submitRoutebookMeta()}>
+                <Button type="button" onClick={() => void submitRoutebookMeta()}>
                   <Save size={18} />
                   <span>{routebookNeedsMeta || metaDialogMode === "create" ? "创建路书" : "保存修改"}</span>
-                </button>
-              </div>
-            </div>
-          </div>
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         ) : null}
         {user && !showPlanHome ? (
           <Dialog open={routebookDrawerOpen} onOpenChange={setRoutebookDrawerOpen}>

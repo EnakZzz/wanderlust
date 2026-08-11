@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Apple, CircleUserRound, LogOut, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type ProviderStatus = {
   google: { configured: boolean };
@@ -68,9 +69,9 @@ export function AuthPanel() {
         <CircleUserRound size={18} />
         <span>{user.name || user.email || user.provider}</span>
         <form action="/auth/session" method="post">
-          <button type="submit" title="Sign out">
+          <Button size="icon" variant="icon" type="submit" title="Sign out" aria-label="Sign out">
             <LogOut size={16} />
-          </button>
+          </Button>
         </form>
       </div>
     );
@@ -78,24 +79,26 @@ export function AuthPanel() {
 
   return (
     <div className="auth-panel">
-      <a
-        className={providers.google.configured ? "provider-button" : "provider-button disabled"}
-        href={providers.google.configured ? `/auth/google/login?returnTo=${encodeURIComponent(returnTo)}` : undefined}
-        aria-disabled={!providers.google.configured}
-        title={providers.google.configured ? "Sign in with Google" : "Google OAuth is not configured"}
-      >
-        <span className="provider-mark">G</span>
-        <span>Google</span>
-      </a>
-      <a
-        className={providers.apple.configured ? "provider-button" : "provider-button disabled"}
-        href={providers.apple.configured ? `/auth/apple/start?returnTo=${encodeURIComponent(returnTo)}` : undefined}
-        aria-disabled={!providers.apple.configured}
-        title={providers.apple.configured ? "Sign in with Apple" : "Apple OAuth is not configured"}
-      >
-        <Apple size={17} />
-        <span>Apple</span>
-      </a>
+      <Button asChild variant="secondary" size="sm" className={providers.google.configured ? "provider-button" : "provider-button disabled"}>
+        <a
+          href={providers.google.configured ? `/auth/google/login?returnTo=${encodeURIComponent(returnTo)}` : undefined}
+          aria-disabled={!providers.google.configured}
+          title={providers.google.configured ? "Sign in with Google" : "Google OAuth is not configured"}
+        >
+          <span className="provider-mark">G</span>
+          <span>Google</span>
+        </a>
+      </Button>
+      <Button asChild variant="secondary" size="sm" className={providers.apple.configured ? "provider-button" : "provider-button disabled"}>
+        <a
+          href={providers.apple.configured ? `/auth/apple/start?returnTo=${encodeURIComponent(returnTo)}` : undefined}
+          aria-disabled={!providers.apple.configured}
+          title={providers.apple.configured ? "Sign in with Apple" : "Apple OAuth is not configured"}
+        >
+          <Apple size={17} />
+          <span>Apple</span>
+        </a>
+      </Button>
       <ShieldCheck className="auth-shield" size={16} />
     </div>
   );
