@@ -5,6 +5,7 @@ import {
   buildMapsUrl,
   createPersistedTripId,
   createTripDays,
+  enforceAiPatchContext,
   getTodayTripDay,
   isPersistedTripId,
   parseTripIdFromEditorPath,
@@ -13,7 +14,8 @@ import {
   sortItineraryItems,
   TripSchema,
   getOfflineReadiness,
-  updateItineraryItem
+  updateItineraryItem,
+  type AiItineraryPatchOperation
 } from "./index";
 
 describe("product brand", () => {
@@ -503,6 +505,106 @@ describe("applyItineraryPatchOperations", () => {
     expect(result.trip.packingItems[0]).toMatchObject({ id: "pack_passport", tripId: "trip_patch", packed: true, notes: "Checked before departure." });
     expect(result.trip.budgetItems[0]).toMatchObject({ id: "budget_hotel", tripId: "trip_patch", amount: 180, currency: "JPY" });
     expect(result.trip.attachments[0]).toMatchObject({ id: "file_hotel", tripId: "trip_patch", storagePath: "attachments/hotel.pdf", title: "Ace Hotel confirmation", linkedId: "booking_hotel" });
+  });
+
+  it("filters AI patch operations to the active day context", () => {
+    const proposal = {
+      id: "proposal_day",
+      summary: "优化当天行程",
+      operations: [
+        {
+          id: "op_keep",
+          type: "update_item",
+          summary: "更新第一天晚餐",
+          dayId: "day_1",
+          itemId: "item_dinner",
+          after: { title: "Slow dinner" }
+        },
+        {
+          id: "op_drop",
+          type: "update_place",
+          summary: "越界修改地点",
+          placeId: "place_hotel",
+          after: { name: "Other hotel" }
+        }
+      ] satisfies AiItineraryPatchOperation[]
+    };
+
+    const scoped = enforceAiPatchContext(proposal, { source: "day", dayId: "day_1" });
+    expect(scoped.operations.map((operation) => operation.id)).toEqual(["op_keep"]);
+    expect(scoped.summary).toContain("已移除 1 项");
+  });
+
+  it("filters AI patch operations to the active module context", () => {
+    const proposal = {
+      id: "proposal_module",
+      summary: "优化预订",
+      operations: [
+        {
+          id: "op_booking",
+          type: "update_booking",
+          summary: "确认酒店",
+          bookingId: "booking_hotel",
+          after: { status: "confirmed" }
+        },
+        {
+          id: "op_budget",
+          type: "update_budget_item",
+          summary: "越界修改预算",
+          budgetItemId: "budget_hotel",
+          after: { amount: 200 }
+        }
+      ] satisfies AiItineraryPatchOperation[]
+    };
+
+    const scoped = enforceAiPatchContext(proposal, { source: "module", moduleId: "bookings" });
+    expect(scoped.operations.map((operation) => operation.id)).toEqual(["op_booking"]);
+  });
+
+  it("filters AI patch operations to the selected entity context", () => {
+    const proposal = {
+      id: "proposal_entity",
+      summary: "优化文件",
+      operations: [
+        {
+          id: "op_file",
+          type: "update_attachment",
+          summary: "整理酒店确认单",
+          attachmentId: "file_hotel",
+          after: { title: "Ace Hotel confirmation" }
+        },
+        {
+          id: "op_other_file",
+          type: "update_attachment",
+          summary: "越界整理其他文件",
+          attachmentId: "file_other",
+          after: { title: "Other file" }
+        }
+      ] satisfies AiItineraryPatchOperation[]
+    };
+
+    const scoped = enforceAiPatchContext(proposal, { source: "entity", entityType: "attachment", entityId: "file_hotel" });
+    expect(scoped.operations.map((operation) => operation.id)).toEqual(["op_file"]);
+  });
+
+  it("returns an empty scoped proposal when every operation is outside the edit context", () => {
+    const proposal = {
+      id: "proposal_empty",
+      summary: "越界修改",
+      operations: [
+        {
+          id: "op_place",
+          type: "update_place",
+          summary: "改地点",
+          placeId: "place_hotel",
+          after: { name: "Other hotel" }
+        }
+      ] satisfies AiItineraryPatchOperation[]
+    };
+
+    const scoped = enforceAiPatchContext(proposal, { source: "entity", entityType: "booking", entityId: "booking_hotel" });
+    expect(scoped.operations).toEqual([]);
+    expect(scoped.summary).toContain("已全部拦截");
   });
 });
 

@@ -1,5 +1,5 @@
 import { normalizeAiOcrImages, normalizeAiTripDraft, parseAiTripDraft } from "@wanderlust/api";
-import { AiItineraryPatchProposalSchema, TripSchema, canViewShare, createPersistedTripId, isPersistedTripId, reassignTripReferences, type AiItineraryPatchOperation } from "@wanderlust/domain";
+import { AiItineraryPatchProposalSchema, TripSchema, canViewShare, createPersistedTripId, enforceAiPatchContext, isPersistedTripId, reassignTripReferences, type AiPatchContext } from "@wanderlust/domain";
 import { getSessionUser, getUserStorageId, json, type AuthEnv } from "../_auth";
 
 type TripDraftPayload = {
@@ -95,14 +95,7 @@ type AiOcrRequest = {
 type AiPatchRequest = {
   trip?: unknown;
   prompt?: string;
-  context?: {
-    source?: "global" | "day" | "item" | "module" | "entity";
-    dayId?: string;
-    itemId?: string;
-    moduleId?: "itinerary" | "places" | "map" | "bookings" | "files" | "packing" | "budget" | "ai";
-    entityType?: "place" | "booking" | "attachment" | "packingItem" | "budgetItem";
-    entityId?: string;
-  };
+  context?: AiPatchContext;
 };
 type AiVisionResult =
   | string
@@ -821,67 +814,6 @@ async function createAiItineraryPatch(request: Request, env: AuthEnv): Promise<R
   } catch (error) {
     return json({ error: "ai_patch_failed", message: error instanceof Error ? error.message : "Could not create AI patch" }, 502);
   }
-}
-
-function enforceAiPatchContext<TProposal extends { summary: string; operations: AiItineraryPatchOperation[] }>(
-  proposal: TProposal,
-  context: AiPatchRequest["context"]
-): TProposal {
-  const operations = proposal.operations.filter((operation) => isAiPatchOperationInContext(operation, context));
-  if (operations.length === proposal.operations.length) return proposal;
-  const removedCount = proposal.operations.length - operations.length;
-  return {
-    ...proposal,
-    summary: operations.length
-      ? `${proposal.summary}（已移除 ${removedCount} 项超出当前编辑范围的修改）`
-      : "AI 返回的修改超出当前编辑范围，已全部拦截。请缩小或重新描述你的修改要求。",
-    operations
-  };
-}
-
-function isAiPatchOperationInContext(operation: AiItineraryPatchOperation, context: AiPatchRequest["context"]): boolean {
-  if (!context || context.source === "global") return true;
-
-  if (context.source === "day") {
-    if (!context.dayId) return false;
-    if (operation.type === "add_item" || operation.type === "update_day") return operation.dayId === context.dayId;
-    if (operation.type === "update_item" || operation.type === "delete_item") return operation.dayId === context.dayId;
-    if (operation.type === "move_item") return operation.dayId === context.dayId || operation.toDayId === context.dayId;
-    return false;
-  }
-
-  if (context.source === "item") {
-    if (!context.dayId || !context.itemId) return false;
-    if (operation.type === "update_item" || operation.type === "delete_item") {
-      return operation.dayId === context.dayId && operation.itemId === context.itemId;
-    }
-    if (operation.type === "move_item") {
-      return operation.itemId === context.itemId && (operation.dayId === context.dayId || operation.toDayId === context.dayId);
-    }
-    return false;
-  }
-
-  if (context.source === "module") {
-    const moduleOperationTypes: Record<string, AiItineraryPatchOperation["type"][]> = {
-      itinerary: ["add_item", "update_item", "delete_item", "move_item", "update_day"],
-      places: ["update_place"],
-      map: ["update_place"],
-      bookings: ["update_booking"],
-      files: ["update_attachment"],
-      packing: ["update_packing"],
-      budget: ["update_budget_item"],
-      ai: ["add_item", "update_item", "delete_item", "move_item", "update_day", "update_place", "update_booking", "update_packing", "update_budget_item", "update_attachment"]
-    };
-    return (moduleOperationTypes[context.moduleId ?? ""] ?? []).includes(operation.type);
-  }
-
-  if (!context.entityId) return false;
-  if (context.entityType === "place") return operation.type === "update_place" && operation.placeId === context.entityId;
-  if (context.entityType === "booking") return operation.type === "update_booking" && operation.bookingId === context.entityId;
-  if (context.entityType === "attachment") return operation.type === "update_attachment" && operation.attachmentId === context.entityId;
-  if (context.entityType === "packingItem") return operation.type === "update_packing" && operation.packingItemId === context.entityId;
-  if (context.entityType === "budgetItem") return operation.type === "update_budget_item" && operation.budgetItemId === context.entityId;
-  return false;
 }
 
 function getAiPatchContextRules(context: AiPatchRequest["context"]): string {
