@@ -711,6 +711,18 @@ test("anonymous users can create a named local routebook and keep it after refre
   await expectNoHorizontalOverflow(page);
 });
 
+test("anonymous share action explains that login is required", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  const shareButton = page.getByRole("button", { name: "分享" });
+  await expect(shareButton).toBeEnabled();
+  await expect(shareButton).toHaveAttribute("title", "登录后可分享只读路书");
+  await shareButton.click();
+
+  await expect(page.getByText("请先登录再分享路书。")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("signed-in users can save and create a share link for a routebook", async ({ page }) => {
   await mockSignedInRuntime(page);
   await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111", { waitUntil: "domcontentloaded" });

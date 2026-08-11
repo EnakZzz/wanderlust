@@ -1080,6 +1080,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const routebookNeedsMeta = false;
   const settlements = useMemo(() => calculateBudgetSettlements(draft.budgetMembers, draft.budgetItems), [draft.budgetMembers, draft.budgetItems]);
   const shareUrl = shareInfo ? buildShareUrl(shareInfo.token) : null;
+  const shareButtonTitle = !user ? "登录后可分享只读路书" : shareUrl ? "复制只读分享链接" : "分享只读路书";
   const destinationTheme = useMemo(() => getDestinationTheme(draft.destination), [draft.destination]);
   const aiPatchPreviewTrip = useMemo(() => {
     if (!aiPatchPreview) return null;
@@ -1999,7 +2000,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 <Save size={18} />
                 <span>{isSyncing ? "保存中" : "保存"}</span>
               </Button>
-              <Button variant="secondary" type="button" onClick={createOrCopyShare} disabled={routebookNeedsMeta || isSyncing || isSharing || !user} title="分享只读路书">
+              <Button variant="secondary" type="button" onClick={createOrCopyShare} disabled={routebookNeedsMeta || isSyncing || isSharing} title={shareButtonTitle}>
                 <Share2 size={17} />
                 <span>{isSharing ? "生成中" : shareUrl ? "复制分享" : "分享"}</span>
               </Button>
