@@ -87,7 +87,7 @@ async function mockSignedInRuntime(page: Page, options: { saveDelayMs?: number }
     bookingCount: 0,
     updatedAt: "2026-08-12T00:00:00.000Z"
   };
-  const calls = { saves: 0, shares: 0 };
+  const calls = { saves: 0, shares: 0, deletes: 0 };
 
   await page.route("**/auth/session", (route) =>
     route.fulfill({
@@ -112,6 +112,10 @@ async function mockSignedInRuntime(page: Page, options: { saveDelayMs?: number }
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ trips: [summary] }) });
   });
   await page.route(`**/api/trips/${encodeURIComponent(tripId)}`, async (route) => {
+    if (route.request().method() === "DELETE") {
+      calls.deletes += 1;
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    }
     if (route.request().method() === "PUT") {
       calls.saves += 1;
       const nextTrip = await route.request().postDataJSON();
@@ -736,6 +740,26 @@ test("signed-in routebook save stays single-flight on slow networks", async ({ p
     .poll(async () => page.evaluate(async () => (window as unknown as { getCommercialApiCalls: () => Promise<{ saves: number; shares: number }> }).getCommercialApiCalls()))
     .toMatchObject({ saves: 1, shares: 0 });
   await expect(page.getByRole("button", { name: "保存" })).toBeEnabled();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("deleting the current routebook uses a clear confirmation and leaves the deleted URL", async ({ page }) => {
+  await mockSignedInRuntime(page);
+  await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111", { waitUntil: "domcontentloaded" });
+
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toBe("删除“东京商业路书”？这会从账号中移除这本路书和它关联的附件。");
+    await dialog.accept();
+  });
+
+  await page.getByRole("button", { name: /^当前路书 东京商业路书/ }).click();
+  await page.getByRole("button", { name: "删除 东京商业路书" }).click();
+
+  await expect(page).toHaveURL(/\/journeys\/edit#editor$/);
+  await expect(page.getByRole("heading", { name: "创建你的第一本路书" })).toBeVisible();
+  await expect
+    .poll(async () => page.evaluate(async () => (window as unknown as { getCommercialApiCalls: () => Promise<{ saves: number; shares: number; deletes: number }> }).getCommercialApiCalls()))
+    .toMatchObject({ deletes: 1 });
   await expectNoHorizontalOverflow(page);
 });
 

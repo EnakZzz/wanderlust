@@ -1139,6 +1139,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     window.history[mode === "replace" ? "replaceState" : "pushState"]({}, "", nextPath);
   }
 
+  function clearDeletedTripRoute(tripId: string) {
+    if (typeof window === "undefined") return;
+    if (parseTripIdFromEditorPath(window.location.pathname) !== tripId) return;
+    window.history.replaceState({}, "", "/journeys/edit#editor");
+  }
+
   useEffect(() => {
     if (!isAuthChecked || !user) return;
 
@@ -1499,7 +1505,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
   async function deleteTrip(trip: TripSummary) {
     if (!user || deletingTripId) return;
-    const confirmed = window.confirm(`删除“${trip.title}"? This will remove the routebook and its attached files from your account.`);
+    const confirmed = window.confirm(`删除“${trip.title}”？这会从账号中移除这本路书和它关联的附件。`);
     if (!confirmed) return;
 
     setDeletingTripId(trip.id);
@@ -1518,6 +1524,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
         setShareInfo(null);
         setShareStatus(null);
         setMetaDialogMode(null);
+        clearDeletedTripRoute(trip.id);
       }
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "无法删除路书");
