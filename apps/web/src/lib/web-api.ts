@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { SessionUser, TripDraft, TripSummary } from "@/app/routebook/types";
+import type { DestinationMeta, RoutebookShare, SessionUser, TripDraft, TripSummary } from "@/app/routebook/types";
 
 export type ProviderStatus = {
   google: { configured: boolean };
@@ -10,6 +10,12 @@ export const fallbackProviders: ProviderStatus = {
   google: { configured: false },
   apple: { configured: false }
 };
+
+async function readJson<T>(response: Response, fallbackMessage: string): Promise<T> {
+  const payload = await response.json() as T & { error?: string; message?: string };
+  if (!response.ok) throw new Error(payload.message || payload.error || fallbackMessage);
+  return payload;
+}
 
 export async function readSession(): Promise<SessionUser | null> {
   const response = await fetch("/auth/session", { credentials: "include" });
@@ -57,6 +63,72 @@ export async function removeTrip(tripId: string): Promise<void> {
     credentials: "include"
   });
   if (!response.ok) throw new Error("无法删除路书");
+}
+
+export async function createTripShare(tripId: string): Promise<RoutebookShare> {
+  const response = await fetch(`/api/trips/${encodeURIComponent(tripId)}/share`, {
+    method: "POST",
+    credentials: "include"
+  });
+  const payload = await readJson<{ share: RoutebookShare | null }>(response, "无法创建分享链接");
+  if (!payload.share) throw new Error("无法创建分享链接");
+  return payload.share;
+}
+
+export async function deleteShare(shareId: string): Promise<void> {
+  const response = await fetch(`/api/shares/${encodeURIComponent(shareId)}`, {
+    method: "DELETE",
+    credentials: "include"
+  });
+  if (!response.ok) throw new Error("无法取消分享");
+}
+
+export async function uploadAttachmentBlob(relativeKey: string, file: File): Promise<void> {
+  const response = await fetch(`/api/attachments/${encodeURIComponent(relativeKey)}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "content-type": file.type || "application/octet-stream" },
+    body: file
+  });
+  if (!response.ok) throw new Error("无法上传附件");
+}
+
+export async function searchDestinations(query: string, signal?: AbortSignal): Promise<{ candidates: DestinationMeta[]; providerError?: string }> {
+  const response = await fetch(`/api/geo/search?q=${encodeURIComponent(query)}`, { signal });
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    throw new Error("API Worker 启动后才能使用目的地搜索。");
+  }
+  return readJson<{ candidates: DestinationMeta[]; providerError?: string }>(response, "无法搜索目的地");
+}
+
+export async function requestAiDraftPayload<TResponse>(mode: "plan" | "import", body: unknown): Promise<TResponse> {
+  const response = await fetch(`/api/ai/${mode}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  return readJson<TResponse>(response, "AI 草稿生成失败");
+}
+
+export async function requestAiPatchPayload<TResponse>(body: unknown): Promise<TResponse> {
+  const response = await fetch("/api/ai/patch", {
+    method: "POST",
+    credentials: "include",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  return readJson<TResponse>(response, "AI 修改预览生成失败");
+}
+
+export async function requestAiOcrPayload<TResponse>(body: unknown): Promise<TResponse> {
+  const response = await fetch("/api/ai/ocr", {
+    method: "POST",
+    credentials: "include",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  return readJson<TResponse>(response, "截图识别失败");
 }
 
 export function useSessionQuery() {

@@ -64,10 +64,27 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getDestinationTheme, getItineraryTypeVisual } from "@/lib/travel-visuals";
-import { readTrip, readTrips, removeTrip, saveTrip, useSessionQuery, useTripsQuery } from "@/lib/web-api";
+import {
+  createTripShare,
+  deleteShare,
+  readTrip,
+  readTrips,
+  removeTrip,
+  requestAiDraftPayload,
+  requestAiOcrPayload,
+  requestAiPatchPayload,
+  saveTrip,
+  searchDestinations,
+  uploadAttachmentBlob,
+  useSessionQuery,
+  useTripsQuery
+} from "@/lib/web-api";
 import {
   attachmentCategories,
   bookingTypes,
@@ -187,15 +204,6 @@ type AiPatchContext = {
   dayId?: string;
   itemId?: string;
   label: string;
-};
-
-type DestinationSearchResponse = {
-  candidates: DestinationMeta[];
-  providerError?: string;
-};
-
-type ShareResponse = {
-  share: RoutebookShare | null;
 };
 
 type RoutebookEditorProps = {
@@ -971,13 +979,8 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     const timer = window.setTimeout(() => {
       setIsSearchingDestination(true);
       setDestinationSearchError(null);
-      fetch(`/api/geo/search?q=${encodeURIComponent(query)}`, { signal: controller.signal })
-        .then(async (response) => {
-          if (!response.headers.get("content-type")?.includes("application/json")) {
-            throw new Error("API Worker 启动后才能使用目的地搜索。");
-          }
-          const payload = (await response.json()) as DestinationSearchResponse & { error?: string };
-          if (!response.ok) throw new Error(payload.error || "无法搜索目的地");
+      searchDestinations(query, controller.signal)
+        .then((payload) => {
           setDestinationCandidates(payload.candidates ?? []);
           setDestinationSearchError(payload.providerError ? "Google Maps 配置好之前先使用本地建议。" : null);
         })
@@ -1333,14 +1336,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
         target = saved;
       }
 
-      const response = await fetch(`/api/trips/${encodeURIComponent(target.id)}/share`, {
-        method: "POST",
-        credentials: "include"
-      });
-      const payload = (await response.json()) as ShareResponse & { error?: string };
-      if (!response.ok || !payload.share) throw new Error(payload.error || "无法创建分享链接");
-      setShareInfo(payload.share);
-      await copyShareUrl(buildShareUrl(payload.share.token));
+      const share = await createTripShare(target.id);
+      setShareInfo(share);
+      await copyShareUrl(buildShareUrl(share.token));
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "无法创建分享链接");
     } finally {
@@ -1354,11 +1352,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     setSyncError(null);
     setShareStatus(null);
     try {
-      const response = await fetch(`/api/shares/${encodeURIComponent(shareInfo.id)}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
-      if (!response.ok) throw new Error("无法取消分享");
+      await deleteShare(shareInfo.id);
       setShareInfo(null);
       setShareStatus("已取消当前分享链接。");
     } catch (error) {
@@ -1418,7 +1412,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   }
 
   function updateBooking(bookingId: string, patch: Partial<Booking>) {
-    setDraft((current) => ({ ...current, 项预订: current.bookings.map((booking) => (booking.id === bookingId ? { ...booking, ...patch } : booking)) }));
+    setDraft((current) => ({ ...current, bookings: current.bookings.map((booking) => (booking.id === bookingId ? { ...booking, ...patch } : booking)) }));
     markDirty();
   }
 
@@ -1439,7 +1433,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     try {
       const text = file.type.includes("pdf") ? file.name : await file.text();
       const booking = createBookingDraftFromText(text, draft.id, selectedDay.id);
-      setDraft((current) => ({ ...current, 项预订: [...current.bookings, booking] }));
+      setDraft((current) => ({ ...current, bookings: [...current.bookings, booking] }));
       await uploadAttachment(file, booking.id);
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "无法导入预订");
@@ -1463,13 +1457,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     };
 
     if (user) {
-      const response = await fetch(`/api/attachments/${encodeURIComponent(relativeKey)}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "content-type": file.type || "application/octet-stream" },
-        body: file
-      });
-      if (!response.ok) throw new Error("无法上传附件");
+      await uploadAttachmentBlob(relativeKey, file);
     }
 
     setDraft((current) => ({
@@ -1550,18 +1538,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     setIsAiRunning(true);
     setAiError(null);
     try {
-      const response = await fetch(`/api/ai/${mode}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          trip: draft,
-          prompt: mode === "plan" ? aiPrompt : undefined,
-          text: mode === "import" ? aiImportText : undefined
-        })
+      const payload = await requestAiDraftPayload<AiDraftResponse>(mode, {
+        trip: draft,
+        prompt: mode === "plan" ? aiPrompt : undefined,
+        text: mode === "import" ? aiImportText : undefined
       });
-      const payload = (await response.json()) as AiDraftResponse & { error?: string; message?: string };
-      if (!response.ok) throw new Error(payload.message || payload.error || "AI 草稿生成失败");
       setAiDraftPreview(payload);
     } catch (error) {
       setAiError(error instanceof Error ? error.message : "AI 草稿生成失败");
@@ -1586,22 +1567,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     setIsAiPatchRunning(true);
     setAiPatchError(null);
     try {
-      const response = await fetch("/api/ai/patch", {
-        method: "POST",
-        credentials: "include",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          trip: draft,
-          prompt: aiPatchPrompt,
-          context: {
-            source: aiPatchContext.source,
-            dayId: aiPatchContext.dayId,
-            itemId: aiPatchContext.itemId
-          }
-        })
+      const payload = await requestAiPatchPayload<AiPatchResponse>({
+        trip: draft,
+        prompt: aiPatchPrompt,
+        context: {
+          source: aiPatchContext.source,
+          dayId: aiPatchContext.dayId,
+          itemId: aiPatchContext.itemId
+        }
       });
-      const payload = (await response.json()) as AiPatchResponse & { error?: string; message?: string };
-      if (!response.ok) throw new Error(payload.message || payload.error || "AI 修改预览生成失败");
       setAiPatchPreview(payload);
       setSelectedAiPatchOperationIds(payload.proposal.operations.map((operation) => operation.id));
     } catch (error) {
@@ -1651,14 +1625,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
           dataUrl: await readFileAsDataUrl(file)
         }))
       );
-      const response = await fetch("/api/ai/ocr", {
-        method: "POST",
-        credentials: "include",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ images })
-      });
-      const payload = (await response.json()) as AiOcrResponse & { error?: string; message?: string };
-      if (!response.ok) throw new Error(payload.message || payload.error || "截图识别失败");
+      const payload = await requestAiOcrPayload<AiOcrResponse>({ images });
       setAiImportText((current) => [current.trim(), payload.text.trim()].filter(Boolean).join("\n\n"));
     } catch (error) {
       setAiError(error instanceof Error ? error.message : "截图识别失败");
@@ -1918,10 +1885,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 <h3>{trips.length > 0 ? "你的路书" : "创建你的第一本路书"}</h3>
                 <p>每趟旅行创建一本路书，然后打开它编辑行程、地点、预订、文件、打包、预算和 AI 草稿。</p>
               </div>
-              <button className="save-button" type="button" onClick={createSyncedTrip}>
+              <Button type="button" onClick={createSyncedTrip}>
                 <Plus size={18} />
                 <span>创建路书</span>
-              </button>
+              </Button>
             </div>
             <div className="plan-home-list">
               {trips.map(renderTripCard)}
@@ -1972,7 +1939,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       />
                       <div>
                         <p className="eyebrow">DAY {String(draft.days.findIndex((day) => day.id === selectedDay.id) + 1).padStart(2, "0")}</p>
-                        <input
+                        <Input
                           className="journey-day-title-input"
                           aria-label="天标题"
                           value={selectedDay.title}
@@ -1982,20 +1949,22 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       <div className="journey-day-tools">
                         <label className="journey-date-control">
                           <CalendarDays size={16} />
-                          <input type="date" value={selectedDay.date} onChange={(event) => updateSelectedDay({ date: event.target.value })} />
+                          <Input type="date" value={selectedDay.date} onChange={(event) => updateSelectedDay({ date: event.target.value })} />
                         </label>
-                        <button className="add-button compact" type="button" onClick={() => addItem()}>
+                        <Button className="compact" size="sm" type="button" onClick={() => addItem()}>
                           <Plus size={18} />
                           <span>添加行程项</span>
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           className="ai-inline-button"
+                          variant="secondary"
+                          size="sm"
                           type="button"
                           onClick={() => openAiAssistant({ source: "day", dayId: selectedDay.id, label: selectedDay.title }, `帮我优化${selectedDay.title}的行程安排`)}
                         >
                           <Sparkles size={16} />
                           <span>AI 修改</span>
-                        </button>
+                        </Button>
                       </div>
                     </div>
 
@@ -2093,19 +2062,19 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                                 <div className="route-step-editor">
                                   <label className="time-field">
                                     <span>开始</span>
-                                    <input aria-label={`${item.title} start time`} type="time" value={item.startTime ?? ""} onChange={(event) => updateItem(item.id, { startTime: event.target.value || undefined })} />
+                                    <Input aria-label={`${item.title} start time`} type="time" value={item.startTime ?? ""} onChange={(event) => updateItem(item.id, { startTime: event.target.value || undefined })} />
                                   </label>
                                   <label className="time-field">
                                     <span>结束</span>
-                                    <input aria-label={`${item.title} end time`} type="time" value={item.endTime ?? ""} onChange={(event) => updateItem(item.id, { endTime: event.target.value || undefined })} />
+                                    <Input aria-label={`${item.title} end time`} type="time" value={item.endTime ?? ""} onChange={(event) => updateItem(item.id, { endTime: event.target.value || undefined })} />
                                   </label>
                                   <label>
                                     <Type size={16} />
-                                    <input value={item.title} onChange={(event) => updateItem(item.id, { title: event.target.value })} />
+                                    <Input value={item.title} onChange={(event) => updateItem(item.id, { title: event.target.value })} />
                                   </label>
                                   <label>
                                     <MapPin size={16} />
-                                    <input
+                                    <Input
                                       value={linkedPlace?.name ?? item.locationName ?? ""}
                                       placeholder="地点名称"
                                       onChange={(event) => updateItem(item.id, { locationName: event.target.value, placeId: undefined })}
@@ -2113,14 +2082,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                                   </label>
                                   <label className="reason-field">
                                     <Sparkles size={16} />
-                                    <textarea
+                                    <Textarea
                                       aria-label={`${item.title} route reason`}
                                       placeholder="为什么放在这里"
                                       value={item.reason ?? ""}
                                       onChange={(event) => updateItem(item.id, { reason: event.target.value })}
                                     />
                                   </label>
-                                  <textarea aria-label={`${item.title} notes`} value={item.notes ?? ""} onChange={(event) => updateItem(item.id, { notes: event.target.value })} />
+                                  <Textarea aria-label={`${item.title} notes`} value={item.notes ?? ""} onChange={(event) => updateItem(item.id, { notes: event.target.value })} />
                                 </div>
                               ) : null}
                             </div>
@@ -2142,10 +2111,13 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               <div className="module-list">
                 <div className="search-row">
                   <Search size={18} />
-                  <input value={placeSearch} placeholder="搜索或粘贴地点名称" onChange={(event) => setPlaceSearch(event.target.value)} />
-                  <a className="sample-button" href={googleSearchUrl(placeSearch || draft.destination)} target="_blank" rel="noreferrer">
-                    Google Maps
-                  </a>
+                  <Input value={placeSearch} placeholder="搜索或粘贴地点名称" onChange={(event) => setPlaceSearch(event.target.value)} />
+                  <Button asChild variant="secondary">
+                    <a href={googleSearchUrl(placeSearch || draft.destination)} target="_blank" rel="noreferrer">
+                      <MapIcon size={16} />
+                      <span>Google Maps</span>
+                    </a>
+                  </Button>
                   <IconButton className="new-trip-button" type="button" onClick={addPlace} label="添加地点">
                     <Plus size={18} />
                   </IconButton>
@@ -2153,29 +2125,31 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 <div className="import-panel">
                   <label>
                     <span>Google Maps 链接</span>
-                    <textarea
+                    <Textarea
                       value={googleImportText}
                       placeholder="每行粘贴一个 Google Maps 地点链接"
                       onChange={(event) => setGoogleImportText(event.target.value)}
                     />
                   </label>
                   <div className="row-actions">
-                    <button className="sample-button" type="button" onClick={importGoogleMapsPlaces} disabled={!googleImportText.trim()}>
+                    <Button variant="secondary" type="button" onClick={importGoogleMapsPlaces} disabled={!googleImportText.trim()}>
                       <MapPin size={16} />
                       <span>导入链接</span>
-                    </button>
-                    <label className="file-upload-button">
-                      <FileUp size={17} />
-                      <span>导入 GeoJSON / GPX / KML / KMZ</span>
-                      <input
-                        type="file"
-                        accept=".geojson,.json,.gpx,.kml,.kmz,application/geo+json,application/json"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) importPlaceFile(file);
-                        }}
-                      />
-                    </label>
+                    </Button>
+                    <Button asChild variant="secondary">
+                      <label className="file-upload-button">
+                        <FileUp size={17} />
+                        <span>导入 GeoJSON / GPX / KML / KMZ</span>
+                        <input
+                          type="file"
+                          accept=".geojson,.json,.gpx,.kml,.kmz,application/geo+json,application/json"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) importPlaceFile(file);
+                          }}
+                        />
+                      </label>
+                    </Button>
                   </div>
                 </div>
                 {draft.places.map((place) => (
@@ -2187,40 +2161,47 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   >
                     <label>
                       <span>地点</span>
-                      <input value={place.name} onChange={(event) => updatePlace(place.id, { name: event.target.value })} />
+                      <Input value={place.name} onChange={(event) => updatePlace(place.id, { name: event.target.value })} />
                     </label>
                     <label>
                       <span>分类</span>
-                      <select value={place.category} onChange={(event) => updatePlace(place.id, { category: event.target.value as Place["category"] })}>
-                        {placeCategories.map((category) => <option key={category} value={category}>{placeCategoryLabels[category]}</option>)}
-                      </select>
+                      <Select value={place.category} onValueChange={(value) => updatePlace(place.id, { category: value as Place["category"] })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {placeCategories.map((category) => <SelectItem key={category} value={category}>{placeCategoryLabels[category]}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </label>
                     <label>
                       <span>纬度</span>
-                      <input type="number" step="0.0001" value={place.latitude} onChange={(event) => updatePlace(place.id, { latitude: Number(event.target.value) })} />
+                      <Input type="number" step="0.0001" value={place.latitude} onChange={(event) => updatePlace(place.id, { latitude: Number(event.target.value) })} />
                     </label>
                     <label>
                       <span>经度</span>
-                      <input type="number" step="0.0001" value={place.longitude} onChange={(event) => updatePlace(place.id, { longitude: Number(event.target.value) })} />
+                      <Input type="number" step="0.0001" value={place.longitude} onChange={(event) => updatePlace(place.id, { longitude: Number(event.target.value) })} />
                     </label>
                     <label>
                       <span>地址</span>
-                      <input value={place.address ?? ""} onChange={(event) => updatePlace(place.id, { address: event.target.value })} />
+                      <Input value={place.address ?? ""} onChange={(event) => updatePlace(place.id, { address: event.target.value })} />
                     </label>
                     <label>
                       <span>标签</span>
-                      <input value={(place.tags ?? []).join(", ")} onChange={(event) => updatePlace(place.id, { tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
+                      <Input value={(place.tags ?? []).join(", ")} onChange={(event) => updatePlace(place.id, { tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
                     </label>
-                    <textarea value={place.notes ?? ""} onChange={(event) => updatePlace(place.id, { notes: event.target.value })} />
+                    <Textarea value={place.notes ?? ""} onChange={(event) => updatePlace(place.id, { notes: event.target.value })} />
                     <div className="row-actions">
-                      <button className="sample-button" type="button" onClick={() => addItem(place)}>
+                      <Button variant="secondary" type="button" onClick={() => addItem(place)}>
                         <Plus size={16} />
                         <span>加入当天</span>
-                      </button>
-                      <a className="sample-button" href={buildMapsUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name }, "google")} target="_blank" rel="noreferrer">
-                        <Navigation size={16} />
-                        Navigate
-                      </a>
+                      </Button>
+                      <Button asChild variant="secondary">
+                        <a href={buildMapsUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name }, "google")} target="_blank" rel="noreferrer">
+                          <Navigation size={16} />
+                          <span>导航</span>
+                        </a>
+                      </Button>
                     </div>
                   </article>
                 ))}
@@ -2260,42 +2241,56 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <strong>把确认单直接导入为预订草稿</strong>
                     <span>目前 PDF 只会作为附件挂上，且先按文件名解析。文本和邮件会解析确认号与航班号。</span>
                   </div>
-                  <label className="file-upload-button">
-                    <FileUp size={17} />
-                    <span>导入 PDF / 邮件 / 文本</span>
-                    <input
-                      type="file"
-                      accept=".pdf,.eml,.txt,.ics,application/pdf,text/plain,message/rfc822,text/calendar"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) importBookingFile(file);
-                      }}
-                    />
-                  </label>
+                  <Button asChild variant="secondary">
+                    <label className="file-upload-button">
+                      <FileUp size={17} />
+                      <span>导入 PDF / 邮件 / 文本</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.eml,.txt,.ics,application/pdf,text/plain,message/rfc822,text/calendar"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) importBookingFile(file);
+                        }}
+                      />
+                    </label>
+                  </Button>
                 </div>
                 {draft.bookings.map((booking) => (
                   <article key={booking.id} className="module-row booking-row-editor">
                     <label>
                       <span>类型</span>
-                      <select value={booking.type} onChange={(event) => updateBooking(booking.id, { type: event.target.value as Booking["type"] })}>
-                        {bookingTypes.map((type) => <option key={type} value={type}>{bookingTypeLabels[type]}</option>)}
-                      </select>
+                      <Select value={booking.type} onValueChange={(value) => updateBooking(booking.id, { type: value as Booking["type"] })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {bookingTypes.map((type) => <SelectItem key={type} value={type}>{bookingTypeLabels[type]}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </label>
                     <label>
                       <span>标题</span>
-                      <input value={booking.title} onChange={(event) => updateBooking(booking.id, { title: event.target.value })} />
+                      <Input value={booking.title} onChange={(event) => updateBooking(booking.id, { title: event.target.value })} />
                     </label>
                     <label>
                       <span>编号</span>
-                      <input value={booking.confirmationCode ?? ""} onChange={(event) => updateBooking(booking.id, { confirmationCode: event.target.value })} />
+                      <Input value={booking.confirmationCode ?? ""} onChange={(event) => updateBooking(booking.id, { confirmationCode: event.target.value })} />
                     </label>
                     <label>
                       <span>状态</span>
-                      <select value={booking.status} onChange={(event) => updateBooking(booking.id, { status: event.target.value as Booking["status"] })}>
-                        {["todo", "confirmed", "checked_in", "cancelled"].map((status) => <option key={status} value={status}>{bookingStatusLabels[status as NonNullable<Booking["status"]>]}</option>)}
-                      </select>
+                      <Select value={booking.status} onValueChange={(value) => updateBooking(booking.id, { status: value as Booking["status"] })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["todo", "confirmed", "checked_in", "cancelled"].map((status) => (
+                            <SelectItem key={status} value={status}>{bookingStatusLabels[status as NonNullable<Booking["status"]>]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </label>
-                    <textarea value={booking.notes ?? ""} onChange={(event) => updateBooking(booking.id, { notes: event.target.value })} />
+                    <Textarea value={booking.notes ?? ""} onChange={(event) => updateBooking(booking.id, { notes: event.target.value })} />
                     {booking.segments?.length ? (
                       <div className="segment-list">
                         {booking.segments.map((segment) => (
@@ -2305,14 +2300,16 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         ))}
                       </div>
                     ) : null}
-                    <label className="file-upload-button">
-                      <FileUp size={17} />
-                      <span>上传文件</span>
-                      <input type="file" onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) uploadAttachment(file, booking.id).catch((error) => setSyncError(error instanceof Error ? error.message : "上传失败"));
-                      }} />
-                    </label>
+                    <Button asChild variant="secondary">
+                      <label className="file-upload-button">
+                        <FileUp size={17} />
+                        <span>上传文件</span>
+                        <input type="file" onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) uploadAttachment(file, booking.id).catch((error) => setSyncError(error instanceof Error ? error.message : "上传失败"));
+                        }} />
+                      </label>
+                    </Button>
                     <div className="attachment-list">
                       {(booking.attachmentIds ?? []).map((id) => {
                         const attachment = draft.attachments.find((item) => item.id === id);
@@ -2321,10 +2318,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </div>
                   </article>
                 ))}
-                <button className="add-button" type="button" onClick={addBooking}>
+                <Button type="button" onClick={addBooking}>
                   <Plus size={18} />
                   <span>添加预订</span>
-                </button>
+                </Button>
               </div>
             ) : null}
 
@@ -2336,44 +2333,56 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <strong>旅行证件和收据</strong>
                     <span>上传护照、签证、酒店确认单、景点门票、交通票券、保险和电子收据。</span>
                   </div>
-                  <label className="file-upload-button">
-                    <FileUp size={17} />
-                    <span>上传文件</span>
-                    <input
-                      type="file"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) uploadAttachment(file).catch((error) => setSyncError(error instanceof Error ? error.message : "上传失败"));
-                      }}
-                    />
-                  </label>
+                  <Button asChild variant="secondary">
+                    <label className="file-upload-button">
+                      <FileUp size={17} />
+                      <span>上传文件</span>
+                      <input
+                        type="file"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) uploadAttachment(file).catch((error) => setSyncError(error instanceof Error ? error.message : "上传失败"));
+                        }}
+                      />
+                    </label>
+                  </Button>
                 </div>
                 {draft.attachments.map((attachment) => (
                   <article key={attachment.id} className="module-row file-row-editor">
                     <Paperclip size={18} />
                     <label>
                       <span>标题</span>
-                      <input value={attachment.title ?? ""} onChange={(event) => updateAttachment(attachment.id, { title: event.target.value })} />
+                      <Input value={attachment.title ?? ""} onChange={(event) => updateAttachment(attachment.id, { title: event.target.value })} />
                     </label>
                     <label>
                       <span>分类</span>
-                      <select value={attachment.category ?? "other"} onChange={(event) => updateAttachment(attachment.id, { category: event.target.value as Attachment["category"] })}>
-                        {attachmentCategories.map((category) => <option key={category} value={category}>{attachmentCategoryLabels[category ?? "other"]}</option>)}
-                      </select>
+                      <Select value={attachment.category ?? "other"} onValueChange={(value) => updateAttachment(attachment.id, { category: value as Attachment["category"] })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {attachmentCategories.map((category) => <SelectItem key={category ?? "other"} value={category ?? "other"}>{attachmentCategoryLabels[category ?? "other"]}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </label>
                     <label>
                       <span>关联到</span>
-                      <select
+                      <Select
                         value={`${attachment.linkedType ?? "trip"}:${attachment.linkedId ?? ""}`}
-                        onChange={(event) => {
-                          const [linkedType, linkedId] = event.target.value.split(":");
+                        onValueChange={(value) => {
+                          const [linkedType, linkedId] = value.split(":");
                           updateAttachment(attachment.id, { linkedType: linkedType as Attachment["linkedType"], linkedId: linkedId || undefined });
                         }}
                       >
-                        <option value="trip:">整趟旅行</option>
-                        {draft.places.map((place) => <option key={place.id} value={`place:${place.id}`}>地点 · {place.name}</option>)}
-                        {draft.bookings.map((booking) => <option key={booking.id} value={`booking:${booking.id}`}>预订 · {booking.title}</option>)}
-                      </select>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="trip:">整趟旅行</SelectItem>
+                          {draft.places.map((place) => <SelectItem key={place.id} value={`place:${place.id}`}>地点 · {place.name}</SelectItem>)}
+                          {draft.bookings.map((booking) => <SelectItem key={booking.id} value={`booking:${booking.id}`}>预订 · {booking.title}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </label>
                   </article>
                 ))}
@@ -2385,20 +2394,25 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               <div className="module-list">
                 <div className="packing-template-bar">
                   {packingCategories.map((category) => (
-                    <button key={category} className="sample-button" type="button" onClick={() => addPackingItem(category)}>
+                    <Button key={category} variant="secondary" size="sm" type="button" onClick={() => addPackingItem(category)}>
                       <Plus size={15} />
                       <span>{packingCategoryLabels[category ?? "other"]}</span>
-                    </button>
+                    </Button>
                   ))}
                 </div>
                 {draft.packingItems.map((item) => (
                   <label key={item.id} className="check-row packing-row">
-                    <input type="checkbox" checked={item.packed} onChange={(event) => updatePacking(item.id, { packed: event.target.checked })} />
-                    <select value={item.category} onChange={(event) => updatePacking(item.id, { category: event.target.value as PackingItem["category"] })}>
-                      {packingCategories.map((category) => <option key={category} value={category}>{packingCategoryLabels[category ?? "other"]}</option>)}
-                    </select>
-                    <input value={item.title} onChange={(event) => updatePacking(item.id, { title: event.target.value })} />
-                    <input type="number" min={1} value={item.quantity} onChange={(event) => updatePacking(item.id, { quantity: Number(event.target.value) || 1 })} />
+                    <Checkbox checked={item.packed} onCheckedChange={(checked) => updatePacking(item.id, { packed: checked === true })} />
+                    <Select value={item.category ?? "other"} onValueChange={(value) => updatePacking(item.id, { category: value as PackingItem["category"] })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {packingCategories.map((category) => <SelectItem key={category ?? "other"} value={category ?? "other"}>{packingCategoryLabels[category ?? "other"]}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Input value={item.title} onChange={(event) => updatePacking(item.id, { title: event.target.value })} />
+                    <Input type="number" min={1} value={item.quantity} onChange={(event) => updatePacking(item.id, { quantity: Number(event.target.value) || 1 })} />
                   </label>
                 ))}
               </div>
@@ -2410,7 +2424,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   {draft.budgetMembers.map((member) => (
                     <label key={member.id}>
                       <span>同行人</span>
-                      <input value={member.name} onChange={(event) => updateBudgetMember(member.id, { name: event.target.value })} />
+                      <Input value={member.name} onChange={(event) => updateBudgetMember(member.id, { name: event.target.value })} />
                     </label>
                   ))}
                   <IconButton className="new-trip-button" type="button" onClick={addBudgetMember} label="添加同行人">
@@ -2421,21 +2435,26 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   <article key={item.id} className="module-row budget-row-editor">
                     <label>
                       <span>账单</span>
-                      <input value={item.title} onChange={(event) => updateBudgetItem(item.id, { title: event.target.value })} />
+                      <Input value={item.title} onChange={(event) => updateBudgetItem(item.id, { title: event.target.value })} />
                     </label>
                     <label>
                       <span>分类</span>
-                      <select value={item.category ?? "other"} onChange={(event) => updateBudgetItem(item.id, { category: event.target.value as BudgetItem["category"] })}>
-                        {budgetCategories.map((category) => <option key={category} value={category}>{budgetCategoryLabels[category ?? "other"]}</option>)}
-                      </select>
+                      <Select value={item.category ?? "other"} onValueChange={(value) => updateBudgetItem(item.id, { category: value as BudgetItem["category"] })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {budgetCategories.map((category) => <SelectItem key={category ?? "other"} value={category ?? "other"}>{budgetCategoryLabels[category ?? "other"]}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </label>
                     <label>
                       <span>金额</span>
-                      <input type="number" min={0} step="0.01" value={item.amount} onChange={(event) => updateBudgetItem(item.id, { amount: Number(event.target.value) || 0 })} />
+                      <Input type="number" min={0} step="0.01" value={item.amount} onChange={(event) => updateBudgetItem(item.id, { amount: Number(event.target.value) || 0 })} />
                     </label>
                     <label>
                       <span>币种</span>
-                      <input value={item.currency ?? "USD"} onChange={(event) => updateBudgetItem(item.id, { currency: event.target.value.toUpperCase() || "USD" })} />
+                      <Input value={item.currency ?? "USD"} onChange={(event) => updateBudgetItem(item.id, { currency: event.target.value.toUpperCase() || "USD" })} />
                     </label>
                     <div className="member-toggle-group">
                       <span>付款人</span>
@@ -2453,13 +2472,13 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         </button>
                       ))}
                     </div>
-                    <textarea value={item.notes ?? ""} placeholder="备注" onChange={(event) => updateBudgetItem(item.id, { notes: event.target.value })} />
+                    <Textarea value={item.notes ?? ""} placeholder="备注" onChange={(event) => updateBudgetItem(item.id, { notes: event.target.value })} />
                   </article>
                 ))}
-                <button className="add-button" type="button" onClick={addBudgetItem}>
+                <Button type="button" onClick={addBudgetItem}>
                   <Plus size={18} />
                   <span>添加账单</span>
-                </button>
+                </Button>
                 <div className="settlement-panel">
                   <p className="eyebrow">结算</p>
                   {settlements.map((settlement, index) => (
@@ -2485,15 +2504,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       <strong>规划一个路书草稿</strong>
                     </div>
                   </div>
-                  <textarea
+                  <Textarea
                     value={aiPrompt}
                     placeholder="东京 5 天，第一次去，美食和建筑，节奏轻松，避免长距离转场。"
                     onChange={(event) => setAiPrompt(event.target.value)}
                   />
-                  <button className="save-button" type="button" onClick={() => requestAiDraft("plan")} disabled={isAiRunning || !aiPrompt.trim() || !user}>
+                  <Button type="button" onClick={() => requestAiDraft("plan")} disabled={isAiRunning || !aiPrompt.trim() || !user}>
                     <Sparkles size={18} />
                     <span>{isAiRunning ? "生成中" : "生成草稿"}</span>
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="ai-card ai-import-card">
@@ -2504,27 +2523,29 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       <strong>把素材整理成路书</strong>
                     </div>
                   </div>
-                  <textarea
+                  <Textarea
                     value={aiImportText}
                     placeholder="粘贴订票邮件、备注、复制的行程文本、景点票券或文件 OCR 文本。"
                     onChange={(event) => setAiImportText(event.target.value)}
                   />
                   <div className="ai-import-actions">
-                    <label className="file-upload-button">
-                      <ImageUp size={18} />
-                      <span>{isOcrRunning ? "识别中" : "上传截图识别"}</span>
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        multiple
-                        disabled={isOcrRunning || isAiRunning || !user}
-                        onChange={requestScreenshotOcr}
-                      />
-                    </label>
-                    <button className="sample-button" type="button" onClick={() => requestAiDraft("import")} disabled={isAiRunning || isOcrRunning || !aiImportText.trim() || !user}>
+                    <Button asChild variant="secondary">
+                      <label className="file-upload-button">
+                        <ImageUp size={18} />
+                        <span>{isOcrRunning ? "识别中" : "上传截图识别"}</span>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          multiple
+                          disabled={isOcrRunning || isAiRunning || !user}
+                          onChange={requestScreenshotOcr}
+                        />
+                      </label>
+                    </Button>
+                    <Button variant="secondary" type="button" onClick={() => requestAiDraft("import")} disabled={isAiRunning || isOcrRunning || !aiImportText.trim() || !user}>
                       <FileUp size={18} />
                       <span>{isAiRunning ? "读取中" : "导入草稿"}</span>
-                    </button>
+                    </Button>
                   </div>
                   {aiScreenshotNames.length ? (
                     <div className="ai-ocr-files" aria-live="polite">
@@ -2545,10 +2566,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         <span>{aiDraftPreview.trip.destination} · {aiDraftPreview.model}</span>
                       </div>
                       <div className="row-actions">
-                        <button className="save-button" type="button" onClick={applyAiDraftPreview}>
+                        <Button type="button" onClick={applyAiDraftPreview}>
                           <CheckSquare size={18} />
                           <span>应用草稿</span>
-                        </button>
+                        </Button>
                         <IconButton className="icon-button" type="button" onClick={() => setAiDraftPreview(null)} label="清除 AI 草稿">
                           <X size={18} />
                         </IconButton>
@@ -2601,15 +2622,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               </IconButton>
             </div>
             <div className="ai-assistant-prompt">
-              <textarea
+              <Textarea
                 value={aiPatchPrompt}
                 placeholder="例如：把今天上午排松一点，午餐换成附近更有当地特色的餐厅。"
                 onChange={(event) => setAiPatchPrompt(event.target.value)}
               />
-              <button className="save-button" type="button" onClick={requestAiPatch} disabled={isAiPatchRunning || !aiPatchPrompt.trim() || !user}>
+              <Button type="button" onClick={requestAiPatch} disabled={isAiPatchRunning || !aiPatchPrompt.trim() || !user}>
                 <Sparkles size={17} />
                 <span>{isAiPatchRunning ? "生成预览..." : "生成修改预览"}</span>
-              </button>
+              </Button>
             </div>
             {!user ? <div className="ai-assistant-note">登录后可使用 AI 修改行程。</div> : null}
             {aiPatchError ? <div className="sync-error compact">{aiPatchError}</div> : null}
@@ -2620,20 +2641,19 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <strong>{aiPatchPreview.proposal.summary}</strong>
                     <span>{aiPatchPreview.proposal.operations.length ? "勾选要应用的修改" : "没有可应用修改"}</span>
                   </div>
-                  <button className="save-button compact" type="button" onClick={applyAiPatchPreview} disabled={!selectedAiPatchOperationIds.length}>
+                  <Button size="sm" type="button" onClick={applyAiPatchPreview} disabled={!selectedAiPatchOperationIds.length}>
                     <CheckSquare size={16} />
                     <span>应用勾选修改</span>
-                  </button>
+                  </Button>
                 </div>
                 <div className="ai-operation-list">
                   {aiPatchPreview.proposal.operations.map((operation) => {
                     const description = describeAiPatchOperation(operation, draft);
                     return (
                       <label key={operation.id} className="ai-operation-row">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={selectedAiPatchOperationIds.includes(operation.id)}
-                          onChange={() => toggleAiPatchOperation(operation.id)}
+                          onCheckedChange={() => toggleAiPatchOperation(operation.id)}
                         />
                         <span>
                           <strong>{operation.summary}</strong>
