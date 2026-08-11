@@ -432,6 +432,8 @@ label span {
 
 .product-nav-primary,
 .product-nav-user {
+  min-width: 44px;
+  min-height: 44px;
   gap: 7px;
   padding: 0 13px;
   background: var(--ink);
@@ -462,7 +464,7 @@ label span {
 }
 
 .product-nav-actions button {
-  width: 36px;
+  width: 44px;
   justify-content: center;
   border: 1px solid var(--line);
   background: var(--surface);

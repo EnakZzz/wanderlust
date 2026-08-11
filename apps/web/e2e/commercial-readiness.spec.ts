@@ -410,6 +410,15 @@ for (const path of ["/", "/dashboard"] as const) {
   });
 }
 
+test("signed-in top navigation keeps account actions tappable", async ({ page }) => {
+  await mockSignedInTripListRuntime(page);
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator(".product-nav-user")).toBeVisible();
+  await expectVisibleTapTargetsAtLeast44(page, ".product-nav-brand, .product-nav-links a, .product-nav-user, .product-nav-actions button");
+  await expectNoHorizontalOverflow(page);
+});
+
 for (const path of ["/dashboard", "/journeys", "/search", "/passport"] as const) {
   test(`product shell actions keep usable tap targets at ${path}`, async ({ page }) => {
     await page.goto(path, { waitUntil: "domcontentloaded" });
