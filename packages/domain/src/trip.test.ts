@@ -8,6 +8,7 @@ import {
   getTodayTripDay,
   isPersistedTripId,
   parseTripIdFromEditorPath,
+  reassignTripReferences,
   removeItineraryItem,
   sortItineraryItems,
   TripSchema,
@@ -208,6 +209,45 @@ describe("routebook editor routes", () => {
     expect(isPersistedTripId(id)).toBe(true);
     expect(isPersistedTripId("local_draft")).toBe(false);
     expect(isPersistedTripId("trip_ai_draft")).toBe(false);
+  });
+
+  it("reassigns trip-scoped references when a draft becomes a persisted routebook", () => {
+    const trip = TripSchema.parse({
+      id: "trip_ai_draft",
+      ownerId: "ai_preview",
+      title: "AI draft",
+      destination: "Kyoto",
+      startDate: "2026-04-01",
+      endDate: "2026-04-01",
+      timezone: "Asia/Tokyo",
+      status: "draft",
+      days: [{
+        id: "trip_ai_draft-2026-04-01",
+        tripId: "trip_ai_draft",
+        date: "2026-04-01",
+        title: "第 1 天",
+        sortOrder: 0,
+        items: [{ id: "item_1", dayId: "trip_ai_draft-2026-04-01", type: "place", title: "Temple", sortOrder: 0 }]
+      }],
+      places: [{ id: "place_1", tripId: "trip_ai_draft", name: "Temple", category: "culture", latitude: 35, longitude: 135 }],
+      bookings: [{ id: "booking_1", tripId: "trip_ai_draft", dayId: "trip_ai_draft-2026-04-01", type: "ticket", title: "Ticket", status: "todo", attachmentIds: [] }],
+      attachments: [{ id: "file_1", tripId: "trip_ai_draft", type: "pdf", title: "Ticket PDF", storagePath: "tickets/ticket.pdf" }],
+      packingItems: [{ id: "pack_1", tripId: "trip_ai_draft", title: "Passport", category: "documents", quantity: 1, packed: false }],
+      weather: [{ dayId: "trip_ai_draft-2026-04-01", date: "2026-04-01", summary: "Clear" }],
+      budgetMembers: [{ id: "member_1", tripId: "trip_ai_draft", name: "Me" }],
+      budgetItems: [{ id: "budget_1", tripId: "trip_ai_draft", title: "Lunch", amount: 20, currency: "JPY", paidByMemberIds: [], splitWithMemberIds: [] }],
+      offlineBundle: { tripId: "trip_ai_draft", version: 1, generatedAt: "2026-01-01T00:00:00.000Z", includes: { itinerary: true, places: true, bookings: true, attachments: true, packing: true, weather: true } }
+    });
+
+    const next = TripSchema.parse(reassignTripReferences(trip, "trip_123e4567-e89b-42d3-a456-426614174000", "user_1"));
+    expect(next.ownerId).toBe("user_1");
+    expect(next.days[0]?.id).toBe("trip_123e4567-e89b-42d3-a456-426614174000-2026-04-01");
+    expect(next.days[0]?.tripId).toBe(next.id);
+    expect(next.days[0]?.items[0]?.dayId).toBe(next.days[0]?.id);
+    expect(next.places[0]?.tripId).toBe(next.id);
+    expect(next.bookings[0]).toMatchObject({ tripId: next.id, dayId: next.days[0]?.id });
+    expect(next.weather[0]?.dayId).toBe(next.days[0]?.id);
+    expect(next.offlineBundle?.tripId).toBe(next.id);
   });
 
   it("uses a path segment containing the trip id for saved trip editor URLs", () => {

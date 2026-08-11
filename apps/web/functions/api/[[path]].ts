@@ -1,5 +1,5 @@
 import { normalizeAiOcrImages, normalizeAiTripDraft, parseAiTripDraft } from "@wanderlust/api";
-import { AiItineraryPatchProposalSchema, TripSchema, canViewShare, createPersistedTripId, isPersistedTripId } from "@wanderlust/domain";
+import { AiItineraryPatchProposalSchema, TripSchema, canViewShare, createPersistedTripId, isPersistedTripId, reassignTripReferences } from "@wanderlust/domain";
 import { getSessionUser, getUserStorageId, json, type AuthEnv } from "../_auth";
 
 type TripDraftPayload = {
@@ -870,7 +870,7 @@ async function createTrip(request: Request, env: AuthEnv): Promise<Response> {
   const title = draft.title?.trim() || "Untitled trip";
   const destination = draft.destination?.trim() || "New destination";
   const status = draft.status ?? "draft";
-  const normalizedDraft = normalizeCreatedTripDraft(draft, id, auth.ownerId);
+  const normalizedDraft = reassignTripReferences(draft, id, auth.ownerId);
   const payload = JSON.stringify({ ...normalizedDraft, title, destination, status });
 
   await auth.db.prepare(
@@ -881,56 +881,6 @@ async function createTrip(request: Request, env: AuthEnv): Promise<Response> {
     .run();
 
   return json({ trip: JSON.parse(payload) }, 201);
-}
-
-function normalizeCreatedTripDraft(draft: TripDraftPayload, id: string, ownerId: string): TripDraftPayload {
-  const previousId = draft.id?.trim();
-  const dayIdByPreviousId = new Map<string, string>();
-  const remapGeneratedDayId = (dayId: string | undefined, fallback: string) => {
-    if (!dayId) return fallback;
-    if (previousId && dayId.startsWith(`${previousId}-`)) return `${id}${dayId.slice(previousId.length)}`;
-    return dayId;
-  };
-
-  const days = draft.days?.map((day, index) => {
-    const fallbackDayId = day.date ? `${id}-${day.date}` : `${id}-day-${index + 1}`;
-    const nextDayId = remapGeneratedDayId(day.id, fallbackDayId);
-    if (day.id) dayIdByPreviousId.set(day.id, nextDayId);
-
-    return {
-      ...day,
-      id: nextDayId,
-      tripId: id,
-      items: day.items?.map((item) => ({
-        ...item,
-        dayId: item.dayId ? dayIdByPreviousId.get(item.dayId) ?? remapGeneratedDayId(item.dayId, nextDayId) : nextDayId
-      }))
-    };
-  });
-
-  const withTripId = <T extends { tripId?: string }>(items: T[] | undefined): T[] | undefined =>
-    items?.map((item) => ({ ...item, tripId: id }));
-
-  return {
-    ...draft,
-    id,
-    ownerId,
-    days,
-    places: withTripId(draft.places),
-    bookings: draft.bookings?.map((booking) => ({
-      ...booking,
-      tripId: id,
-      dayId: booking.dayId ? dayIdByPreviousId.get(booking.dayId) ?? remapGeneratedDayId(booking.dayId, booking.dayId) : booking.dayId
-    })),
-    attachments: withTripId(draft.attachments),
-    packingItems: withTripId(draft.packingItems),
-    weather: draft.weather?.map((forecast) => ({
-      ...forecast,
-      dayId: forecast.dayId ? dayIdByPreviousId.get(forecast.dayId) ?? remapGeneratedDayId(forecast.dayId, forecast.dayId) : forecast.dayId
-    })),
-    budgetMembers: withTripId(draft.budgetMembers),
-    budgetItems: withTripId(draft.budgetItems)
-  };
 }
 
 async function getTripShare(request: Request, env: AuthEnv, tripId: string): Promise<Response> {

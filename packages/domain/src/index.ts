@@ -436,6 +436,71 @@ export function isPersistedTripId(id: string): boolean {
   return persistedTripIdPattern.test(id);
 }
 
+type ReassignableTrip = {
+  id?: string | undefined;
+  ownerId?: string | undefined;
+  days?: Array<{ id?: string | undefined; tripId?: string | undefined; date?: string | undefined; items?: Array<{ dayId?: string | undefined }> | undefined }> | undefined;
+  places?: Array<{ tripId?: string | undefined }> | undefined;
+  bookings?: Array<{ tripId?: string | undefined; dayId?: string | undefined }> | undefined;
+  attachments?: Array<{ tripId?: string | undefined }> | undefined;
+  packingItems?: Array<{ tripId?: string | undefined }> | undefined;
+  weather?: Array<{ dayId?: string | undefined }> | undefined;
+  budgetMembers?: Array<{ tripId?: string | undefined }> | undefined;
+  budgetItems?: Array<{ tripId?: string | undefined }> | undefined;
+  offlineBundle?: { tripId?: string | undefined } | undefined;
+};
+
+export function reassignTripReferences<T extends ReassignableTrip>(trip: T, tripId: string, ownerId?: string): T {
+  const previousId = trip.id?.trim();
+  const dayIdByPreviousId = new Map<string, string>();
+  const remapGeneratedDayId = (dayId: string | undefined, fallback: string) => {
+    if (!dayId) return fallback;
+    if (previousId && dayId.startsWith(`${previousId}-`)) return `${tripId}${dayId.slice(previousId.length)}`;
+    return dayId;
+  };
+
+  const days = trip.days?.map((day, index) => {
+    const fallbackDayId = day.date ? `${tripId}-${day.date}` : `${tripId}-day-${index + 1}`;
+    const nextDayId = remapGeneratedDayId(day.id, fallbackDayId);
+    if (day.id) dayIdByPreviousId.set(day.id, nextDayId);
+
+    return {
+      ...day,
+      id: nextDayId,
+      tripId,
+      items: day.items?.map((item) => ({
+        ...item,
+        dayId: item.dayId ? dayIdByPreviousId.get(item.dayId) ?? remapGeneratedDayId(item.dayId, nextDayId) : nextDayId
+      }))
+    };
+  });
+
+  const withTripId = <Item extends { tripId?: string | undefined }>(items: Item[] | undefined): Item[] | undefined =>
+    items?.map((item) => ({ ...item, tripId }));
+
+  return {
+    ...trip,
+    id: tripId,
+    ...(ownerId ? { ownerId } : {}),
+    days,
+    places: withTripId(trip.places),
+    bookings: trip.bookings?.map((booking) => ({
+      ...booking,
+      tripId,
+      dayId: booking.dayId ? dayIdByPreviousId.get(booking.dayId) ?? remapGeneratedDayId(booking.dayId, booking.dayId) : booking.dayId
+    })),
+    attachments: withTripId(trip.attachments),
+    packingItems: withTripId(trip.packingItems),
+    weather: trip.weather?.map((forecast) => ({
+      ...forecast,
+      dayId: forecast.dayId ? dayIdByPreviousId.get(forecast.dayId) ?? remapGeneratedDayId(forecast.dayId, forecast.dayId) : forecast.dayId
+    })),
+    budgetMembers: withTripId(trip.budgetMembers),
+    budgetItems: withTripId(trip.budgetItems),
+    offlineBundle: trip.offlineBundle ? { ...trip.offlineBundle, tripId } : trip.offlineBundle
+  };
+}
+
 export type GateResult =
   | { allowed: true }
   | {

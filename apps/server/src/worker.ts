@@ -1,4 +1,4 @@
-import { TripSchema, createPersistedTripId, isPersistedTripId, type AppliedTrip } from "@wanderlust/domain";
+import { TripSchema, createPersistedTripId, isPersistedTripId, reassignTripReferences } from "@wanderlust/domain";
 
 export type Env = {
   DB: D1Database;
@@ -51,7 +51,9 @@ export default {
 };
 
 async function createTrip(request: Request, env: Env): Promise<Response> {
-  const trip = normalizePersistedTrip(TripSchema.parse(await request.json()));
+  const parsed = TripSchema.parse(await request.json());
+  const id = isPersistedTripId(parsed.id) ? parsed.id : createPersistedTripId();
+  const trip = TripSchema.parse(reassignTripReferences(parsed, id));
   await env.DB.prepare(
     `INSERT INTO trips (id, owner_id, title, destination, status, payload, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -67,48 +69,6 @@ async function createTrip(request: Request, env: Env): Promise<Response> {
     .run();
 
   return json({ trip }, 201);
-}
-
-function normalizePersistedTrip(trip: AppliedTrip): AppliedTrip {
-  if (isPersistedTripId(trip.id)) return trip;
-
-  const previousId = trip.id;
-  const id = createPersistedTripId();
-  const dayIdByPreviousId = new Map<string, string>();
-  const days = trip.days.map((day) => {
-    const nextDayId = day.id.startsWith(`${previousId}-`) ? `${id}${day.id.slice(previousId.length)}` : day.id;
-    dayIdByPreviousId.set(day.id, nextDayId);
-    return {
-      ...day,
-      id: nextDayId,
-      tripId: id,
-      items: day.items.map((item) => ({
-        ...item,
-        dayId: dayIdByPreviousId.get(item.dayId) ?? item.dayId
-      }))
-    };
-  });
-  const withTripId = <T extends { tripId: string }>(items: T[]): T[] => items.map((item) => ({ ...item, tripId: id }));
-
-  return TripSchema.parse({
-    ...trip,
-    id,
-    days,
-    places: withTripId(trip.places),
-    bookings: trip.bookings.map((booking) => ({
-      ...booking,
-      tripId: id,
-      dayId: booking.dayId ? dayIdByPreviousId.get(booking.dayId) ?? booking.dayId : booking.dayId
-    })),
-    attachments: withTripId(trip.attachments),
-    packingItems: withTripId(trip.packingItems),
-    weather: trip.weather.map((forecast) => ({
-      ...forecast,
-      dayId: dayIdByPreviousId.get(forecast.dayId) ?? forecast.dayId
-    })),
-    budgetMembers: withTripId(trip.budgetMembers),
-    budgetItems: withTripId(trip.budgetItems)
-  });
 }
 
 async function getTrip(id: string, env: Env): Promise<Response> {
