@@ -169,6 +169,13 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   box-shadow: 0 22px 54px rgba(45, 45, 45, 0.3);
 }
 
+body[data-scroll-locked] .global-ai-launcher,
+body[data-scroll-locked] .global-command-launcher {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .global-ai-dialog-content {
   width: min(560px, calc(100vw - 28px));
   padding: 18px;
