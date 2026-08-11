@@ -37,6 +37,7 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
 
 .travel-image-img {
   object-fit: cover;
+  z-index: 1;
 }
 
 .travel-image-overlay {
@@ -2331,8 +2332,25 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .route-step-image {
   min-height: 248px;
 }
+.route-step-image::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0.62;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 24%, rgba(255, 248, 238, 0.46), transparent 28%),
+    radial-gradient(circle at 76% 18%, rgba(255, 248, 238, 0.3), transparent 24%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 42%),
+    repeating-linear-gradient(135deg, rgba(255, 248, 238, 0.3) 0 1px, transparent 1px 14px);
+}
 .route-step-image-overlay {
-  background: linear-gradient(90deg, rgba(29, 27, 24, 0.08), rgba(29, 27, 24, 0.02));
+  z-index: 2;
+  background:
+    linear-gradient(90deg, rgba(29, 27, 24, 0.08), rgba(29, 27, 24, 0.02)),
+    radial-gradient(circle at 88% 82%, rgba(255, 248, 238, 0.16), transparent 26%);
 }
 .route-step-date-panel {
   position: relative;
@@ -4122,7 +4140,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     font-size: 18px;
   }
   .route-step-image,
-  .workspace:not(.workspace-loading) .route-step-image { min-height: 180px; }
+  .workspace:not(.workspace-loading) .route-step-image { min-height: 148px; }
   .route-step-body,
   .workspace:not(.workspace-loading) .route-step-body { padding: 18px; }
   .route-step-topline { align-items: flex-start; flex-direction: column; }

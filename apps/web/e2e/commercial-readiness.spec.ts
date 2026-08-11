@@ -618,6 +618,31 @@ test("expanded itinerary cards stay readable on mobile", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("mobile itinerary image placeholder does not dominate expanded cards", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.getByRole("button", { name: "编辑 新的行程项" }).click();
+
+  if ((page.viewportSize()?.width ?? 0) <= 500) {
+    const image = await page.locator(".route-step-card.expanded .route-step-image").first().evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const before = getComputedStyle(element, "::before");
+      return {
+        height: Math.round(box.height),
+        viewportHeight: window.innerHeight,
+        hasFallbackTexture: before.content !== "none" && before.backgroundImage !== "none"
+      };
+    });
+
+    expect(image.height).toBeLessThanOrEqual(160);
+    expect(image.height).toBeLessThan(image.viewportHeight * 0.22);
+    expect(image.hasFallbackTexture).toBe(true);
+  }
+
+  await expectNoHorizontalOverflow(page);
+});
+
 test("expanded itinerary card actions keep usable tap targets", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
