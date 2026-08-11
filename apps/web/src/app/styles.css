@@ -339,6 +339,7 @@ label span {
 }
 
 .product-nav-brand {
+  min-height: 44px;
   gap: 9px;
   font-size: 13px;
   font-weight: 900;
@@ -3143,11 +3144,11 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   font-weight: 800;
 }
 .share-state a {
-  min-height: 40px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 0 14px;
+  padding: 0 16px;
   background: var(--ink);
   color: #fff8ee;
   font-weight: 900;
@@ -3845,7 +3846,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     top: 10px;
   }
   .product-nav-brand {
-    min-height: 38px;
+    min-height: 44px;
   }
   .product-nav-links {
     grid-column: 1 / -1;

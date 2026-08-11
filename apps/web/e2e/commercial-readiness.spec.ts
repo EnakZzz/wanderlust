@@ -295,6 +295,31 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(overflow.scrollWidth, JSON.stringify(overflow.offenders, null, 2)).toBeLessThanOrEqual(overflow.viewport + 2);
 }
 
+async function expectVisibleTapTargetsAtLeast44(page: Page, selector: string) {
+  const targets = await page.locator(selector).evaluateAll((elements) =>
+    elements
+      .filter((element) => {
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden" && rect.top < window.innerHeight;
+      })
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          text: element.textContent?.trim().replace(/\s+/g, " ") ?? element.getAttribute("aria-label") ?? "",
+          width: Math.round(rect.width),
+          height: Math.round(rect.height)
+        };
+      })
+  );
+
+  expect(targets.length).toBeGreaterThan(0);
+  for (const target of targets) {
+    expect(target.width, `${target.text} width`).toBeGreaterThanOrEqual(44);
+    expect(target.height, `${target.text} height`).toBeGreaterThanOrEqual(44);
+  }
+}
+
 function relativeLuminance([red, green, blue]: [number, number, number]) {
   const [r, g, b] = [red, green, blue].map((value) => {
     const channel = value / 255;
@@ -359,7 +384,7 @@ for (const path of ["/", "/dashboard"] as const) {
     await expect(page.locator(path === "/" ? ".hero-shell .product-nav" : ".product-nav").first()).toBeVisible();
     await expect(page.locator(".product-nav-actions a").first()).toBeVisible();
 
-    const actions = await page.locator(".product-nav-links a, .product-nav-actions a").evaluateAll((links) =>
+    const actions = await page.locator(".product-nav-brand, .product-nav-links a, .product-nav-actions a").evaluateAll((links) =>
       links
         .filter((link) => {
           const style = getComputedStyle(link);
@@ -381,6 +406,15 @@ for (const path of ["/", "/dashboard"] as const) {
       expect(action.width, `${path} ${action.text} width`).toBeGreaterThanOrEqual(44);
       expect(action.height, `${path} ${action.text} height`).toBeGreaterThanOrEqual(44);
     }
+    await expectNoHorizontalOverflow(page);
+  });
+}
+
+for (const path of ["/dashboard", "/journeys", "/search", "/passport"] as const) {
+  test(`product shell actions keep usable tap targets at ${path}`, async ({ page }) => {
+    await page.goto(path, { waitUntil: "domcontentloaded" });
+
+    await expectVisibleTapTargetsAtLeast44(page, "main a, main button");
     await expectNoHorizontalOverflow(page);
   });
 }
@@ -608,6 +642,7 @@ test("invalid public share links show a customer-facing error", async ({ page })
   await expect(page.getByText("无法打开分享路书")).toBeVisible();
   await expect(page.getByText(/Unexpected token|DOCTYPE|JSON/i)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "打开 AI 修改窗口" })).toHaveCount(0);
+  await expectVisibleTapTargetsAtLeast44(page, ".share-state a");
   await expectNoHorizontalOverflow(page);
 });
 
