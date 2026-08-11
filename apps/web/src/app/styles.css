@@ -2535,6 +2535,9 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   gap: 8px;
   color: var(--accent);
 }
+.route-step-editor input {
+  min-height: 44px;
+}
 .route-step-editor .reason-field,
 .route-step-editor > textarea {
   grid-column: 1 / -1;
