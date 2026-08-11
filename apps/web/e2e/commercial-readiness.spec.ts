@@ -1013,11 +1013,25 @@ test("public and journey list display typography avoids vertical clipping", asyn
   await mockSignedInTripListRuntime(page);
   await page.goto("/journeys", { waitUntil: "domcontentloaded" });
 
-  const journeyOverflow = await page.locator(".journey-photo-card strong").evaluateAll((elements) =>
-    elements.map((element) => element.scrollHeight - element.clientHeight)
+  const journeyOverflow = await page.locator(".journeys-heading h1, .journey-photo-card strong").evaluateAll((elements) =>
+    elements.map((element) => ({
+      text: element.textContent?.trim(),
+      overflow: element.scrollHeight - element.clientHeight
+    }))
   );
-  for (const overflow of journeyOverflow) {
-    expect(overflow).toBeLessThanOrEqual(2);
+  for (const item of journeyOverflow) {
+    expect(item.overflow, `${item.text} should not clip vertically`).toBeLessThanOrEqual(2);
+  }
+
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  const dashboardOverflow = await page.locator(".dashboard-hero h1, .dashboard-stat-grid strong, .dashboard-section-heading h2, .dashboard-trip-card strong").evaluateAll((elements) =>
+    elements.map((element) => ({
+      text: element.textContent?.trim(),
+      overflow: element.scrollHeight - element.clientHeight
+    }))
+  );
+  for (const item of dashboardOverflow) {
+    expect(item.overflow, `${item.text} should not clip vertically`).toBeLessThanOrEqual(2);
   }
 
   await mockPublicShareRuntime(page);

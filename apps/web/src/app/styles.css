@@ -534,8 +534,9 @@ label span {
 .passport-hero h1 {
   max-width: 860px;
   font-size: clamp(42px, 6vw, 78px);
+  line-height: 1.18;
   overflow-wrap: anywhere;
-  padding: 0.06em 0.08em 0.08em 0;
+  padding: 0.08em 0.08em 0.1em 0;
 }
 
 .dashboard-hero p:not(.eyebrow),
@@ -721,7 +722,8 @@ label span {
   font-size: clamp(38px, 5vw, 62px);
   font-style: italic;
   font-weight: 500;
-  line-height: 0.95;
+  line-height: 1.28;
+  padding-block: 0.12em 0.14em;
 }
 
 .dashboard-stat-grid span,
@@ -747,6 +749,8 @@ label span {
 
 .dashboard-section-heading h2 {
   font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.2;
+  padding-block: 0.06em 0.08em;
 }
 
 .dashboard-trip-list,
@@ -799,7 +803,8 @@ label span {
   font-size: 28px;
   font-style: italic;
   font-weight: 500;
-  line-height: 1.02;
+  line-height: 1.18;
+  padding-block: 0.06em 0.08em;
 }
 
 .dashboard-trip-card em,
