@@ -295,6 +295,28 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(overflow.scrollWidth, JSON.stringify(overflow.offenders, null, 2)).toBeLessThanOrEqual(overflow.viewport + 2);
 }
 
+function relativeLuminance([red, green, blue]: [number, number, number]) {
+  const [r, g, b] = [red, green, blue].map((value) => {
+    const channel = value / 255;
+    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrastRatio(foreground: [number, number, number], background: [number, number, number]) {
+  const fg = relativeLuminance(foreground);
+  const bg = relativeLuminance(background);
+  const lighter = Math.max(fg, bg);
+  const darker = Math.min(fg, bg);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function parseRgb(value: string): [number, number, number] {
+  const match = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!match) throw new Error(`Unsupported color value: ${value}`);
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
 async function expectAnyInputValue(page: Page, value: string) {
   await expect
     .poll(async () =>
@@ -431,6 +453,24 @@ test("global AI launcher does not cover mobile editor forms", async ({ page }) =
     expect(layout!.overlaps).toBe(false);
   }
 
+  await expectNoHorizontalOverflow(page);
+});
+
+test("journey list primary CTA label remains readable", async ({ page }) => {
+  await page.goto("/journeys", { waitUntil: "domcontentloaded" });
+
+  const cta = page.locator(".journeys-heading a").first();
+  await expect(cta).toContainText("新建路书");
+
+  const colors = await cta.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      color: style.color,
+      backgroundColor: style.backgroundColor
+    };
+  });
+
+  expect(contrastRatio(parseRgb(colors.color), parseRgb(colors.backgroundColor))).toBeGreaterThanOrEqual(4.5);
   await expectNoHorizontalOverflow(page);
 });
 

@@ -844,6 +844,10 @@ label span {
   margin-bottom: clamp(24px, 4vw, 44px);
 }
 
+.journeys-heading > a {
+  color: #fff8ee;
+}
+
 .journeys-grid {
   grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
 }
