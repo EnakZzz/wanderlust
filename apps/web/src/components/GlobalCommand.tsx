@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Command } from "cmdk";
 import { Command as CommandIcon, LayoutDashboard, MapPinned, Route, Search, Sparkles } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const openGlobalAiDialogEvent = "wanderlust:open-global-ai-dialog";
@@ -16,10 +17,14 @@ const commandItems = [
 ];
 
 export function GlobalCommand() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const hiddenOnThisRoute = pathname === "/share";
 
   useEffect(() => {
+    if (hiddenOnThisRoute) return;
+
     function onKeyDown(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
@@ -29,7 +34,9 @@ export function GlobalCommand() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [hiddenOnThisRoute]);
+
+  if (hiddenOnThisRoute) return null;
 
   function runCommand(item: (typeof commandItems)[number]) {
     const prompt = query.trim();
