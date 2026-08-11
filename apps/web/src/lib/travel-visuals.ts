@@ -89,6 +89,6 @@ export function getDestinationTheme(destination: string): DestinationTheme | Omi
   return destinationThemes.find((theme) => theme.keywords.some((keyword) => normalized.includes(keyword.toLowerCase()))) ?? defaultDestinationTheme;
 }
 
-export function getItineraryTypeVisual(type: ItineraryItem["type"]): TravelVisual {
-  return itineraryTypeVisuals[type];
+export function getItineraryTypeVisual(type: ItineraryItem["type"] | string): TravelVisual {
+  return itineraryTypeVisuals[type as ItineraryItem["type"]] ?? itineraryTypeVisuals.activity;
 }

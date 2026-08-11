@@ -19,6 +19,10 @@ const typeLabels: Record<ItineraryItem["type"], string> = {
   booking: "预订"
 };
 
+function getTypeLabel(type: ItineraryItem["type"] | string): string {
+  return typeLabels[type as ItineraryItem["type"]] ?? "活动";
+}
+
 function formatDateRange(trip: Trip): string {
   return `${trip.startDate} - ${trip.endDate}`;
 }
@@ -152,7 +156,7 @@ export default function SharePage() {
                           />
                           <div className="share-step-copy">
                             <div className="share-step-meta">
-                              <span>{typeLabels[item.type]}</span>
+                              <span>{getTypeLabel(item.type)}</span>
                               <em><Clock size={14} /> {formatItemTime(item)}</em>
                             </div>
                             <h3>{item.title}</h3>

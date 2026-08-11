@@ -135,6 +135,91 @@ async function mockSignedInRuntime(page: Page) {
   await page.exposeFunction("getCommercialApiCalls", () => calls);
 }
 
+async function mockPublicShareRuntime(page: Page) {
+  const tripId = "trip_public_readable";
+  await page.route("**/api/share/public_tokyo_test", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        share: {
+          id: "share_public_test",
+          tripId,
+          token: "public_tokyo_test",
+          visibility: "public",
+          allowCopy: true,
+          revokedAt: null,
+          expiresAt: null
+        },
+        trip: {
+          id: tripId,
+          ownerId: "google:test-user",
+          title: "东京公开路书",
+          destination: "Tokyo, Japan",
+          startDate: "2026-09-01",
+          endDate: "2026-09-03",
+          timezone: "Asia/Tokyo",
+          status: "published",
+          places: [
+            {
+              id: "place_sensoji",
+              tripId,
+              name: "浅草寺",
+              category: "culture",
+              latitude: 35.7148,
+              longitude: 139.7967,
+              address: "2 Chome-3-1 Asakusa, Taito City, Tokyo",
+              tags: ["temple"],
+              isFavorite: true
+            }
+          ],
+          bookings: [
+            {
+              id: "booking_hotel",
+              tripId,
+              type: "hotel",
+              title: "Hotel Niwa Tokyo",
+              status: "confirmed",
+              confirmationCode: "ABC123",
+              attachmentIds: [],
+              segments: []
+            }
+          ],
+          attachments: [],
+          packingItems: [{ id: "packing_suica", tripId, title: "Suica 卡", category: "documents", quantity: 1, packed: false }],
+          weather: [],
+          budgetMembers: [],
+          budgetItems: [],
+          days: [
+            {
+              id: "day_tokyo_1",
+              tripId,
+              date: "2026-09-01",
+              title: "抵达东京",
+              sortOrder: 0,
+              items: [
+                {
+                  id: "item_legacy_type",
+                  dayId: "day_tokyo_1",
+                  tripId,
+                  type: "sightseeing",
+                  title: "浅草寺散步",
+                  startTime: "09:30",
+                  endTime: "11:00",
+                  placeId: "place_sensoji",
+                  notes: "早上人少，适合拍照。",
+                  attachmentIds: [],
+                  sortOrder: 0
+                }
+              ]
+            }
+          ]
+        }
+      })
+    })
+  );
+}
+
 async function expectNoHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => {
     const root = document.documentElement;
@@ -340,6 +425,23 @@ test("signed-in users can save and create a share link for a routebook", async (
   await expect
     .poll(async () => page.evaluate(async () => (window as unknown as { getCommercialApiCalls: () => Promise<{ saves: number; shares: number }> }).getCommercialApiCalls()))
     .toMatchObject({ saves: 1, shares: 1 });
+});
+
+test("public share routebook renders safely with legacy itinerary types", async ({ page }) => {
+  await mockPublicShareRuntime(page);
+  const browserErrors: string[] = [];
+  page.on("pageerror", (error) => browserErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") browserErrors.push(message.text());
+  });
+
+  await page.goto("/share?token=public_tokyo_test", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "东京公开路书" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "浅草寺散步" })).toBeVisible();
+  await expect(page.getByText("活动").first()).toBeVisible();
+  expect(browserErrors).toEqual([]);
+  await expectNoHorizontalOverflow(page);
 });
 
 test("id based journey URL has a browser fallback in static-compatible routing", async ({ page }) => {
