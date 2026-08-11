@@ -863,6 +863,32 @@ test("signed-in journey cards keep destination imagery full bleed", async ({ pag
   await expectNoHorizontalOverflow(page);
 });
 
+test("public and journey list display typography avoids vertical clipping", async ({ page }) => {
+  await mockSignedInTripListRuntime(page);
+  await page.goto("/journeys", { waitUntil: "domcontentloaded" });
+
+  const journeyOverflow = await page.locator(".journey-photo-card strong").evaluateAll((elements) =>
+    elements.map((element) => element.scrollHeight - element.clientHeight)
+  );
+  for (const overflow of journeyOverflow) {
+    expect(overflow).toBeLessThanOrEqual(2);
+  }
+
+  await mockPublicShareRuntime(page);
+  await page.goto("/share?token=public_tokyo_test", { waitUntil: "domcontentloaded" });
+  const shareOverflow = await page.locator(".share-hero-copy h1, .share-stat-grid strong, .share-day-heading h2").evaluateAll((elements) =>
+    elements.map((element) => ({
+      text: element.textContent?.trim(),
+      overflow: element.scrollHeight - element.clientHeight
+    }))
+  );
+  for (const item of shareOverflow) {
+    expect(item.overflow, `${item.text} should not clip vertically`).toBeLessThanOrEqual(2);
+  }
+
+  await expectNoHorizontalOverflow(page);
+});
+
 test("anonymous users can create a named local routebook and keep it after refresh", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

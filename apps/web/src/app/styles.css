@@ -1014,6 +1014,7 @@ label span {
 .journey-photo-card strong {
   max-width: 92%;
   color: #fff8ee;
+  line-height: 1.18;
   text-shadow: 0 2px 20px rgba(20, 18, 16, 0.42);
 }
 
@@ -2951,6 +2952,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .share-hero-copy h1 {
   max-width: 980px;
+  line-height: 1.38;
 }
 .share-hero-copy p:not(.eyebrow) {
   max-width: 720px;
@@ -3014,7 +3016,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   font-size: clamp(36px, 4vw, 58px);
   font-style: italic;
   font-weight: 500;
-  line-height: 0.95;
+  line-height: 1.34;
 }
 .share-stat-grid span {
   color: var(--muted);
@@ -3072,6 +3074,9 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .share-day-heading {
   display: grid;
   gap: 4px;
+}
+.share-day-heading h2 {
+  line-height: 1.3;
 }
 .share-day-heading .eyebrow {
   margin-bottom: 2px;
