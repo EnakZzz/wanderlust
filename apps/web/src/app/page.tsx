@@ -2,6 +2,7 @@ import { Plane } from "lucide-react";
 import { productBrand } from "@wanderlust/domain";
 import { MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
+import { Button } from "@/components/ui/button";
 import { heroVisuals } from "@/lib/travel-visuals";
 import { ProductNav } from "./ProductNav";
 import { RoutebookEditor } from "./RoutebookEditor";
@@ -19,8 +20,12 @@ export default function HomePage() {
             {productBrand.description}
           </p>
           <div className="hero-buttons">
-            <a className="primary" href="/dashboard">打开控制台</a>
-            <a className="secondary" href="#editor"><Plane size={17} /> 直接编辑路书</a>
+            <Button asChild size="lg" className="hero-action-primary">
+              <a href="/dashboard">打开控制台</a>
+            </Button>
+            <Button asChild size="lg" variant="secondary" className="hero-action-secondary">
+              <a href="#editor"><Plane size={17} /> 直接编辑路书</a>
+            </Button>
           </div>
         </div>
       </MotionSection>

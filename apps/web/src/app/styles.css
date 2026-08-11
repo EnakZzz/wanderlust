@@ -1090,7 +1090,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 
 .hero-buttons { gap: 12px; flex-wrap: wrap; margin-top: 26px; }
 
-.primary, .secondary, .icon-button {
+.icon-button {
   border: 1px solid rgba(255,255,255,0.35);
   border-radius: 999px;
   min-height: 44px;
@@ -1101,8 +1101,16 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   font-weight: 800;
   letter-spacing: 0.02em;
 }
-.primary { background: #fff8ee; color: #2c241f; }
-.secondary { color: #fff8ee; backdrop-filter: blur(12px); }
+.hero-action-primary {
+  background: #fff8ee;
+  color: #2c241f;
+}
+.hero-action-secondary {
+  border-color: rgba(255,255,255,0.35);
+  background: rgba(255, 248, 238, 0.08);
+  color: #fff8ee;
+  backdrop-filter: blur(12px);
+}
 
 .workspace {
   width: min(1520px, calc(100% - clamp(28px, 6vw, 112px)));
@@ -3717,8 +3725,8 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .hero-copy p:not(.eyebrow) {
     max-width: 34rem;
   }
-  .hero-buttons .primary,
-  .hero-buttons .secondary {
+  .hero-buttons .hero-action-primary,
+  .hero-buttons .hero-action-secondary {
     width: 100%;
   }
   .dashboard-shell,
