@@ -942,6 +942,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const activeTripSummary = useMemo(() => trips.find((trip) => trip.id === draft.id), [draft.id, trips]);
   const displayTitle = draft.title || "未命名路书";
   const displayDestination = draft.destination || "未设置目的地";
+  const activeModuleMeta = modules.find((module) => module.id === activeModule) ?? modules[0];
   const hasTripDeepLink = Boolean(getRequestedTripId());
   const hasPendingTripDeepLink = Boolean(
     hasTripDeepLink && !initialTripIdConsumed
@@ -1625,6 +1626,21 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     setAiAssistantOpen(true);
   }
 
+  function openActiveModuleAiAssistant() {
+    if (activeModule === "itinerary") {
+      openAiAssistant(
+        { source: "day", dayId: selectedDay.id, label: selectedDay.title },
+        `帮我优化${selectedDay.title}的行程安排，先给出可确认的修改预览。`
+      );
+      return;
+    }
+
+    openAiAssistant(
+      { source: "global", label: `${activeModuleMeta.title}模块` },
+      `帮我优化这本路书的${activeModuleMeta.title}模块，重点处理${activeModuleMeta.copy}，先给出可确认的修改预览。`
+    );
+  }
+
   async function requestAiPatch(values: AiPatchForm) {
     if (!user) {
       setAiPatchError("运行 AI 修改前请先用 Google 或 Apple 登录。");
@@ -1971,8 +1987,20 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
             {syncError ? <div className="sync-error">{syncError}</div> : null}
 
             <div className="module-heading">
-              <p>{modules.find((module) => module.id === activeModule)?.title}</p>
-              <span>{moduleCopy[activeModule]}</span>
+              <div>
+                <p>{activeModuleMeta.title}</p>
+                <span>{moduleCopy[activeModule]}</span>
+              </div>
+              <IconButton
+                className="module-ai-button"
+                type="button"
+                label={`AI 优化${activeModuleMeta.title}模块`}
+                tooltip={user ? `用 AI 修改${activeModuleMeta.title}，先生成预览` : "登录后使用 AI 修改"}
+                onClick={openActiveModuleAiAssistant}
+                disabled={!user}
+              >
+                <Sparkles size={18} />
+              </IconButton>
             </div>
 
             {activeModule === "itinerary" ? (
