@@ -3709,6 +3709,13 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   gap: 24px;
   padding-top: clamp(22px, 3vw, 34px);
 }
+.workspace.workspace-plan-home:not(.workspace-loading) {
+  width: min(1220px, calc(100% - clamp(32px, 7vw, 132px)));
+  grid-template-columns: minmax(0, 1fr);
+}
+.workspace.workspace-plan-home:not(.workspace-loading) .itinerary-panel {
+  grid-column: 1 / -1;
+}
 .workspace:not(.workspace-loading) .rail {
   width: min(620px, calc(100% - 32px));
   margin-bottom: 18px;
@@ -4136,6 +4143,26 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     border-radius: 22px;
   }
   .trip-card { aspect-ratio: 1.85 / 1; }
+  .plan-home-list .trip-card {
+    aspect-ratio: auto;
+    min-height: 216px;
+    grid-template-rows: minmax(150px, 1fr) 58px;
+  }
+  .plan-home-list .trip-card-open {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 16px 10px;
+  }
+  .plan-home-list .trip-card-icon {
+    width: 58px;
+    height: 58px;
+  }
+  .plan-home-list .trip-card-copy strong {
+    line-height: 1.16;
+  }
+  .plan-home-list .trip-card-copy small {
+    margin-top: 10px;
+  }
   .new-trip-button { justify-self: start; }
   .plan-home-heading { align-items: stretch; flex-direction: column; }
   .editor-heading { grid-template-columns: 1fr; }

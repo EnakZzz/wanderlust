@@ -609,6 +609,45 @@ test("mobile editor module rail stays single row clear of the floating AI launch
   await expectNoHorizontalOverflow(page);
 });
 
+test("mobile routebook library keeps trip cards readable", async ({ page }) => {
+  await mockSignedInTripListRuntime(page);
+  await page.goto("/journeys/edit", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "你的路书" })).toBeVisible();
+
+  if ((page.viewportSize()?.width ?? 0) <= 500) {
+    const layout = await page.evaluate(() => {
+      const panel = document.querySelector<HTMLElement>(".itinerary-panel")?.getBoundingClientRect();
+      const list = document.querySelector<HTMLElement>(".plan-home-list")?.getBoundingClientRect();
+      const cards = Array.from(document.querySelectorAll<HTMLElement>(".plan-home-list .trip-card")).map((card) => {
+        const cardBox = card.getBoundingClientRect();
+        const title = card.querySelector<HTMLElement>(".trip-card-copy strong");
+        const titleBox = title?.getBoundingClientRect();
+        return {
+          cardWidth: cardBox.width,
+          titleWidth: titleBox?.width ?? 0,
+          titleOverflowY: title ? title.scrollHeight - title.clientHeight : 0
+        };
+      });
+
+      return {
+        panelWidth: panel?.width ?? 0,
+        listWidth: list?.width ?? 0,
+        cards
+      };
+    });
+
+    expect(layout.panelWidth, JSON.stringify(layout)).toBeGreaterThan(300);
+    expect(layout.listWidth, JSON.stringify(layout)).toBeGreaterThan(280);
+    for (const card of layout.cards) {
+      expect(card.cardWidth, JSON.stringify(layout)).toBeGreaterThan(280);
+      expect(card.titleWidth, JSON.stringify(layout)).toBeGreaterThan(150);
+      expect(card.titleOverflowY, JSON.stringify(layout)).toBeLessThanOrEqual(2);
+    }
+  }
+
+  await expectNoHorizontalOverflow(page);
+});
+
 test("local routebook editing supports a first itinerary item without login", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
