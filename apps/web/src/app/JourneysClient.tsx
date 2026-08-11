@@ -59,7 +59,6 @@ export function JourneysClient() {
                 src={theme.image}
                 alt=""
                 className="journey-card-image"
-                containerStyle={{ position: "absolute", inset: 0, width: "100vw", height: "100%" }}
                 overlayClassName="journey-card-image-overlay"
                 sizes="(max-width: 760px) 100vw, 33vw"
               />

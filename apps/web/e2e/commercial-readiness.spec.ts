@@ -848,8 +848,10 @@ test("signed-in journey cards keep destination imagery full bleed", async ({ pag
       const card = element.getBoundingClientRect();
       const image = element.querySelector<HTMLElement>(".journey-card-image")?.getBoundingClientRect();
       return {
+        cardLeft: Math.round(card.left),
         cardWidth: Math.round(card.width),
         cardHeight: Math.round(card.height),
+        imageLeft: Math.round(image?.left ?? 0),
         imageWidth: Math.round(image?.width ?? 0),
         imageHeight: Math.round(image?.height ?? 0)
       };
@@ -857,7 +859,9 @@ test("signed-in journey cards keep destination imagery full bleed", async ({ pag
   );
 
   for (const card of cards) {
+    expect(Math.abs(card.imageLeft - card.cardLeft), JSON.stringify(card)).toBeLessThanOrEqual(6);
     expect(card.imageWidth, JSON.stringify(card)).toBeGreaterThanOrEqual(card.cardWidth - 2);
+    expect(card.imageWidth, JSON.stringify(card)).toBeLessThanOrEqual(Math.ceil(card.cardWidth * 1.04));
     expect(card.imageHeight, JSON.stringify(card)).toBeGreaterThanOrEqual(card.cardHeight - 2);
   }
   await expectNoHorizontalOverflow(page);
