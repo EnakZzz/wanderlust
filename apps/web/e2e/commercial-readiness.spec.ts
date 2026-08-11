@@ -571,6 +571,32 @@ test("signed-in routebook lists show customer-facing status labels", async ({ pa
   await expectNoHorizontalOverflow(page);
 });
 
+test("signed-in journey cards keep destination imagery full bleed", async ({ page }) => {
+  await mockSignedInTripListRuntime(page);
+
+  await page.goto("/journeys", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(".journey-photo-card")).toHaveCount(2);
+
+  const cards = await page.locator(".journey-photo-card").evaluateAll((elements) =>
+    elements.map((element) => {
+      const card = element.getBoundingClientRect();
+      const image = element.querySelector<HTMLElement>(".journey-card-image")?.getBoundingClientRect();
+      return {
+        cardWidth: Math.round(card.width),
+        cardHeight: Math.round(card.height),
+        imageWidth: Math.round(image?.width ?? 0),
+        imageHeight: Math.round(image?.height ?? 0)
+      };
+    })
+  );
+
+  for (const card of cards) {
+    expect(card.imageWidth, JSON.stringify(card)).toBeGreaterThanOrEqual(card.cardWidth - 2);
+    expect(card.imageHeight, JSON.stringify(card)).toBeGreaterThanOrEqual(card.cardHeight - 2);
+  }
+  await expectNoHorizontalOverflow(page);
+});
+
 test("anonymous users can create a named local routebook and keep it after refresh", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

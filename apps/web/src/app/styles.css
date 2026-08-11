@@ -890,10 +890,14 @@ label span {
 .journey-photo-card {
   min-height: 340px;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   overflow: hidden;
-  align-content: space-between;
   border-color: color-mix(in srgb, var(--journey-card-accent, var(--accent)) 34%, transparent);
-  background: #27231f;
+  background:
+    radial-gradient(circle at 16% 18%, var(--journey-card-glow, rgba(139, 115, 91, 0.22)), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--journey-card-accent, var(--accent)) 38%, #27231f), #27231f 54%, color-mix(in srgb, var(--journey-card-ink, #27231f) 62%, #171410));
   color: #fff8ee;
   isolation: isolate;
 }
@@ -918,6 +922,10 @@ label span {
   position: absolute;
   inset: 0;
   z-index: 0;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  width: 100vw;
+  height: 100%;
   transform: scale(1.01);
   transition: transform 420ms ease;
 }

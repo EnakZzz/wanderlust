@@ -50,10 +50,19 @@ export function JourneysClient() {
               href={tripEditorHref(trip.id)}
               style={{
                 "--journey-card-accent": theme.accent,
-                "--journey-card-ink": theme.ink
+                "--journey-card-ink": theme.ink,
+                "--journey-card-wash": theme.wash,
+                "--journey-card-glow": theme.glow
               } as CSSProperties}
             >
-              <TravelImage src={theme.image} alt="" className="journey-card-image" overlayClassName="journey-card-image-overlay" sizes="(max-width: 760px) 100vw, 33vw" />
+              <TravelImage
+                src={theme.image}
+                alt=""
+                className="journey-card-image"
+                containerStyle={{ position: "absolute", inset: 0, width: "100vw", height: "100%" }}
+                overlayClassName="journey-card-image-overlay"
+                sizes="(max-width: 760px) 100vw, 33vw"
+              />
               <div className="journey-card-topline">
                 <span>{formatTripStatus(trip.status)}</span>
                 <small><CalendarDays size={14} />{formatTripDates(trip)}</small>
