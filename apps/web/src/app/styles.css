@@ -119,6 +119,30 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   font-weight: 850;
 }
 
+.global-command-launcher {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 38;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  background: #fff8ee;
+  color: var(--ink);
+  box-shadow: 0 18px 46px rgba(45, 45, 45, 0.2);
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.global-command-launcher:hover {
+  transform: translateY(-2px);
+  background: #fff;
+  box-shadow: 0 22px 54px rgba(45, 45, 45, 0.24);
+}
+
 .global-ai-launcher {
   position: fixed;
   left: 24px;
@@ -3894,6 +3918,12 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     left: auto;
     right: 16px;
     bottom: calc(84px + env(safe-area-inset-bottom));
+    width: 48px;
+    height: 48px;
+  }
+  .global-command-launcher {
+    right: 16px;
+    bottom: calc(24px + env(safe-area-inset-bottom));
     width: 48px;
     height: 48px;
   }

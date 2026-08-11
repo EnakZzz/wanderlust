@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Command } from "cmdk";
-import { LayoutDashboard, MapPinned, Route, Search, Sparkles } from "lucide-react";
+import { Command as CommandIcon, LayoutDashboard, MapPinned, Route, Search, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const openGlobalAiDialogEvent = "wanderlust:open-global-ai-dialog";
@@ -43,36 +43,41 @@ export function GlobalCommand() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="command-dialog-content" aria-label="全局命令窗口">
-        <DialogHeader className="command-dialog-heading">
-          <DialogTitle>快速操作</DialogTitle>
-          <DialogDescription>搜索页面和常用路书动作。</DialogDescription>
-        </DialogHeader>
-        <Command className="command-menu" loop>
-          <Command.Input
-            className="command-input"
-            placeholder="搜索页面，或输入一句话让 AI 修改当前路书..."
-            value={query}
-            onValueChange={setQuery}
-          />
-          <Command.Empty className="command-empty">没有匹配结果</Command.Empty>
-          <Command.List className="command-list">
-            {commandItems.map((item) => (
-              <Command.Item
-                key={item.href}
-                className="command-item"
-                value={`${item.label} ${item.hint}${item.action === "open-ai" ? ` ${query}` : ""}`}
-                onSelect={() => runCommand(item)}
-              >
-                <item.icon size={17} />
-                <span>{item.label}</span>
-                <small>{item.action === "open-ai" && query.trim() ? "使用当前输入" : item.hint}</small>
-              </Command.Item>
-            ))}
-          </Command.List>
-        </Command>
-      </DialogContent>
-    </Dialog>
+    <>
+      <button className="global-command-launcher" type="button" onClick={() => setOpen(true)} aria-label="打开全局命令窗口" title="快速操作">
+        <CommandIcon size={20} />
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="command-dialog-content" aria-label="全局命令窗口">
+          <DialogHeader className="command-dialog-heading">
+            <DialogTitle>快速操作</DialogTitle>
+            <DialogDescription>搜索页面和常用路书动作。</DialogDescription>
+          </DialogHeader>
+          <Command className="command-menu" loop>
+            <Command.Input
+              className="command-input"
+              placeholder="搜索页面，或输入一句话让 AI 修改当前路书..."
+              value={query}
+              onValueChange={setQuery}
+            />
+            <Command.Empty className="command-empty">没有匹配结果</Command.Empty>
+            <Command.List className="command-list">
+              {commandItems.map((item) => (
+                <Command.Item
+                  key={item.href}
+                  className="command-item"
+                  value={`${item.label} ${item.hint}${item.action === "open-ai" ? ` ${query}` : ""}`}
+                  onSelect={() => runCommand(item)}
+                >
+                  <item.icon size={17} />
+                  <span>{item.label}</span>
+                  <small>{item.action === "open-ai" && query.trim() ? "使用当前输入" : item.hint}</small>
+                </Command.Item>
+              ))}
+            </Command.List>
+          </Command>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

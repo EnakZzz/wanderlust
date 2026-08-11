@@ -442,6 +442,22 @@ test("global AI prompt routes into the routebook preview assistant", async ({ pa
   await expect(page.getByText("登录后可使用 AI 修改行程。")).toBeVisible();
 });
 
+test("global command has a visible launcher and can hand prompts to AI", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("button", { name: "打开全局命令窗口" })).toBeVisible();
+  await expectVisibleTapTargetsAtLeast44(page, ".global-command-launcher");
+  await page.getByRole("button", { name: "打开全局命令窗口" }).click();
+  await expect(page.getByRole("dialog", { name: "快速操作" })).toBeVisible();
+
+  await page.getByPlaceholder("搜索页面，或输入一句话让 AI 修改当前路书...").fill("把第一天节奏放慢");
+  await page.getByText("AI 修改当前路书").click();
+
+  await expect(page.getByRole("dialog", { name: "AI 修改路书" })).toBeVisible();
+  await expect(page.getByPlaceholder("例如：把第三天节奏放松一点，晚餐换成更有当地特色的选择。")).toHaveValue("把第一天节奏放慢");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("AI itinerary changes render a confirmable preview before applying", async ({ page }) => {
   await mockSignedInRuntime(page);
   await page.route("**/api/ai/patch", async (route) => {
