@@ -440,6 +440,9 @@ test("public share routebook renders safely with legacy itinerary types", async 
   await expect(page.getByRole("heading", { name: "东京公开路书" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "浅草寺散步" })).toBeVisible();
   await expect(page.getByText("活动").first()).toBeVisible();
+  const routePosition = await page.locator(".share-route").boundingBox();
+  const viewport = page.viewportSize();
+  expect(routePosition?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(viewport?.height ?? 0);
   expect(browserErrors).toEqual([]);
   await expectNoHorizontalOverflow(page);
 });

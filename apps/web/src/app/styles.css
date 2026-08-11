@@ -4074,18 +4074,27 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .editor-heading { align-items: stretch; flex-direction: column; }
   .day-strip { grid-template-columns: repeat(5, minmax(144px, 1fr)); }
   .share-hero {
-    min-height: 640px;
-    padding: 132px 20px 46px;
+    min-height: clamp(390px, 52vh, 470px);
+    padding: 118px 20px 34px;
   }
   .share-body {
     width: calc(100% - 24px);
   }
-  .share-stat-grid,
   .share-layout {
     grid-template-columns: 1fr;
   }
   .share-stat-grid {
-    margin-top: -44px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: -32px 0 18px;
+  }
+  .share-stat-grid div {
+    min-height: 76px;
+    border-radius: 16px;
+    padding: 12px;
+  }
+  .share-stat-grid strong {
+    font-size: 30px;
   }
   .share-day {
     grid-template-columns: 30px minmax(0, 1fr);
