@@ -2457,12 +2457,12 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   margin-top: 10px;
 }
 .route-link-button {
-  min-height: 38px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  padding: 0 4px;
+  padding: 0 8px;
   border: 0;
   background: transparent;
   color: var(--ink);
@@ -2481,9 +2481,9 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   transform: rotate(180deg);
 }
 .icon-button.small {
-  width: 38px;
-  height: 38px;
-  min-height: 38px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
 }
 .icon-button.danger {
   color: #8a3f36;

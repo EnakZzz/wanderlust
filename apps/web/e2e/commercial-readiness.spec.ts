@@ -491,6 +491,16 @@ test("expanded itinerary cards stay readable on mobile", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("expanded itinerary card actions keep usable tap targets", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.getByRole("button", { name: "编辑 新的行程项" }).click();
+
+  await expectVisibleTapTargetsAtLeast44(page, ".route-step-card button, .route-step-card a");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("core routebook modules allow adding places and bookings", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
