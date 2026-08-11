@@ -623,6 +623,21 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expectNoHorizontalOverflow(page);
 });
 
+test("dialogs and select menus keep usable tap targets", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("button", { name: "编辑路书信息" }).click();
+  await expectVisibleTapTargetsAtLeast44(page, "[role='dialog'] button[aria-label='Close'], [role='dialog'] button:has-text('关闭')");
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("radio", { name: "地点" }).click();
+  await page.getByRole("button", { name: "添加地点" }).click();
+  await page.locator(".place-row [role='combobox']").first().click();
+  await expectVisibleTapTargetsAtLeast44(page, "[role='option']");
+  await page.keyboard.press("Escape");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("map pins keep mobile tap targets and return to places", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
