@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type CSSProperties, type ChangeEvent, type DragEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import JSZip from "jszip";
 import { AnimatePresence, motion } from "motion/react";
 import { useForm } from "react-hook-form";
@@ -51,6 +52,7 @@ import {
   type TripDay,
 } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/IconButton";
 import { TravelImage } from "@/components/TravelImage";
 import {
   Dialog,
@@ -65,6 +67,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getDestinationTheme, getItineraryTypeVisual } from "@/lib/travel-visuals";
+import { readTrip, readTrips, removeTrip, saveTrip, useSessionQuery, useTripsQuery } from "@/lib/web-api";
 import {
   attachmentCategories,
   bookingTypes,
@@ -778,6 +781,9 @@ function calculateBudgetSettlements(members: BudgetMember[], items: BudgetItem[]
 }
 
 export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
+  const queryClient = useQueryClient();
+  const sessionQuery = useSessionQuery();
+  const tripsQuery = useTripsQuery(Boolean(sessionQuery.data));
   const [draft, setDraft] = useState<TripDraft>(() => createEmptyTripDraft());
   const [trips, setTrips] = useState<TripSummary[]>([]);
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -823,49 +829,31 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [initialTripIdConsumed, setInitialTripIdConsumed] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    if (sessionQuery.isLoading) return;
 
-    async function bootstrapEditor() {
-      const sessionResponse = await fetch("/auth/session", { credentials: "include" });
-      if (!sessionResponse.ok || !sessionResponse.headers.get("content-type")?.includes("application/json")) {
-        const parsed = readLocalDraft();
-        if (!cancelled) {
-          setDraft(parsed);
-          setSelectedDayId(parsed.days[0]?.id ?? createEmptyTripDraft().days[0]!.id);
-        }
-        return;
-      }
-
-      const session = (await sessionResponse.json()) as { user?: SessionUser | null };
-      if (!session.user) {
-        const parsed = readLocalDraft();
-        if (!cancelled) {
-          setDraft(parsed);
-          setSelectedDayId(parsed.days[0]?.id ?? createEmptyTripDraft().days[0]!.id);
-        }
-        return;
-      }
-
-      const tripsResponse = await fetch("/api/trips", { credentials: "include" });
-      if (!tripsResponse.ok) throw new Error("无法加载账号路书");
-      const tripsPayload = (await tripsResponse.json()) as { trips: TripSummary[] };
-      if (cancelled) return;
-
-      setUser(session.user);
-      setTrips(tripsPayload.trips);
-      setIsSaved(true);
+    if (!sessionQuery.data) {
+      const parsed = readLocalDraft();
+      setUser(null);
+      setTrips([]);
+      setDraft(parsed);
+      setSelectedDayId(parsed.days[0]?.id ?? createEmptyTripDraft().days[0]!.id);
+      setIsAuthChecked(true);
+      return;
     }
 
-    bootstrapEditor().catch((error) => {
-      if (!cancelled) setSyncError(error instanceof Error ? error.message : "无法加载账号路书");
-    }).finally(() => {
-      if (!cancelled) setIsAuthChecked(true);
-    });
+    if (tripsQuery.isLoading) return;
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (tripsQuery.error) {
+      setSyncError(tripsQuery.error instanceof Error ? tripsQuery.error.message : "无法加载账号路书");
+      setIsAuthChecked(true);
+      return;
+    }
+
+    setUser(sessionQuery.data);
+    setTrips(tripsQuery.data ?? []);
+    setIsSaved(true);
+    setIsAuthChecked(true);
+  }, [sessionQuery.data, sessionQuery.isLoading, tripsQuery.data, tripsQuery.error, tripsQuery.isLoading]);
 
   useEffect(() => {
     if (!isAuthChecked || initialDestinationConsumed) return;
@@ -1228,20 +1216,19 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
   async function refreshTrips() {
     if (!user) return;
-    const response = await fetch("/api/trips", { credentials: "include" });
-    if (!response.ok) throw new Error("无法刷新路书列表");
-    const payload = (await response.json()) as { trips: TripSummary[] };
-    setTrips(payload.trips);
+    await queryClient.invalidateQueries({ queryKey: ["trips"] });
+    const nextTrips = await queryClient.fetchQuery({
+      queryKey: ["trips"],
+      queryFn: readTrips
+    });
+    setTrips(nextTrips);
   }
 
   async function loadTrip(tripId: string, options: { updateRoute?: boolean; routeMode?: "push" | "replace" } = {}) {
     setIsSyncing(true);
     setSyncError(null);
     try {
-      const response = await fetch(`/api/trips/${encodeURIComponent(tripId)}`, { credentials: "include" });
-      if (!response.ok) throw new Error("无法打开路书");
-      const payload = (await response.json()) as { trip: TripDraft };
-      const hydrated = hydrateDraft(payload.trip);
+      const hydrated = hydrateDraft(await readTrip(tripId));
       setDraft(hydrated);
       setSelectedDayId(hydrated.days[0]?.id ?? createEmptyTripDraft().days[0]!.id);
       setIsSaved(true);
@@ -1267,14 +1254,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     setDeletingTripId(trip.id);
     setSyncError(null);
     try {
-      const response = await fetch(`/api/trips/${encodeURIComponent(trip.id)}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
-      if (!response.ok) throw new Error("无法删除路书");
+      await removeTrip(trip.id);
 
       const nextTrips = trips.filter((item) => item.id !== trip.id);
       setTrips(nextTrips);
+      queryClient.setQueryData(["trips"], nextTrips);
       if (draft.id === trip.id) {
         const blank = createBlankTripDraft();
         setDraft(blank);
@@ -1305,15 +1289,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
     setIsSyncing(true);
     try {
-      const response = await fetch(existing ? `/api/trips/${encodeURIComponent(target.id)}` : "/api/trips", {
-        method: existing ? "PUT" : "POST",
-        credentials: "include",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(target)
-      });
-      if (!response.ok) throw new Error("无法保存路书");
-      const payload = (await response.json()) as { trip: TripDraft };
-      const hydrated = hydrateDraft(payload.trip);
+      const hydrated = hydrateDraft(await saveTrip(target, existing));
       setDraft(hydrated);
       setSelectedDayId(hydrated.days[0]?.id ?? createEmptyTripDraft().days[0]!.id);
       setIsSaved(true);
@@ -1715,16 +1691,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
         </button>
         <div className="trip-card-footer">
           <span>{trip.status}</span>
-          <button
+          <IconButton
             className="trip-delete-button"
             type="button"
+            label={`删除 ${trip.title}`}
             onClick={() => deleteTrip(trip)}
             disabled={deletingTripId === trip.id}
-            title="Delete routebook"
-            aria-label={`Delete ${trip.title}`}
           >
             <Trash2 size={16} />
-          </button>
+          </IconButton>
         </div>
       </article>
     );
@@ -1760,9 +1735,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               </span>
             </button>
             <div className="trip-library-actions">
-              <Button variant="icon" size="icon" type="button" onClick={openEditTripMetaDialog} disabled={routebookNeedsMeta} title="编辑路书信息" aria-label="编辑路书信息">
+              <IconButton type="button" onClick={openEditTripMetaDialog} disabled={routebookNeedsMeta} label="编辑路书信息">
                 <PencilLine size={18} />
-              </Button>
+              </IconButton>
               <Button className="trip-save-button" type="button" onClick={() => persistDraft()} disabled={routebookNeedsMeta} title="保存路书">
                 <Save size={18} />
                 <span>{isSyncing ? "保存中" : "保存"}</span>
@@ -1772,13 +1747,13 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 <span>{isSharing ? "生成中" : shareUrl ? "复制分享" : "分享"}</span>
               </Button>
               {shareInfo ? (
-                <Button variant="icon" size="icon" type="button" onClick={revokeShare} disabled={isSharing} title="取消分享" aria-label="取消分享">
+                <IconButton type="button" onClick={revokeShare} disabled={isSharing} label="取消分享">
                   <X size={18} />
-                </Button>
+                </IconButton>
               ) : null}
-              <button className="new-trip-button" type="button" onClick={createSyncedTrip} title="新建行程" aria-label="新建行程">
+              <IconButton className="new-trip-button" type="button" onClick={createSyncedTrip} label="新建行程">
                 <Plus size={20} />
-              </button>
+              </IconButton>
             </div>
           </div>
         ) : null}
@@ -2099,21 +2074,20 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                                     <span>待补地点</span>
                                   </span>
                                 )}
-                                <button className="icon-button small" type="button" onClick={() => setExpandedItineraryItemId(isExpanded ? null : item.id)} title="编辑行程项" aria-label={`编辑 ${item.title}`}>
+                                <IconButton className="icon-button small" type="button" onClick={() => setExpandedItineraryItemId(isExpanded ? null : item.id)} label={`编辑 ${item.title}`}>
                                   <PencilLine size={16} />
-                                </button>
-                                <button
+                                </IconButton>
+                                <IconButton
                                   className="icon-button small ai"
                                   type="button"
                                   onClick={() => openAiAssistant({ source: "item", dayId: selectedDay.id, itemId: item.id, label: item.title }, `帮我调整“${item.title}”这个行程项`)}
-                                  title="用 AI 修改"
-                                  aria-label={`用 AI 修改 ${item.title}`}
+                                  label={`用 AI 修改 ${item.title}`}
                                 >
                                   <Sparkles size={16} />
-                                </button>
-                                <button className="icon-button small danger" type="button" onClick={() => deleteItem(item.id)} title="删除条目" aria-label={`删除 ${item.title}`}>
+                                </IconButton>
+                                <IconButton className="icon-button small danger" type="button" onClick={() => deleteItem(item.id)} label={`删除 ${item.title}`}>
                                   <Trash2 size={16} />
-                                </button>
+                                </IconButton>
                               </div>
                               {isExpanded ? (
                                 <div className="route-step-editor">
@@ -2172,9 +2146,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   <a className="sample-button" href={googleSearchUrl(placeSearch || draft.destination)} target="_blank" rel="noreferrer">
                     Google Maps
                   </a>
-                  <button className="new-trip-button" type="button" onClick={addPlace} title="添加地点" aria-label="添加地点">
+                  <IconButton className="new-trip-button" type="button" onClick={addPlace} label="添加地点">
                     <Plus size={18} />
-                  </button>
+                  </IconButton>
                 </div>
                 <div className="import-panel">
                   <label>
@@ -2439,9 +2413,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       <input value={member.name} onChange={(event) => updateBudgetMember(member.id, { name: event.target.value })} />
                     </label>
                   ))}
-                  <button className="new-trip-button" type="button" onClick={addBudgetMember} title="添加同行人" aria-label="添加同行人">
+                  <IconButton className="new-trip-button" type="button" onClick={addBudgetMember} label="添加同行人">
                     <Plus size={18} />
-                  </button>
+                  </IconButton>
                 </div>
                 {draft.budgetItems.map((item) => (
                   <article key={item.id} className="module-row budget-row-editor">
@@ -2575,9 +2549,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                           <CheckSquare size={18} />
                           <span>应用草稿</span>
                         </button>
-                        <button className="icon-button" type="button" onClick={() => setAiDraftPreview(null)} title="清除 AI 草稿" aria-label="清除 AI 草稿">
+                        <IconButton className="icon-button" type="button" onClick={() => setAiDraftPreview(null)} label="清除 AI 草稿">
                           <X size={18} />
-                        </button>
+                        </IconButton>
                       </div>
                     </div>
                     <div className="ai-day-list">
@@ -2622,9 +2596,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 <p className="eyebrow">AI 修改</p>
                 <h2>{aiPatchContext.label}</h2>
               </div>
-              <button className="icon-button small" type="button" onClick={() => setAiAssistantOpen(false)} title="关闭 AI 修改" aria-label="关闭 AI 修改">
+              <IconButton className="icon-button small" type="button" onClick={() => setAiAssistantOpen(false)} label="关闭 AI 修改">
                 <X size={16} />
-              </button>
+              </IconButton>
             </div>
             <div className="ai-assistant-prompt">
               <textarea
