@@ -3981,14 +3981,16 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   }
   .global-ai-launcher {
     left: auto;
-    right: 16px;
-    bottom: calc(154px + env(safe-area-inset-bottom));
+    top: calc(13px + env(safe-area-inset-top));
+    right: 192px;
+    bottom: auto;
     width: 48px;
     height: 48px;
   }
   .global-command-launcher {
-    right: 16px;
-    bottom: calc(24px + env(safe-area-inset-bottom));
+    top: calc(13px + env(safe-area-inset-top));
+    right: 132px;
+    bottom: auto;
     width: 48px;
     height: 48px;
   }

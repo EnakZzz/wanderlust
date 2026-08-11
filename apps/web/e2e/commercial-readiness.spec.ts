@@ -648,6 +648,57 @@ test("mobile routebook library keeps trip cards readable", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("mobile global launchers stay clear of primary card content", async ({ page }) => {
+  await mockSignedInTripListRuntime(page);
+
+  for (const path of ["/journeys", "/journeys/edit", "/dashboard"] as const) {
+    await page.goto(path, { waitUntil: "domcontentloaded" });
+
+    if ((page.viewportSize()?.width ?? 0) <= 500) {
+      const overlaps = await page.evaluate(() => {
+        const floaters = Array.from(document.querySelectorAll<HTMLElement>(".global-ai-launcher, .global-command-launcher"));
+        const targets = Array.from(
+          document.querySelectorAll<HTMLElement>(
+            [
+              ".brand",
+              ".product-nav-actions",
+              ".journey-card-copy",
+              ".journey-card-topline",
+              ".plan-home-list .trip-card-copy",
+              ".dashboard-discovery-grid strong",
+              ".dashboard-discovery-grid small"
+            ].join(", ")
+          )
+        );
+
+        return floaters.flatMap((floater) => {
+          const floaterBox = floater.getBoundingClientRect();
+          return targets.flatMap((target) => {
+            const targetBox = target.getBoundingClientRect();
+            const visible = targetBox.width > 0 && targetBox.height > 0 && targetBox.bottom > 0 && targetBox.top < window.innerHeight;
+            const overlaps =
+              visible &&
+              !(floaterBox.right < targetBox.left || floaterBox.left > targetBox.right || floaterBox.bottom < targetBox.top || floaterBox.top > targetBox.bottom);
+            return overlaps
+              ? [{
+                  floater: floater.className,
+                  target: target.textContent?.trim(),
+                  floaterTop: Math.round(floaterBox.top),
+                  targetTop: Math.round(targetBox.top),
+                  targetBottom: Math.round(targetBox.bottom)
+                }]
+              : [];
+          });
+        });
+      });
+
+      expect(overlaps, `${path} primary content should stay readable`).toEqual([]);
+    }
+  }
+
+  await expectNoHorizontalOverflow(page);
+});
+
 test("local routebook editing supports a first itinerary item without login", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
@@ -818,19 +869,18 @@ test("global AI launcher does not cover mobile editor forms", async ({ page }) =
 
   if ((page.viewportSize()?.width ?? 0) <= 500) {
     const layout = await page.evaluate(() => {
-      const launcher = document.querySelector<HTMLElement>(".global-ai-launcher")?.getBoundingClientRect();
+      const launchers = Array.from(document.querySelectorAll<HTMLElement>(".global-ai-launcher, .global-command-launcher")).map((item) => item.getBoundingClientRect());
       const input = Array.from(document.querySelectorAll<HTMLInputElement>("input")).find((item) => item.value === "新的收藏地点")?.getBoundingClientRect();
-      if (!launcher || !input) return null;
-      const overlaps = !(launcher.right < input.left || launcher.left > input.right || launcher.bottom < input.top || launcher.top > input.bottom);
+      if (launchers.length === 0 || !input) return null;
+      const overlaps = launchers.some((launcher) => !(launcher.right < input.left || launcher.left > input.right || launcher.bottom < input.top || launcher.top > input.bottom));
       return {
-        launcherLeft: Math.round(launcher.left),
-        viewport: document.documentElement.clientWidth,
+        launcherCount: launchers.length,
         overlaps
       };
     });
 
     expect(layout).not.toBeNull();
-    expect(layout!.launcherLeft).toBeGreaterThan(layout!.viewport / 2);
+    expect(layout!.launcherCount).toBe(2);
     expect(layout!.overlaps).toBe(false);
   }
 
