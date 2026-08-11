@@ -88,10 +88,10 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
           </>
         ) : (
           <>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="sm" className="product-nav-signin">
               <a href={authHref}>登录</a>
             </Button>
-            <Button asChild size="sm">
+            <Button asChild size="sm" className="product-nav-primary">
               <a href={authHref}>开始规划</a>
             </Button>
           </>

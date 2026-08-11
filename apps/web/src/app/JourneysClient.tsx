@@ -1,9 +1,12 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { CalendarDays, MapPin, Plus, Route, Ticket } from "lucide-react";
 import { buildTripEditorPath } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
 import { MotionSection } from "@/components/MotionShell";
+import { TravelImage } from "@/components/TravelImage";
+import { getDestinationTheme } from "@/lib/travel-visuals";
 import { useDashboardData } from "@/lib/web-api";
 import type { TripSummary } from "./routebook/types";
 
@@ -26,7 +29,7 @@ export function JourneysClient() {
           <p className="eyebrow">我的路书</p>
           <h1>把草稿整理成真正能出发的旅行。</h1>
           <p>
-            把草稿、预订、地点、打包清单和离线准备状态放在同一个工作区里。
+            草稿、预订、地点和离线清单，统一收进一个工作区。
           </p>
         </div>
         <Button asChild>
@@ -37,25 +40,41 @@ export function JourneysClient() {
       {state.errorMessage ? <div className="sync-error">{state.errorMessage}</div> : null}
 
       <div className="journeys-grid">
-        {state.trips.map((trip) => (
-          <a key={trip.id} className="journey-card" href={tripEditorHref(trip.id)}>
-            <span>{trip.status}</span>
-            <strong>{trip.title}</strong>
-            <em>{trip.destination}</em>
-            <div>
-              <small><CalendarDays size={14} />{formatTripDates(trip)}</small>
-              <small><Route size={14} />{trip.dayCount} 天</small>
-              <small><MapPin size={14} />{trip.placeCount} 个地点</small>
-              <small><Ticket size={14} />{trip.bookingCount} 个预订</small>
-            </div>
-          </a>
-        ))}
+        {state.trips.map((trip) => {
+          const theme = getDestinationTheme(trip.destination);
+          return (
+            <a
+              key={trip.id}
+              className="journey-card journey-photo-card"
+              href={tripEditorHref(trip.id)}
+              style={{
+                "--journey-card-accent": theme.accent,
+                "--journey-card-ink": theme.ink
+              } as CSSProperties}
+            >
+              <TravelImage src={theme.image} alt="" className="journey-card-image" overlayClassName="journey-card-image-overlay" sizes="(max-width: 760px) 100vw, 33vw" />
+              <div className="journey-card-topline">
+                <span>{trip.status}</span>
+                <small><CalendarDays size={14} />{formatTripDates(trip)}</small>
+              </div>
+              <div className="journey-card-copy">
+                <strong>{trip.title}</strong>
+                <em>{trip.destination}</em>
+              </div>
+              <div className="journey-card-stats" aria-label="路书概览">
+                <small title="天数"><Route size={14} />{trip.dayCount}</small>
+                <small title="地点"><MapPin size={14} />{trip.placeCount}</small>
+                <small title="预订"><Ticket size={14} />{trip.bookingCount}</small>
+              </div>
+            </a>
+          );
+        })}
 
         {state.loaded && state.trips.length === 0 ? (
           <div className="journey-empty">
             <Route size={24} />
             <strong>还没有路书。</strong>
-            <span>先创建框架、粘贴旅行笔记，或让 AI 生成第一版行程。</span>
+            <span>先创建框架，或让 AI 生成第一版。</span>
             <Button asChild variant="secondary" size="sm">
               <a href="/#editor"><Plus size={17} /><span>开始规划</span></a>
             </Button>

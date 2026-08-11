@@ -403,6 +403,7 @@ label span {
 .passport-hero h1 {
   max-width: 860px;
   font-size: clamp(42px, 6vw, 78px);
+  overflow-wrap: anywhere;
 }
 
 .dashboard-hero p:not(.eyebrow),
@@ -763,7 +764,7 @@ label span {
   padding: 20px;
 }
 
-.journey-card div {
+.journey-card div:not(.journey-card-image):not(.journey-card-image-overlay) {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -778,6 +779,110 @@ label span {
   border-radius: 999px;
   padding: 0 10px;
   background: var(--paper-deep);
+}
+
+.journey-photo-card {
+  min-height: 340px;
+  position: relative;
+  overflow: hidden;
+  align-content: space-between;
+  border-color: color-mix(in srgb, var(--journey-card-accent, var(--accent)) 34%, transparent);
+  background: #27231f;
+  color: #fff8ee;
+  isolation: isolate;
+}
+
+.journey-photo-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 18px 18px auto;
+  z-index: 1;
+  width: 74px;
+  height: 74px;
+  border: 1px solid rgba(255, 248, 238, 0.36);
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg, transparent 47%, rgba(255, 248, 238, 0.34) 48% 52%, transparent 53%),
+    linear-gradient(0deg, transparent 47%, rgba(255, 248, 238, 0.26) 48% 52%, transparent 53%);
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+.journey-card-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transform: scale(1.01);
+  transition: transform 420ms ease;
+}
+
+.journey-photo-card:hover .journey-card-image {
+  transform: scale(1.05);
+}
+
+.journey-card-image-overlay {
+  background:
+    linear-gradient(180deg, rgba(22, 20, 17, 0.12), rgba(22, 20, 17, 0.32) 36%, rgba(22, 20, 17, 0.82)),
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--journey-card-accent, var(--accent)) 52%, transparent), transparent 34%);
+}
+
+.journey-card-topline,
+.journey-card-copy,
+.journey-card-stats {
+  position: relative;
+  z-index: 1;
+}
+
+.journey-card-topline {
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.journey-card-topline span,
+.journey-card-topline small,
+.journey-card-stats small {
+  border: 1px solid rgba(255, 248, 238, 0.22);
+  background: rgba(255, 248, 238, 0.15);
+  color: #fff8ee;
+  backdrop-filter: blur(16px);
+}
+
+.journey-card-topline span {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 42%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journey-card-copy {
+  align-self: end;
+  display: grid !important;
+  gap: 7px !important;
+  margin-top: auto !important;
+}
+
+.journey-photo-card strong {
+  max-width: 92%;
+  color: #fff8ee;
+  text-shadow: 0 2px 20px rgba(20, 18, 16, 0.42);
+}
+
+.journey-photo-card em {
+  max-width: 82%;
+  color: rgba(255, 248, 238, 0.84);
+}
+
+.journey-card-stats {
+  align-items: center;
+}
+
+.journey-card-stats small {
+  min-width: 56px;
+  justify-content: center;
 }
 
 .journey-card-loading {
@@ -3660,12 +3765,15 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .product-nav-actions {
     align-self: start;
   }
-  .product-nav-user span,
-  .product-nav-signin {
+  .product-nav-user span {
     display: none;
   }
   .product-nav-primary {
-    padding: 0 11px;
+    display: none;
+  }
+  .product-nav-signin {
+    display: inline-flex;
+    padding: 0 8px;
   }
   .hero-copy {
     max-width: 100%;
@@ -3693,6 +3801,50 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .passport-section-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+  .dashboard-hero > div,
+  .journeys-heading > div,
+  .search-heading > div,
+  .passport-hero > div {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .dashboard-hero h1,
+  .journeys-heading h1,
+  .simple-product-page h1,
+  .search-heading h1,
+  .passport-hero h1 {
+    width: 100%;
+    max-width: 100%;
+    font-size: clamp(32px, 9vw, 42px);
+    line-height: 1.04;
+    white-space: normal;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+    padding-right: 0.08em;
+  }
+  .dashboard-hero p:not(.eyebrow),
+  .journeys-heading p,
+  .search-heading p,
+  .passport-hero p:not(.eyebrow) {
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+  }
+  .journeys-heading > a,
+  .journeys-heading > button {
+    width: 100%;
+    max-width: 100%;
+    color: #fff8ee;
+  }
+  .journey-empty strong,
+  .journey-empty span {
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-all;
+    overflow-wrap: anywhere;
   }
   .dashboard-hero-actions {
     justify-content: flex-start;
