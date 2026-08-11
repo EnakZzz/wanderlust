@@ -456,23 +456,32 @@ test("global AI launcher does not cover mobile editor forms", async ({ page }) =
   await expectNoHorizontalOverflow(page);
 });
 
-test("journey list primary CTA label remains readable", async ({ page }) => {
-  await page.goto("/journeys", { waitUntil: "domcontentloaded" });
+const lightPagePrimaryCtas = [
+  { path: "/dashboard", selector: ".dashboard-hero-actions a", label: "新建路书" },
+  { path: "/journeys", selector: ".journeys-heading a", label: "新建路书" },
+  { path: "/search", selector: ".search-heading a", label: "打开编辑器" },
+  { path: "/passport", selector: ".passport-hero-actions a", label: "打开路书" }
+] as const;
 
-  const cta = page.locator(".journeys-heading a").first();
-  await expect(cta).toContainText("新建路书");
+for (const ctaSpec of lightPagePrimaryCtas) {
+  test(`primary CTA label remains readable at ${ctaSpec.path}`, async ({ page }) => {
+    await page.goto(ctaSpec.path, { waitUntil: "domcontentloaded" });
 
-  const colors = await cta.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return {
-      color: style.color,
-      backgroundColor: style.backgroundColor
-    };
+    const cta = page.locator(ctaSpec.selector).first();
+    await expect(cta).toContainText(ctaSpec.label);
+
+    const colors = await cta.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        color: style.color,
+        backgroundColor: style.backgroundColor
+      };
+    });
+
+    expect(contrastRatio(parseRgb(colors.color), parseRgb(colors.backgroundColor))).toBeGreaterThanOrEqual(4.5);
+    await expectNoHorizontalOverflow(page);
   });
-
-  expect(contrastRatio(parseRgb(colors.color), parseRgb(colors.backgroundColor))).toBeGreaterThanOrEqual(4.5);
-  await expectNoHorizontalOverflow(page);
-});
+}
 
 test("signed-in routebook lists show customer-facing status labels", async ({ page }) => {
   await mockSignedInTripListRuntime(page);

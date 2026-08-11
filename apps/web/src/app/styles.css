@@ -844,7 +844,10 @@ label span {
   margin-bottom: clamp(24px, 4vw, 44px);
 }
 
-.journeys-heading > a {
+.dashboard-hero-actions > a:first-child,
+.journeys-heading > a,
+.search-heading > a,
+.passport-hero-actions > a:first-child {
   color: #fff8ee;
 }
 
