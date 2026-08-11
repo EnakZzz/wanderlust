@@ -1,25 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, CheckSquare, Clock, MapPin, Navigation, Plane, Share2, Ticket } from "lucide-react";
 import { buildMapsUrl, productBrand, sortItineraryItems, type ItineraryItem, type Place, type Trip } from "@wanderlust/domain";
 import { TravelImage } from "@/components/TravelImage";
 import { getItineraryTypeVisual, heroVisuals } from "@/lib/travel-visuals";
-
-type PublicShare = {
-  id: string;
-  tripId: string;
-  token: string;
-  visibility: "public" | "private";
-  allowCopy: boolean;
-  revokedAt: string | null;
-  expiresAt: string | null;
-};
-
-type PublicShareResponse = {
-  share: PublicShare;
-  trip: Trip;
-};
+import { readPublicShare } from "@/lib/web-api";
 
 const typeLabels: Record<ItineraryItem["type"], string> = {
   place: "地点",
@@ -60,30 +47,25 @@ function getNavigationHref(item: ItineraryItem, place?: Place): string | undefin
 }
 
 export default function SharePage() {
-  const [payload, setPayload] = useState<PublicShareResponse | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [message, setMessage] = useState("正在读取分享路书...");
+  const [token, setToken] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
-    const token = new URLSearchParams(window.location.search).get("token")?.trim();
-    if (!token) {
-      setStatus("error");
-      setMessage("分享链接缺少 token。");
-      return;
-    }
-
-    fetch(`/api/share/${encodeURIComponent(token)}`)
-      .then(async (response) => {
-        const data = await response.json() as PublicShareResponse & { error?: string };
-        if (!response.ok) throw new Error(data.error || "无法打开分享路书");
-        setPayload(data);
-        setStatus("ready");
-      })
-      .catch((error) => {
-        setStatus("error");
-        setMessage(error instanceof Error ? error.message : "无法打开分享路书");
-      });
+    setToken(new URLSearchParams(window.location.search).get("token")?.trim() || null);
   }, []);
+
+  const shareQuery = useQuery({
+    queryKey: ["share", token],
+    queryFn: () => readPublicShare(token!),
+    enabled: typeof token === "string" && token.length > 0
+  });
+
+  const payload = shareQuery.data ?? null;
+  const status = token === null || shareQuery.isError ? "error" : token === undefined || shareQuery.isLoading || !payload ? "loading" : "ready";
+  const message = token === null
+    ? "分享链接缺少 token。"
+    : shareQuery.error instanceof Error
+      ? shareQuery.error.message
+      : "正在读取分享路书...";
 
   const stats = useMemo(() => {
     if (!payload) return [];

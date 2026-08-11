@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500;1,600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800;900&family=Noto+Serif+SC:wght@500;600;700;900&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -21,7 +21,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
   overflow-x: hidden;
 }
 
@@ -513,7 +513,7 @@ label span {
 
 .destination-result-card strong {
   overflow: hidden;
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: 24px;
   font-style: italic;
   font-weight: 500;
@@ -547,7 +547,7 @@ label span {
   background:
     radial-gradient(circle at 90% 20%, rgba(111, 123, 102, 0.15), transparent 26%),
     var(--surface);
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: 24px;
   font-style: italic;
 }
@@ -584,7 +584,7 @@ label span {
 
 .dashboard-stat-grid strong,
 .passport-preview strong {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: clamp(38px, 5vw, 62px);
   font-style: italic;
   font-weight: 500;
@@ -662,7 +662,7 @@ label span {
 .dashboard-discovery-grid strong,
 .journey-card strong,
 .journey-empty strong {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: 28px;
   font-style: italic;
   font-weight: 500;
@@ -828,7 +828,7 @@ label span {
   border-radius: 16px;
   padding: 0 16px;
   background: var(--paper-deep);
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: 26px;
   font-style: italic;
 }
@@ -882,7 +882,7 @@ label span {
 }
 
 .passport-score-card strong {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: clamp(58px, 7vw, 92px);
   font-style: italic;
   font-weight: 500;
@@ -900,7 +900,7 @@ label span {
 
 .passport-stat-card strong,
 .passport-next-panel strong {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: clamp(36px, 4vw, 58px);
   font-style: italic;
   font-weight: 500;
@@ -959,7 +959,7 @@ label span {
 
 .passport-footprint-list strong,
 .passport-empty strong {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: 28px;
   font-style: italic;
   font-weight: 500;
@@ -1072,7 +1072,7 @@ label span {
 .hero-copy .eyebrow { color: #e9cda4; }
 
 h1, h2, h3 {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   margin: 0;
   letter-spacing: 0;
 }
@@ -1191,7 +1191,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .editor-loading-routebook strong {
   display: block;
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-style: italic;
   font-size: clamp(24px, 3vw, 34px);
   font-weight: 500;
@@ -1274,7 +1274,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .routebook-current strong {
   overflow: hidden;
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: clamp(22px, 2vw, 30px);
   font-style: italic;
   font-weight: 500;
@@ -1441,7 +1441,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .routebook-meta-card strong {
   display: block;
   overflow: hidden;
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: clamp(30px, 3.4vw, 48px);
   font-style: italic;
   font-weight: 500;
@@ -1510,7 +1510,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .routebook-meta-form label:first-child input,
 .routebook-meta-form label:nth-child(2) input {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-style: italic;
   font-size: clamp(24px, 4vw, 36px);
 }
@@ -1561,7 +1561,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   background: var(--paper-deep);
 }
 .destination-suggestion strong {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: 21px;
   font-style: italic;
   font-weight: 500;
@@ -1686,7 +1686,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   overflow: hidden;
 }
 .trip-card-copy strong {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-style: italic;
   font-weight: 500;
   font-size: 24px;
@@ -1783,7 +1783,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   flex: 1;
 }
 .title-fields input {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-style: italic;
   font-size: clamp(22px, 3vw, 32px);
   min-height: 56px;
@@ -1860,7 +1860,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .module-heading p {
   margin: 0 0 4px;
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-style: italic;
   font-size: 23px;
 }
@@ -2051,7 +2051,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   border: 0;
   background: transparent;
   color: var(--journey-ink);
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-style: italic;
   font-size: clamp(34px, 5vw, 54px);
   line-height: 1.02;
@@ -2159,7 +2159,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .route-step-date-panel span,
 .route-step-date-panel b {
   color: var(--journey-accent);
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: 18px;
   font-weight: 700;
 }
@@ -2243,7 +2243,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .route-step-body h3 {
   margin: 0;
   color: var(--journey-ink);
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: clamp(27px, 3.1vw, 36px);
   line-height: 1.05;
 }
@@ -2356,7 +2356,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .journey-empty-card strong {
   color: var(--ink);
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: 28px;
   font-style: italic;
   font-weight: 500;
@@ -2404,7 +2404,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   display: block;
 }
 .booking-import-panel strong {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-style: italic;
   font-weight: 500;
   font-size: 24px;
@@ -2634,7 +2634,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .ai-card-heading strong,
 .ai-preview-heading strong {
   display: block;
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-style: italic;
   font-weight: 500;
   font-size: 25px;
@@ -2790,7 +2790,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .share-stat-grid strong,
 .share-side-card h2 {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: clamp(36px, 4vw, 58px);
   font-style: italic;
   font-weight: 500;
@@ -3337,7 +3337,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .weather-card strong {
   display: block;
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-style: italic;
   font-weight: 500;
   font-size: 36px;
@@ -3362,7 +3362,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     var(--surface);
 }
 .plan-summary-card strong {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-style: italic;
   font-weight: 500;
   font-size: 64px;
@@ -3389,7 +3389,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 
 .quick-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .quick-grid div { padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; }
-.quick-grid strong { display: block; font-family: "Playfair Display", Georgia, serif; font-style: italic; font-weight: 500; font-size: 34px; }
+.quick-grid strong { display: block; font-family: "Noto Serif SC", Georgia, serif; font-style: italic; font-weight: 500; font-size: 34px; }
 .quick-grid span { color: var(--muted); font-weight: 700; }
 .offline-button {
   min-height: 52px;
@@ -3418,7 +3418,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   margin: 0;
 }
 .offline-readiness-heading strong {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Noto Serif SC", Georgia, serif;
   font-size: 30px;
   font-style: italic;
   font-weight: 500;

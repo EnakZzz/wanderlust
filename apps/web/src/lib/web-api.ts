@@ -1,9 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
+import type { Trip } from "@wanderlust/domain";
 import type { DestinationMeta, RoutebookShare, SessionUser, TripDraft, TripSummary } from "@/app/routebook/types";
 
 export type ProviderStatus = {
   google: { configured: boolean };
   apple: { configured: boolean };
+};
+
+export type PublicShare = {
+  id: string;
+  tripId: string;
+  token: string;
+  visibility: "public" | "private";
+  allowCopy: boolean;
+  revokedAt: string | null;
+  expiresAt: string | null;
+};
+
+export type PublicShareResponse = {
+  share: PublicShare;
+  trip: Trip;
 };
 
 export const fallbackProviders: ProviderStatus = {
@@ -129,6 +145,11 @@ export async function requestAiOcrPayload<TResponse>(body: unknown): Promise<TRe
     body: JSON.stringify(body)
   });
   return readJson<TResponse>(response, "截图识别失败");
+}
+
+export async function readPublicShare(token: string): Promise<PublicShareResponse> {
+  const response = await fetch(`/api/share/${encodeURIComponent(token)}`);
+  return readJson<PublicShareResponse>(response, "无法打开分享路书");
 }
 
 export function useSessionQuery() {

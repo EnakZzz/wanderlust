@@ -1,19 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { DestinationMeta } from "./routebook/types";
+import { Input } from "@/components/ui/input";
+import { searchDestinations } from "@/lib/web-api";
 
 type DestinationSearchPanelProps = {
   className?: string;
   placeholder?: string;
   suggestions?: string[];
-};
-
-type DestinationSearchResponse = {
-  candidates: DestinationMeta[];
-  providerError?: string;
 };
 
 const defaultSuggestions = ["京都", "里斯本", "首尔", "墨西哥城"];
@@ -29,49 +26,35 @@ export function DestinationSearchPanel({
   suggestions = defaultSuggestions
 }: DestinationSearchPanelProps) {
   const [query, setQuery] = useState("");
-  const [candidates, setCandidates] = useState<DestinationMeta[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const normalizedQuery = query.trim();
+  const canSearch = debouncedQuery.length >= 2;
 
   useEffect(() => {
-    const normalized = query.trim();
-    if (normalized.length < 2) {
-      setCandidates([]);
-      setIsSearching(false);
-      setMessage(null);
-      return;
-    }
-
-    const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      setIsSearching(true);
-      setMessage(null);
-
-      fetch(`/api/geo/search?q=${encodeURIComponent(normalized)}`, { signal: controller.signal })
-        .then(async (response) => {
-          if (!response.headers.get("content-type")?.includes("application/json")) {
-            throw new Error("API Worker 运行后才能使用目的地搜索。");
-          }
-          const payload = (await response.json()) as DestinationSearchResponse & { error?: string };
-          if (!response.ok) throw new Error(payload.error || "无法搜索目的地");
-          setCandidates(payload.candidates ?? []);
-          setMessage(payload.providerError ? "地图服务尚未配置，正在使用本地目的地建议。" : null);
-        })
-        .catch((error) => {
-          if (controller.signal.aborted) return;
-          setCandidates([]);
-          setMessage(error instanceof Error ? error.message : "目的地搜索暂时不可用。");
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setIsSearching(false);
-        });
+      setDebouncedQuery(normalizedQuery);
     }, 220);
 
     return () => {
       window.clearTimeout(timer);
-      controller.abort();
     };
-  }, [query]);
+  }, [normalizedQuery]);
+
+  const destinationQuery = useQuery({
+    queryKey: ["destination-search", debouncedQuery],
+    queryFn: ({ signal }) => searchDestinations(debouncedQuery, signal),
+    enabled: canSearch
+  });
+
+  const candidates = canSearch ? destinationQuery.data?.candidates ?? [] : [];
+  const isSearching = canSearch && destinationQuery.isFetching;
+  const message = !canSearch
+    ? null
+    : destinationQuery.error instanceof Error
+      ? destinationQuery.error.message
+      : destinationQuery.data?.providerError
+        ? "地图服务尚未配置，正在使用本地目的地建议。"
+        : null;
 
   const quickSuggestions = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -83,7 +66,7 @@ export function DestinationSearchPanel({
     <div className={`destination-panel ${className}`.trim()}>
       <div className="destination-panel-search">
         <Search size={20} />
-        <input value={query} placeholder={placeholder} onChange={(event) => setQuery(event.target.value)} />
+        <Input value={query} placeholder={placeholder} onChange={(event) => setQuery(event.target.value)} />
         <Button asChild size="icon" variant={query.trim() ? "default" : "secondary"} className="destination-panel-action">
           <a href={editorHref(query)} aria-label="开始规划">
             <ArrowRight size={17} />
