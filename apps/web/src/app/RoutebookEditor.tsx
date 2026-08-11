@@ -1686,6 +1686,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     );
   }
 
+  function openEntityAiAssistant(label: string, prompt: string) {
+    openAiAssistant({ source: "global", label }, `${prompt}，只返回需要确认的修改预览。`);
+  }
+
   async function requestAiPatch(values: AiPatchForm) {
     if (!user) {
       setAiPatchError("运行 AI 修改前请先用 Google 或 Apple 登录。");
@@ -2331,6 +2335,16 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </label>
                     <Textarea value={place.notes ?? ""} onChange={(event) => updatePlace(place.id, { notes: event.target.value })} />
                     <div className="row-actions">
+                      <IconButton
+                        className="row-ai-button"
+                        type="button"
+                        label={`AI 优化地点 ${place.name}`}
+                        tooltip={user ? "用 AI 修改这个地点，先生成预览" : "登录后使用 AI 修改"}
+                        onClick={() => openEntityAiAssistant(`地点 · ${place.name}`, `帮我优化地点 ${place.name}，placeId 是 ${place.id}，可以补充更清晰的地址、标签、备注或收藏状态`)}
+                        disabled={!user}
+                      >
+                        <Sparkles size={16} />
+                      </IconButton>
                       <Button variant="secondary" type="button" onClick={() => addItem(place)}>
                         <Plus size={16} />
                         <span>加入当天</span>
@@ -2444,6 +2458,16 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       <FileUp size={17} />
                       <span>上传文件</span>
                     </FileUploadButton>
+                    <IconButton
+                      className="row-ai-button"
+                      type="button"
+                      label={`AI 优化预订 ${booking.title}`}
+                      tooltip={user ? "用 AI 修改这个预订，先生成预览" : "登录后使用 AI 修改"}
+                      onClick={() => openEntityAiAssistant(`预订 · ${booking.title}`, `帮我优化预订 ${booking.title}，bookingId 是 ${booking.id}，可以补充确认号、状态、时间、供应商、地址或备注`)}
+                      disabled={!user}
+                    >
+                      <Sparkles size={16} />
+                    </IconButton>
                     <div className="attachment-list">
                       {(booking.attachmentIds ?? []).map((id) => {
                         const attachment = draft.attachments.find((item) => item.id === id);
@@ -2543,6 +2567,16 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </Select>
                     <Input value={item.title} onChange={(event) => updatePacking(item.id, { title: event.target.value })} />
                     <Input type="number" min={1} value={item.quantity} onChange={(event) => updatePacking(item.id, { quantity: Number(event.target.value) || 1 })} />
+                    <IconButton
+                      className="row-ai-button"
+                      type="button"
+                      label={`AI 优化打包项 ${item.title}`}
+                      tooltip={user ? "用 AI 修改这个打包项，先生成预览" : "登录后使用 AI 修改"}
+                      onClick={() => openEntityAiAssistant(`打包 · ${item.title}`, `帮我优化打包项 ${item.title}，packingItemId 是 ${item.id}，可以调整分类、数量、备注或打包状态`)}
+                      disabled={!user}
+                    >
+                      <Sparkles size={16} />
+                    </IconButton>
                   </label>
                 ))}
               </div>
@@ -2603,6 +2637,16 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       ))}
                     </div>
                     <Textarea value={item.notes ?? ""} placeholder="备注" onChange={(event) => updateBudgetItem(item.id, { notes: event.target.value })} />
+                    <IconButton
+                      className="row-ai-button"
+                      type="button"
+                      label={`AI 优化账单 ${item.title}`}
+                      tooltip={user ? "用 AI 修改这个账单，先生成预览" : "登录后使用 AI 修改"}
+                      onClick={() => openEntityAiAssistant(`预算 · ${item.title}`, `帮我优化账单 ${item.title}，budgetItemId 是 ${item.id}，可以调整分类、金额、币种、分摊人或备注`)}
+                      disabled={!user}
+                    >
+                      <Sparkles size={16} />
+                    </IconButton>
                   </article>
                 ))}
                 <Button type="button" onClick={addBudgetItem}>

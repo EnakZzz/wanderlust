@@ -1840,6 +1840,15 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   border-color: rgba(255, 248, 238, 0.6);
   box-shadow: 0 12px 26px rgba(148, 111, 71, 0.18);
 }
+.row-ai-button {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  align-self: end;
+  background: #fffdf8;
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+}
 .day-strip {
   display: grid;
   grid-template-columns: repeat(5, minmax(112px, 1fr));
@@ -2369,6 +2378,9 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .place-row textarea, .place-row .row-actions {
   grid-column: 1 / -1;
 }
+.place-row .row-ai-button {
+  align-self: center;
+}
 .row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2433,6 +2445,11 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .booking-row-editor .file-upload-button,
 .booking-row-editor .attachment-list {
   grid-column: 1 / -1;
+}
+.booking-row-editor .row-ai-button,
+.budget-row-editor .row-ai-button {
+  grid-column: 1 / -1;
+  justify-self: end;
 }
 .file-row-editor {
   grid-template-columns: 22px minmax(180px, 1fr) minmax(140px, 0.6fr) minmax(180px, 0.8fr);
@@ -3218,7 +3235,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   gap: 8px;
 }
 .packing-row {
-  grid-template-columns: 22px minmax(120px, 0.52fr) minmax(180px, 1fr) 72px;
+  grid-template-columns: 22px minmax(120px, 0.52fr) minmax(180px, 1fr) 72px 42px;
 }
 .check-row input[type="checkbox"] {
   width: 18px;
