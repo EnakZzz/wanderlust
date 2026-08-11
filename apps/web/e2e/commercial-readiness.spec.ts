@@ -452,6 +452,20 @@ test("global AI prompt routes into the routebook preview assistant", async ({ pa
   await expect(page.getByText("登录后可使用 AI 修改行程。")).toBeVisible();
 });
 
+test("anonymous contextual AI entry opens the preview assistant with login guidance", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  const moduleAiButton = page.getByRole("button", { name: "AI 优化行程模块" });
+  await expect(moduleAiButton).toBeEnabled();
+  await moduleAiButton.click();
+
+  await expect(page.locator(".ai-assistant-panel")).toBeVisible();
+  await expect(page.locator(".ai-assistant-panel textarea")).toHaveValue(/帮我优化/);
+  await expect(page.getByText("登录后可使用 AI 修改行程。")).toBeVisible();
+  await expect(page.getByRole("button", { name: /生成修改预览/ })).toBeDisabled();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("global command has a visible launcher and can hand prompts to AI", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

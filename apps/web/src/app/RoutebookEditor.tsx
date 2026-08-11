@@ -2200,9 +2200,8 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 className="module-ai-button"
                 type="button"
                 label={`AI 优化${activeModuleMeta.title}模块`}
-                tooltip={user ? `用 AI 修改${activeModuleMeta.title}，先生成预览` : "登录后使用 AI 修改"}
+                tooltip={user ? `用 AI 修改${activeModuleMeta.title}，先生成预览` : "打开预览，登录后可生成修改"}
                 onClick={openActiveModuleAiAssistant}
-                disabled={!user}
               >
                 <Sparkles size={18} />
               </IconButton>
@@ -2495,12 +2494,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         className="row-ai-button"
                         type="button"
                         label={`AI 优化地点 ${place.name}`}
-                        tooltip={user ? "用 AI 修改这个地点，先生成预览" : "登录后使用 AI 修改"}
+                        tooltip={user ? "用 AI 修改这个地点，先生成预览" : "打开预览，登录后可生成修改"}
                         onClick={() => openEntityAiAssistant(
                           { moduleId: "places", entityType: "place", entityId: place.id, label: `地点 · ${place.name}` },
                           `帮我优化地点 ${place.name}，可以补充更清晰的地址、标签、备注或收藏状态`
                         )}
-                        disabled={!user}
                       >
                         <Sparkles size={16} />
                       </IconButton>
@@ -2621,12 +2619,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       className="row-ai-button"
                       type="button"
                       label={`AI 优化预订 ${booking.title}`}
-                      tooltip={user ? "用 AI 修改这个预订，先生成预览" : "登录后使用 AI 修改"}
+                      tooltip={user ? "用 AI 修改这个预订，先生成预览" : "打开预览，登录后可生成修改"}
                       onClick={() => openEntityAiAssistant(
                         { moduleId: "bookings", entityType: "booking", entityId: booking.id, label: `预订 · ${booking.title}` },
                         `帮我优化预订 ${booking.title}，可以补充确认号、状态、时间、供应商、地址或备注`
                       )}
-                      disabled={!user}
                     >
                       <Sparkles size={16} />
                     </IconButton>
@@ -2704,12 +2701,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       className="row-ai-button"
                       type="button"
                       label={`AI 优化文件 ${attachment.title ?? attachment.id}`}
-                      tooltip={user ? "用 AI 修改这个文件资料，先生成预览" : "登录后使用 AI 修改"}
+                      tooltip={user ? "用 AI 修改这个文件资料，先生成预览" : "打开预览，登录后可生成修改"}
                       onClick={() => openEntityAiAssistant(
                         { moduleId: "files", entityType: "attachment", entityId: attachment.id, label: `文件 · ${attachment.title ?? attachment.id}` },
                         `帮我优化文件 ${attachment.title ?? attachment.id}，可以调整标题、类型、分类或关联对象，但不要修改 storagePath 或 localUri`
                       )}
-                      disabled={!user}
                     >
                       <Sparkles size={16} />
                     </IconButton>
@@ -2746,12 +2742,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       className="row-ai-button"
                       type="button"
                       label={`AI 优化打包项 ${item.title}`}
-                      tooltip={user ? "用 AI 修改这个打包项，先生成预览" : "登录后使用 AI 修改"}
+                      tooltip={user ? "用 AI 修改这个打包项，先生成预览" : "打开预览，登录后可生成修改"}
                       onClick={() => openEntityAiAssistant(
                         { moduleId: "packing", entityType: "packingItem", entityId: item.id, label: `打包 · ${item.title}` },
                         `帮我优化打包项 ${item.title}，可以调整分类、数量、备注或打包状态`
                       )}
-                      disabled={!user}
                     >
                       <Sparkles size={16} />
                     </IconButton>
@@ -2819,12 +2814,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       className="row-ai-button"
                       type="button"
                       label={`AI 优化账单 ${item.title}`}
-                      tooltip={user ? "用 AI 修改这个账单，先生成预览" : "登录后使用 AI 修改"}
+                      tooltip={user ? "用 AI 修改这个账单，先生成预览" : "打开预览，登录后可生成修改"}
                       onClick={() => openEntityAiAssistant(
                         { moduleId: "budget", entityType: "budgetItem", entityId: item.id, label: `预算 · ${item.title}` },
                         `帮我优化账单 ${item.title}，可以调整分类、金额、币种、分摊人或备注`
                       )}
-                      disabled={!user}
                     >
                       <Sparkles size={16} />
                     </IconButton>
