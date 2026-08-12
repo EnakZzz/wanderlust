@@ -1888,6 +1888,8 @@ test("public share routebook renders safely with legacy itinerary types", async 
   await page.goto("/share?token=public_tokyo_test", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("heading", { name: "东京公开路书" })).toBeVisible();
+  await expect(page.getByText("当地时间：东京")).toBeVisible();
+  await expect(page.getByText("Asia/Tokyo")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "浅草寺散步" })).toBeVisible();
   await expect(page.getByText("活动").first()).toBeVisible();
   await expect(page.locator(".share-day-heading").first()).toContainText("1 项安排");

@@ -32,6 +32,26 @@ function formatItemTime(item: ItineraryItem): string {
   return item.startTime ?? item.endTime ?? "时间待定";
 }
 
+function formatTimezoneLabel(timezone: string): string {
+  const knownCities: Record<string, string> = {
+    "Africa/Cairo": "开罗",
+    "America/Los_Angeles": "洛杉矶",
+    "America/New_York": "纽约",
+    "Asia/Bangkok": "曼谷",
+    "Asia/Seoul": "首尔",
+    "Asia/Shanghai": "上海",
+    "Asia/Singapore": "新加坡",
+    "Asia/Tokyo": "东京",
+    "Australia/Sydney": "悉尼",
+    "Europe/Lisbon": "里斯本",
+    "Europe/London": "伦敦",
+    "Europe/Paris": "巴黎"
+  };
+  const trimmed = timezone.trim();
+  if (!trimmed || trimmed === "Etc/UTC" || trimmed === "UTC") return "当地时间";
+  return `当地时间：${knownCities[trimmed] ?? trimmed.split("/").pop()?.replace(/_/g, " ") ?? "当地"}`;
+}
+
 function getPlaceForItem(item: ItineraryItem, places: Place[]): Place | undefined {
   return item.placeId ? places.find((place) => place.id === item.placeId) : undefined;
 }
@@ -124,7 +144,7 @@ export default function SharePage() {
           <p>{trip.destination} · {formatDateRange(trip)}</p>
           <div className="share-hero-actions">
             <a href="/" className="share-home-link"><Plane size={17} /> {productBrand.name}</a>
-            <span><CalendarDays size={16} /> {trip.timezone}</span>
+            <span><CalendarDays size={16} /> {formatTimezoneLabel(trip.timezone)}</span>
           </div>
         </div>
       </MotionSection>
