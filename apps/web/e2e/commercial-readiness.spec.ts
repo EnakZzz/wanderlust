@@ -864,6 +864,7 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
   await page.getByRole("radio", { name: "地点" }).click();
+  await expect(page.getByLabel("搜索或粘贴地点名称")).toBeVisible();
   await expect(page.getByPlaceholder("搜索或粘贴地点名称")).toBeVisible();
   await page.getByRole("button", { name: "添加地点" }).click();
   await expectAnyInputValue(page, "新的收藏地点");
@@ -874,6 +875,15 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expectAnyInputValue(page, "新的预订");
   await expect(page.getByLabel("新的预订 notes")).toBeVisible();
   await expectNoHorizontalOverflow(page);
+});
+
+test("AI planning and import prompts expose stable labels", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "AI" }).click();
+
+  await expect(page.getByLabel("AI 规划需求")).toBeVisible();
+  await expect(page.getByLabel("AI 导入材料")).toBeVisible();
 });
 
 test("dialogs and select menus keep usable tap targets", async ({ page }) => {

@@ -2466,7 +2466,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               <div className="module-list">
                 <div className="search-row">
                   <Search size={18} />
-                  <Input value={placeSearch} placeholder="搜索或粘贴地点名称" onChange={(event) => setPlaceSearch(event.target.value)} />
+                  <Input aria-label="搜索或粘贴地点名称" value={placeSearch} placeholder="搜索或粘贴地点名称" onChange={(event) => setPlaceSearch(event.target.value)} />
                   <Button asChild variant="secondary">
                     <a href={googleSearchUrl(placeSearch || draft.destination)} target="_blank" rel="noreferrer">
                       <MapIcon size={16} />
@@ -2907,6 +2907,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </div>
                   </div>
                   <Textarea
+                    aria-label="AI 规划需求"
                     placeholder="东京 5 天，第一次去，美食和建筑，节奏轻松，避免长距离转场。"
                     {...aiPlanForm.register("prompt")}
                   />
@@ -2925,6 +2926,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </div>
                   </div>
                   <Textarea
+                    aria-label="AI 导入材料"
                     placeholder="粘贴订票邮件、备注、复制的行程文本、景点票券或文件 OCR 文本。"
                     {...aiImportForm.register("text")}
                   />
