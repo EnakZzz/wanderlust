@@ -2825,7 +2825,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   <article key={item.id} className="module-row budget-row-editor">
                     <label>
                       <span>账单</span>
-                      <Input value={item.title} onChange={(event) => updateBudgetItem(item.id, { title: event.target.value })} />
+                      <Input aria-label={`${item.title} budget title`} value={item.title} onChange={(event) => updateBudgetItem(item.id, { title: event.target.value })} />
                     </label>
                     <label>
                       <span>分类</span>
@@ -2840,11 +2840,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </label>
                     <label>
                       <span>金额</span>
-                      <Input type="number" min={0} step="0.01" value={item.amount} onChange={(event) => updateBudgetItem(item.id, { amount: Number(event.target.value) || 0 })} />
+                      <Input aria-label={`${item.title} amount`} type="number" min={0} step="0.01" value={item.amount} onChange={(event) => updateBudgetItem(item.id, { amount: Number(event.target.value) || 0 })} />
                     </label>
                     <label>
                       <span>币种</span>
-                      <Input value={item.currency ?? "USD"} onChange={(event) => updateBudgetItem(item.id, { currency: event.target.value.toUpperCase() || "USD" })} />
+                      <Input aria-label={`${item.title} currency`} value={item.currency ?? "USD"} onChange={(event) => updateBudgetItem(item.id, { currency: event.target.value.toUpperCase() || "USD" })} />
                     </label>
                     <div className="member-toggle-group">
                       <span>付款人</span>
@@ -2862,7 +2862,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         </button>
                       ))}
                     </div>
-                    <Textarea value={item.notes ?? ""} placeholder="备注" onChange={(event) => updateBudgetItem(item.id, { notes: event.target.value })} />
+                    <Textarea aria-label={`${item.title} notes`} value={item.notes ?? ""} placeholder="备注" onChange={(event) => updateBudgetItem(item.id, { notes: event.target.value })} />
                     <IconButton
                       className="row-ai-button"
                       type="button"
