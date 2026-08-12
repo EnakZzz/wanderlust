@@ -1248,6 +1248,40 @@ test("budget member toggles keep mobile tap targets", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("budget editor renders compact receipt cards", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "预算" }).click();
+  await page.getByRole("button", { name: "添加同行人" }).click();
+  await page.getByLabel("预算成员姓名").nth(1).fill("Alex");
+  await page.getByRole("button", { name: "添加账单" }).click();
+  await page.getByLabel("账单标题").fill("金字塔门票");
+  await page.getByLabel("账单金额").fill("120");
+
+  await expect(page.locator(".budget-receipt-summary")).toBeVisible();
+  await expect(page.locator(".budget-receipt-summary strong")).toHaveText("$120");
+  await expect(page.getByRole("button", { name: "付款人 我" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "分摊人 Alex" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByLabel("账单备注")).toBeVisible();
+
+  const card = await page.locator(".budget-row-editor").first().evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const summary = element.querySelector<HTMLElement>(".budget-receipt-summary")?.getBoundingClientRect();
+    return {
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      summaryWidth: Math.round(summary?.width ?? 0),
+      viewport: document.documentElement.clientWidth
+    };
+  });
+
+  expect(card.summaryWidth, JSON.stringify(card)).toBeGreaterThanOrEqual(180);
+  if (card.viewport >= 900) {
+    expect(card.height, JSON.stringify(card)).toBeLessThanOrEqual(270);
+  }
+  await expectNoHorizontalOverflow(page);
+});
+
 test("packing checklist controls keep usable tap targets", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

@@ -12,6 +12,7 @@ import {
   CheckSquare,
   ChevronDown,
   Clock,
+  CreditCard,
   FileText,
   FileUp,
   ImageUp,
@@ -812,6 +813,19 @@ function formatMoney(amount: number, currency: string): string {
   const normalized = currency.toUpperCase();
   const symbol = normalized === "CNY" ? "¥" : normalized === "JPY" ? "¥" : normalized === "EUR" ? "€" : normalized === "GBP" ? "£" : normalized === "USD" ? "$" : `${normalized} `;
   return `${symbol}${Math.round(amount).toLocaleString("en-US")}`;
+}
+
+function formatPreciseMoney(amount: number, currency: string): string {
+  const normalized = currency.toUpperCase();
+  const symbol = normalized === "CNY" ? "¥" : normalized === "JPY" ? "¥" : normalized === "EUR" ? "€" : normalized === "GBP" ? "£" : normalized === "USD" ? "$" : `${normalized} `;
+  return `${symbol}${amount.toLocaleString("en-US", { minimumFractionDigits: amount % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
+}
+
+function summarizeBudgetMembers(memberIds: string[] | undefined, members: BudgetMember[]): string {
+  const names = (memberIds ?? []).map((id) => members.find((member) => member.id === id)?.name).filter(Boolean);
+  if (!names.length) return "待选择";
+  if (names.length <= 2) return names.join(" / ");
+  return `${names.slice(0, 2).join(" / ")} +${names.length - 2}`;
 }
 
 function getItemBudgetEstimate(item: ItineraryItem, day: TripDay, budgetItems: BudgetItem[]): string {
@@ -3152,72 +3166,87 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 </div>
                 {draft.budgetItems.map((item) => (
                   <article key={item.id} className="module-row budget-row-editor">
-                    <label>
-                      <span>账单</span>
-                      <Input aria-label="账单标题" value={item.title} onChange={(event) => updateBudgetItem(item.id, { title: event.target.value })} />
-                    </label>
-                    <label>
-                      <span>分类</span>
-                      <Select value={item.category ?? "other"} onValueChange={(value) => updateBudgetItem(item.id, { category: value as BudgetItem["category"] })}>
-                        <SelectTrigger aria-label="账单分类">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {budgetCategories.map((category) => <SelectItem key={category ?? "other"} value={category ?? "other"}>{budgetCategoryLabels[category ?? "other"]}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </label>
-                    <label>
-                      <span>金额</span>
-                      <Input aria-label="账单金额" type="number" min={0} step="0.01" value={item.amount} onChange={(event) => updateBudgetItem(item.id, { amount: Number(event.target.value) || 0 })} />
-                    </label>
-                    <label>
-                      <span>币种</span>
-                      <Input aria-label="账单币种" value={item.currency ?? "USD"} onChange={(event) => updateBudgetItem(item.id, { currency: event.target.value.toUpperCase() || "USD" })} />
-                    </label>
-                    <div className="member-toggle-group">
-                      <span>付款人</span>
-                      {draft.budgetMembers.map((member) => (
-                        <button
-                          key={member.id}
-                          aria-label={`付款人 ${member.name}`}
-                          aria-pressed={item.paidByMemberIds?.includes(member.id) ? "true" : "false"}
-                          className={item.paidByMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"}
-                          type="button"
-                          onClick={() => toggleBudgetMember(item, "paidByMemberIds", member.id)}
-                        >
-                          {member.name}
-                        </button>
-                      ))}
+                    <div className="budget-receipt-summary" aria-hidden="true">
+                      <CreditCard size={22} />
+                      <span>{budgetCategoryLabels[item.category ?? "other"]}</span>
+                      <strong>{formatPreciseMoney(item.amount, item.currency ?? "USD")}</strong>
+                      <small>{summarizeBudgetMembers(item.paidByMemberIds, draft.budgetMembers)} 付款</small>
+                      <small>{summarizeBudgetMembers(item.splitWithMemberIds, draft.budgetMembers)} 分摊</small>
                     </div>
-                    <div className="member-toggle-group">
-                      <span>分摊人</span>
-                      {draft.budgetMembers.map((member) => (
-                        <button
-                          key={member.id}
-                          aria-label={`分摊人 ${member.name}`}
-                          aria-pressed={item.splitWithMemberIds?.includes(member.id) ? "true" : "false"}
-                          className={item.splitWithMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"}
+                    <div className="budget-receipt-body">
+                      <div className="budget-receipt-fields">
+                        <label className="budget-title-field">
+                          <span>账单</span>
+                          <Input aria-label="账单标题" value={item.title} onChange={(event) => updateBudgetItem(item.id, { title: event.target.value })} />
+                        </label>
+                        <label>
+                          <span>分类</span>
+                          <Select value={item.category ?? "other"} onValueChange={(value) => updateBudgetItem(item.id, { category: value as BudgetItem["category"] })}>
+                            <SelectTrigger aria-label="账单分类">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {budgetCategories.map((category) => <SelectItem key={category ?? "other"} value={category ?? "other"}>{budgetCategoryLabels[category ?? "other"]}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </label>
+                        <label>
+                          <span>金额</span>
+                          <Input aria-label="账单金额" type="number" min={0} step="0.01" value={item.amount} onChange={(event) => updateBudgetItem(item.id, { amount: Number(event.target.value) || 0 })} />
+                        </label>
+                        <label>
+                          <span>币种</span>
+                          <Input aria-label="账单币种" value={item.currency ?? "USD"} onChange={(event) => updateBudgetItem(item.id, { currency: event.target.value.toUpperCase() || "USD" })} />
+                        </label>
+                      </div>
+                      <div className="budget-split-grid">
+                        <div className="member-toggle-group">
+                          <span>付款人</span>
+                          {draft.budgetMembers.map((member) => (
+                            <button
+                              key={member.id}
+                              aria-label={`付款人 ${member.name}`}
+                              aria-pressed={item.paidByMemberIds?.includes(member.id) ? "true" : "false"}
+                              className={item.paidByMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"}
+                              type="button"
+                              onClick={() => toggleBudgetMember(item, "paidByMemberIds", member.id)}
+                            >
+                              {member.name}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="member-toggle-group">
+                          <span>分摊人</span>
+                          {draft.budgetMembers.map((member) => (
+                            <button
+                              key={member.id}
+                              aria-label={`分摊人 ${member.name}`}
+                              aria-pressed={item.splitWithMemberIds?.includes(member.id) ? "true" : "false"}
+                              className={item.splitWithMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"}
+                              type="button"
+                              onClick={() => toggleBudgetMember(item, "splitWithMemberIds", member.id)}
+                            >
+                              {member.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="budget-note-row">
+                        <Textarea aria-label="账单备注" value={item.notes ?? ""} placeholder="备注" onChange={(event) => updateBudgetItem(item.id, { notes: event.target.value })} />
+                        <IconButton
+                          className="row-ai-button"
                           type="button"
-                          onClick={() => toggleBudgetMember(item, "splitWithMemberIds", member.id)}
+                          label={`AI 优化账单 ${item.title}`}
+                          tooltip={user ? "用 AI 修改这个账单，先生成预览" : "打开预览，登录后可生成修改"}
+                          onClick={() => openEntityAiAssistant(
+                            { moduleId: "budget", entityType: "budgetItem", entityId: item.id, label: `预算 · ${item.title}` },
+                            `帮我优化账单 ${item.title}，可以调整分类、金额、币种、分摊人或备注`
+                          )}
                         >
-                          {member.name}
-                        </button>
-                      ))}
+                          <Sparkles size={16} />
+                        </IconButton>
+                      </div>
                     </div>
-                    <Textarea aria-label="账单备注" value={item.notes ?? ""} placeholder="备注" onChange={(event) => updateBudgetItem(item.id, { notes: event.target.value })} />
-                    <IconButton
-                      className="row-ai-button"
-                      type="button"
-                      label={`AI 优化账单 ${item.title}`}
-                      tooltip={user ? "用 AI 修改这个账单，先生成预览" : "打开预览，登录后可生成修改"}
-                      onClick={() => openEntityAiAssistant(
-                        { moduleId: "budget", entityType: "budgetItem", entityId: item.id, label: `预算 · ${item.title}` },
-                        `帮我优化账单 ${item.title}，可以调整分类、金额、币种、分摊人或备注`
-                      )}
-                    >
-                      <Sparkles size={16} />
-                    </IconButton>
                   </article>
                 ))}
                 <Button type="button" onClick={addBudgetItem}>

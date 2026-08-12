@@ -3179,20 +3179,93 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   background: var(--paper-deep);
 }
 .budget-row-editor {
-  grid-template-columns: minmax(180px, 1fr) minmax(140px, 0.7fr) minmax(110px, 0.48fr) minmax(90px, 0.36fr);
+  grid-template-columns: minmax(190px, 0.34fr) minmax(0, 1fr);
+  gap: 0;
+  align-items: stretch;
+  overflow: hidden;
 }
-.budget-row-editor textarea,
-.member-toggle-group {
+.budget-receipt-summary {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 8px 10px;
+  align-content: center;
+  margin: -14px 0 -14px -14px;
+  padding: 18px 16px;
+  border-right: 1px dashed color-mix(in srgb, var(--moss) 34%, var(--line));
+  background:
+    linear-gradient(140deg, #f8f3e8 0%, color-mix(in srgb, var(--moss) 14%, #fff 86%) 100%),
+    radial-gradient(circle at 10% 12%, rgba(255,255,255,0.9), transparent 34%);
+}
+.budget-receipt-summary svg {
+  grid-row: 1 / span 2;
+  display: block;
+  width: 40px;
+  height: 40px;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--moss) 32%, var(--line));
+  border-radius: 14px;
+  color: var(--moss);
+  background: rgba(255,255,255,0.7);
+}
+.budget-receipt-summary span,
+.budget-receipt-summary small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.budget-receipt-summary span {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.7);
+  color: var(--moss);
+  font-size: 11px;
+  font-weight: 900;
+}
+.budget-receipt-summary strong {
   grid-column: 1 / -1;
+  color: var(--ink);
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 1;
+}
+.budget-receipt-summary small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+.budget-receipt-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.38fr);
+  gap: 10px;
+  min-width: 0;
+  padding-left: 16px;
+}
+.budget-receipt-fields {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(130px, 0.55fr) minmax(110px, 0.42fr) minmax(82px, 0.32fr);
+  gap: 10px;
+}
+.budget-split-grid {
+  grid-column: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 .member-toggle-group {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.45);
 }
 .member-toggle-group > span {
-  min-width: 74px;
+  width: 100%;
   color: var(--muted);
   font-size: 11px;
   font-weight: 900;
@@ -3212,6 +3285,19 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   border-color: var(--moss);
   background: #eef2ed;
   color: var(--moss);
+}
+.budget-note-row {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  gap: 10px;
+  align-items: end;
+}
+.budget-note-row textarea {
+  min-height: 92px;
+}
+.budget-note-row .row-ai-button {
+  justify-self: end;
 }
 .settlement-panel {
   display: grid;
@@ -4875,6 +4961,62 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   }
   .file-card-fields label:first-child {
     grid-column: 1 / -1;
+  }
+  .budget-row-editor {
+    gap: 12px;
+  }
+  .budget-members {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .budget-members .new-trip-button {
+    justify-self: start;
+  }
+  .budget-receipt-summary {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    margin: -14px -14px 0 -14px;
+    padding: 14px;
+    border-right: 0;
+    border-bottom: 1px dashed color-mix(in srgb, var(--moss) 34%, var(--line));
+  }
+  .budget-receipt-summary svg {
+    grid-row: 1 / span 2;
+  }
+  .budget-receipt-summary strong {
+    grid-column: 2 / span 2;
+    font-size: 28px;
+  }
+  .budget-receipt-summary small {
+    grid-column: auto;
+  }
+  .budget-receipt-body {
+    grid-template-columns: 1fr;
+    padding-left: 0;
+  }
+  .budget-receipt-fields {
+    grid-column: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .budget-title-field {
+    grid-column: 1 / -1;
+  }
+  .budget-split-grid {
+    grid-column: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .member-toggle-group {
+    align-content: start;
+    padding: 8px;
+  }
+  .member-pill {
+    min-width: 0;
+    padding: 0 12px;
+  }
+  .budget-note-row textarea {
+    min-height: 48px;
+  }
+  .budget-note-row {
+    grid-column: auto;
   }
   .ai-preview-heading { align-items: stretch; flex-direction: column; }
   .search-row .new-trip-button { justify-self: start; }
