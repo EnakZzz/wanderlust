@@ -1403,7 +1403,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       setDestinationSearchError(null);
       searchDestinations(query, controller.signal)
         .then((payload) => {
-          setDestinationCandidates(payload.candidates ?? []);
+          const candidates = payload.candidates ?? [];
+          const exactCandidate = candidates.find((candidate) => candidate.fullName === query);
+          if (exactCandidate) {
+            metaForm.setValue("destinationMeta", exactCandidate, { shouldDirty: true });
+            if (exactCandidate.timezone) {
+              metaForm.setValue("timezone", exactCandidate.timezone, { shouldDirty: true });
+            }
+          }
+          setDestinationCandidates(candidates);
           setDestinationSearchError(payload.providerError ? "Google Maps 配置好之前先使用本地建议。" : null);
         })
         .catch((error) => {
