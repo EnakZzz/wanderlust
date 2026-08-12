@@ -9,6 +9,7 @@ export type AuthEnv = {
   WORKERS_AI_VISION_MODEL?: string;
   AGENT_API_TOKENS?: string;
   GOOGLE_MAPS_API_KEY?: string;
+  GOOGLE_MAPS_BROWSER_API_KEY?: string;
   GOOGLE_OAUTH_CLIENT_ID?: string;
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   APPLE_OAUTH_CLIENT_ID?: string;

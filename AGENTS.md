@@ -60,7 +60,8 @@ GitHub 仓库 `EnakZzz/wanderlust` 需要配置这些 Actions Secrets：
 - `CLOUDFLARE_D1_DATABASE_NAME`: D1 数据库名。
 - `CLOUDFLARE_D1_DATABASE_ID`: D1 数据库 id。
 - `CLOUDFLARE_R2_BUCKET_NAME`: R2 bucket 名。
-- `GOOGLE_MAPS_API_KEY`: Google Maps / Places API key，CI 会同步到 Cloudflare Pages secret。
+- `GOOGLE_MAPS_API_KEY`: Google Maps 服务端 API key，用于 Static Maps、Geocoding、Time Zone，CI 会同步到 Cloudflare Pages secret。
+- `GOOGLE_MAPS_BROWSER_API_KEY`: Google Maps 浏览器 API key，用于 Maps JavaScript API 的可交互地图，CI 会同步到 Cloudflare Pages secret。这个 key 必须允许 `Maps JavaScript API`，并建议用 HTTP referrer 限制到 `https://wanderlust-web.pages.dev/*` 和需要的预览域名。
 - `SESSION_SECRET`: 会话签名密钥，CI 会同步到 Cloudflare Pages secret。
 - `GOOGLE_OAUTH_CLIENT_ID`: Google OAuth client id，CI 会同步到 Cloudflare Pages secret。
 - `GOOGLE_OAUTH_CLIENT_SECRET`: Google OAuth client secret，CI 会同步到 Cloudflare Pages secret。
@@ -127,6 +128,7 @@ OAuth 和 session 这类 secret 不写入仓库，也不写入 `.deploy.local.ex
 npx wrangler pages secret put GOOGLE_OAUTH_CLIENT_ID --project-name <PagesProjectName>
 npx wrangler pages secret put GOOGLE_OAUTH_CLIENT_SECRET --project-name <PagesProjectName>
 npx wrangler pages secret put GOOGLE_MAPS_API_KEY --project-name <PagesProjectName>
+npx wrangler pages secret put GOOGLE_MAPS_BROWSER_API_KEY --project-name <PagesProjectName>
 npx wrangler pages secret put SESSION_SECRET --project-name <PagesProjectName>
 ```
 

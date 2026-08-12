@@ -625,7 +625,7 @@ async function getStaticMapPreview(request: Request, env: AuthEnv): Promise<Resp
 }
 
 function getMapsClientConfig(env: AuthEnv): Response {
-  const apiKey = env.GOOGLE_MAPS_API_KEY?.trim();
+  const apiKey = env.GOOGLE_MAPS_BROWSER_API_KEY?.trim() || env.GOOGLE_MAPS_API_KEY?.trim();
   const response = json(apiKey ? { configured: true, apiKey } : { configured: false });
   response.headers.set("cache-control", "private, max-age=300");
   return response;
