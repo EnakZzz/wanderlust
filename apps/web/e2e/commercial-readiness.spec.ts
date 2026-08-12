@@ -777,6 +777,9 @@ test("mobile global launchers stay clear of primary card content", async ({ page
 test("local routebook editing supports a first itinerary item without login", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
+  await expect(page.getByText(/3 天 · 登录后同步/)).toBeVisible();
+  await expect(page.getByText(/1 day · 登录后同步/)).toHaveCount(0);
+
   await page.getByRole("button", { name: "添加行程项" }).click();
   await expect(page.getByRole("heading", { name: "新的行程项" })).toBeVisible();
 

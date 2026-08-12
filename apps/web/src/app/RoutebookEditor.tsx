@@ -2052,7 +2052,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       : trips.length > 0
                         ? "打开路书列表选择一个路书。"
                         : "先创建一个路书开始。"
-                    : `${displayDestination} · ${draft.startDate} - ${draft.endDate} · ${draft.days.length} ${draft.days.length === 1 ? "day" : "天"} · 登录后同步`}
+                    : `${displayDestination} · ${draft.startDate} - ${draft.endDate} · ${draft.days.length} 天 · 登录后同步`}
                 </small>
               </span>
             </button>
