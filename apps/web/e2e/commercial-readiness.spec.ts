@@ -432,6 +432,14 @@ test("signed-in top navigation keeps account actions tappable", async ({ page })
   await expectNoHorizontalOverflow(page);
 });
 
+test("primary navigation label stays localized", async ({ page }) => {
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("navigation", { name: "主导航" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("destination search exposes a stable input label", async ({ page }) => {
   await page.goto("/search", { waitUntil: "domcontentloaded" });
 

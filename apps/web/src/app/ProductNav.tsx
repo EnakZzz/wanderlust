@@ -41,7 +41,7 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
   }
 
   return (
-    <nav className={className} aria-label="Primary">
+    <nav className={className} aria-label="主导航">
       <a className="product-nav-brand" href="/" aria-label="返回首页">
         <Plane size={18} />
         <span>{productBrand.shortName}</span>

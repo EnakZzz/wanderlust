@@ -21,7 +21,7 @@ export function AuthPanel() {
   }, []);
 
   if (!loaded) {
-    return <div className="auth-panel auth-panel-loading">Checking sign-in</div>;
+    return <div className="auth-panel auth-panel-loading">正在检查登录状态</div>;
   }
 
   if (user) {
@@ -44,7 +44,7 @@ export function AuthPanel() {
         <a
           href={providers.google.configured ? `/auth/google/login?returnTo=${encodeURIComponent(returnTo)}` : undefined}
           aria-disabled={!providers.google.configured}
-          title={providers.google.configured ? "Sign in with Google" : "Google OAuth is not configured"}
+          title={providers.google.configured ? "使用 Google 登录" : "Google OAuth 尚未配置"}
         >
           <span className="provider-mark">G</span>
           <span>Google</span>
@@ -54,7 +54,7 @@ export function AuthPanel() {
         <a
           href={providers.apple.configured ? `/auth/apple/start?returnTo=${encodeURIComponent(returnTo)}` : undefined}
           aria-disabled={!providers.apple.configured}
-          title={providers.apple.configured ? "Sign in with Apple" : "Apple OAuth is not configured"}
+          title={providers.apple.configured ? "使用 Apple 登录" : "Apple OAuth 尚未配置"}
         >
           <Apple size={17} />
           <span>Apple</span>
