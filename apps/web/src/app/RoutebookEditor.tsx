@@ -2173,12 +2173,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   ) : null}
                 </label>
                 <label>
-                  <span>Start</span>
-                  <Input type="date" {...metaForm.register("startDate")} />
+                  <span>出发日期</span>
+                  <Input aria-label="出发日期" type="date" {...metaForm.register("startDate")} />
                 </label>
                 <label>
-                  <span>End</span>
-                  <Input type="date" {...metaForm.register("endDate")} />
+                  <span>结束日期</span>
+                  <Input aria-label="结束日期" type="date" {...metaForm.register("endDate")} />
                 </label>
                 <label>
                   <span>时区</span>

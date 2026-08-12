@@ -1162,8 +1162,8 @@ test("anonymous users can create a named local routebook and keep it after refre
   await page.getByLabel("路书标题").fill("东京亲子路书");
   await page.getByLabel("目的地").fill("Tokyo, Japan");
   await page.getByLabel("时区").fill("Asia/Tokyo");
-  await page.locator(".routebook-meta-form input[type='date']").first().fill("2026-09-01");
-  await page.locator(".routebook-meta-form input[type='date']").nth(1).fill("2026-09-03");
+  await page.getByLabel("出发日期").fill("2026-09-01");
+  await page.getByLabel("结束日期").fill("2026-09-03");
   await page.getByRole("button", { name: "保存修改" }).click();
 
   await expect(page.getByRole("button", { name: /东京亲子路书/ })).toBeVisible();
