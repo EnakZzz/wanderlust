@@ -429,6 +429,23 @@ test("signed-in top navigation keeps account actions tappable", async ({ page })
   await expectNoHorizontalOverflow(page);
 });
 
+test("destination search exposes a stable input label", async ({ page }) => {
+  await page.goto("/search", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByLabel("搜索目的地")).toBeVisible();
+});
+
+test("editor falls back to a local routebook when session check stalls", async ({ page }) => {
+  await page.route("**/auth/session", () => {
+    // Simulates an unavailable auth edge so the editor must not remain a skeleton forever.
+  });
+
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("radio", { name: "地点" })).toBeVisible({ timeout: 8_000 });
+  await expect(page.locator(".workspace-loading")).toHaveCount(0);
+});
+
 for (const path of ["/dashboard", "/journeys", "/search", "/passport"] as const) {
   test(`product shell actions keep usable tap targets at ${path}`, async ({ page }) => {
     await page.goto(path, { waitUntil: "domcontentloaded" });

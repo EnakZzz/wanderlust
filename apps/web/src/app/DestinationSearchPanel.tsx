@@ -9,6 +9,7 @@ import { searchDestinations } from "@/lib/web-api";
 
 type DestinationSearchPanelProps = {
   className?: string;
+  searchLabel?: string;
   placeholder?: string;
   suggestions?: string[];
 };
@@ -22,6 +23,7 @@ function editorHref(destination: string): string {
 
 export function DestinationSearchPanel({
   className = "",
+  searchLabel = "搜索目的地",
   placeholder = "搜索城市、路线或一个小长假目的地...",
   suggestions = defaultSuggestions
 }: DestinationSearchPanelProps) {
@@ -66,7 +68,7 @@ export function DestinationSearchPanel({
     <div className={`destination-panel ${className}`.trim()}>
       <div className="destination-panel-search">
         <Search size={20} />
-        <Input value={query} placeholder={placeholder} onChange={(event) => setQuery(event.target.value)} />
+        <Input aria-label={searchLabel} value={query} placeholder={placeholder} onChange={(event) => setQuery(event.target.value)} />
         <Button asChild size="icon" variant={query.trim() ? "default" : "secondary"} className="destination-panel-action">
           <a href={editorHref(query)} aria-label="开始规划">
             <ArrowRight size={17} />

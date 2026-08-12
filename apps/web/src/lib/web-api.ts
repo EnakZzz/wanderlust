@@ -27,6 +27,8 @@ export const fallbackProviders: ProviderStatus = {
   apple: { configured: false }
 };
 
+const sessionProbeTimeoutMs = 4_000;
+
 async function readJson<T>(response: Response, fallbackMessage: string): Promise<T> {
   let payload: (T & { error?: string; message?: string }) | null = null;
   if (response.headers.get("content-type")?.includes("application/json")) {
@@ -43,10 +45,20 @@ async function readJson<T>(response: Response, fallbackMessage: string): Promise
 }
 
 export async function readSession(): Promise<SessionUser | null> {
-  const response = await fetch("/auth/session", { credentials: "include" });
-  if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return null;
-  const session = (await response.json()) as { user?: SessionUser | null };
-  return session.user ?? null;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), sessionProbeTimeoutMs);
+
+  try {
+    const response = await fetch("/auth/session", { credentials: "include", signal: controller.signal });
+    if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return null;
+    const session = (await response.json()) as { user?: SessionUser | null };
+    return session.user ?? null;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") return null;
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 export async function readAuthConfig(): Promise<ProviderStatus> {
