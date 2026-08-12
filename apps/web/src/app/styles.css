@@ -2984,6 +2984,17 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   justify-content: flex-end;
   gap: 9px;
 }
+.share-open-link-button,
+.share-open-link-button:visited {
+  color: #fff8ee;
+}
+.share-open-link-button:hover {
+  color: #fff8ee;
+}
+.share-open-link-button svg,
+.share-open-link-button span {
+  color: inherit;
+}
 
 .switch-dialog-content {
   max-width: min(500px, calc(100vw - 24px));

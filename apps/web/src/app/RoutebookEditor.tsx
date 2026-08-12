@@ -2330,17 +2330,13 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 </div>
               )}
               <DialogFooter className="share-dialog-actions">
-                <Button variant="ghost" type="button" onClick={() => setShareDialogOpen(false)}>
-                  <X size={17} />
-                  <span>关闭</span>
-                </Button>
                 {shareUrl ? (
                   <>
                     <Button variant="secondary" type="button" onClick={() => copyShareUrl(shareUrl)}>
                       <Share2 size={17} />
                       <span>复制链接</span>
                     </Button>
-                    <Button asChild>
+                    <Button className="share-open-link-button" asChild>
                       <a href={shareUrl} target="_blank" rel="noreferrer">
                         <MapIcon size={17} />
                         <span>打开只读页</span>

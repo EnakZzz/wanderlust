@@ -1349,7 +1349,7 @@ test("anonymous share action explains that login is required", async ({ page }) 
 
   await expect(page.getByRole("dialog", { name: "分享路书" })).toBeVisible();
   await expect(page.getByText("登录后可生成一条只读链接，用来发给同行人查看路书。")).toBeVisible();
-  await expect(page.locator(".share-dialog-actions").getByRole("button", { name: "关闭" })).toBeVisible();
+  await expect(page.locator(".share-dialog-actions").getByRole("button", { name: "关闭" })).toHaveCount(0);
   await expect(page.locator(".sync-error")).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
@@ -1370,7 +1370,17 @@ test("signed-in users can save and create a share link for a routebook", async (
   await expect(page.getByText("把这条只读链接发给同行人，对方无需编辑权限也能查看路书。")).toBeVisible();
   await expect(page.getByLabel("只读分享链接")).toHaveValue(/token=public_tokyo_test/);
   await expect(page.getByRole("button", { name: "复制链接" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "打开只读页" })).toHaveAttribute("href", /token=public_tokyo_test/);
+  const openShareLink = page.getByRole("link", { name: "打开只读页" });
+  await expect(openShareLink).toHaveAttribute("href", /token=public_tokyo_test/);
+  const openShareLinkColors = await openShareLink.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      color: style.color,
+      backgroundColor: style.backgroundColor
+    };
+  });
+  expect(contrastRatio(parseRgb(openShareLinkColors.color), parseRgb(openShareLinkColors.backgroundColor))).toBeGreaterThanOrEqual(4.5);
+  await expect(page.locator(".share-dialog-actions").getByRole("button", { name: "关闭" })).toHaveCount(0);
   await expect(page.getByText("链接已准备好，可复制给同行人。")).toBeVisible();
   await expect(page.getByText(/链接已复制|请手动复制/)).toHaveCount(0);
   await expect(page.getByText(/分享链接已(复制|生成)/)).toHaveCount(0);
