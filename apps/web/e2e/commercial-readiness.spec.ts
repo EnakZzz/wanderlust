@@ -1198,7 +1198,7 @@ test("signed-in users can save and create a share link for a routebook", async (
   await mockSignedInRuntime(page);
   await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByRole("button", { name: /^当前路书 东京商业路书/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "打开 东京商业路书" })).toBeVisible();
   await page.getByRole("button", { name: "添加行程项" }).click();
   await page.getByRole("button", { name: "保存" }).click();
   await page.getByRole("button", { name: "分享" }).click();
@@ -1235,7 +1235,7 @@ test("deleting the current routebook uses a clear confirmation and leaves the de
     await dialog.accept();
   });
 
-  await page.getByRole("button", { name: /^当前路书 东京商业路书/ }).click();
+  await page.getByRole("button", { name: "打开 东京商业路书" }).click();
   await expectVisibleTapTargetsAtLeast44(page, ".trip-delete-button");
   await page.getByRole("button", { name: "删除 东京商业路书" }).click();
 

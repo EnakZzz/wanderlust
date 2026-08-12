@@ -1989,7 +1989,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   function renderTripCard(trip: TripSummary) {
     return (
       <article key={trip.id} className={trip.id === draft.id ? "trip-card active" : "trip-card"}>
-        <button className="trip-card-open" type="button" onClick={() => loadTrip(trip.id, { updateRoute: true })}>
+        <button className="trip-card-open" type="button" aria-label={`打开 ${trip.title}`} onClick={() => loadTrip(trip.id, { updateRoute: true })}>
           <span className="trip-card-icon" aria-hidden="true">
             <MapPin size={22} />
           </span>
@@ -2024,6 +2024,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               className="routebook-current"
               type="button"
               onClick={() => (user ? setRoutebookDrawerOpen(true) : openEditTripMetaDialog())}
+              aria-label={user ? `打开 ${activeTripSummary?.title ?? displayTitle}` : `编辑本地草稿信息 ${displayTitle}`}
               aria-haspopup="dialog"
               aria-expanded={routebookDrawerOpen}
             >
