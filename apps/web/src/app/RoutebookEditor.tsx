@@ -2620,7 +2620,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <label>
                       <span>类型</span>
                       <Select value={booking.type} onValueChange={(value) => updateBooking(booking.id, { type: value as Booking["type"] })}>
-                        <SelectTrigger>
+                        <SelectTrigger aria-label={`${booking.title} booking type`}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -2639,7 +2639,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <label>
                       <span>状态</span>
                       <Select value={booking.status} onValueChange={(value) => updateBooking(booking.id, { status: value as Booking["status"] })}>
-                        <SelectTrigger>
+                        <SelectTrigger aria-label={`${booking.title} booking status`}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
