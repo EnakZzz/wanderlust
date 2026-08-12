@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, CheckSquare, Clock, Compass, ExternalLink, MapPin, Plane, Plus, Search, Share2, Ticket } from "lucide-react";
-import { buildGoogleMapsPlaceUrl, productBrand, sortItineraryItems, type Booking, type ItineraryItem, type Place } from "@wanderlust/domain";
+import { buildGoogleMapsPlaceUrl, productBrand, sortItineraryItems, type Booking, type ItineraryItem, type PackingItem, type Place } from "@wanderlust/domain";
 import { MotionDiv, MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
 import { formatTripDateRange } from "@/lib/date-format";
@@ -93,6 +93,11 @@ function getGooglePlaceHrefForPlace(place: Place): string | undefined {
   return buildGoogleMapsPlaceUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name, googlePlaceId: place.googlePlaceId });
 }
 
+function hasUsablePackingItem(item: PackingItem): boolean {
+  const quantity = item.quantity;
+  return Boolean(item.title?.trim() && typeof quantity === "number" && Number.isInteger(quantity) && quantity > 0);
+}
+
 function getDaySummary(items: ItineraryItem[]): string {
   const sorted = sortItineraryItems(items);
   const times = sorted.flatMap((item) => [item.startTime, item.endTime]).filter((time): time is string => Boolean(time));
@@ -168,9 +173,10 @@ export default function SharePage() {
   const shareablePlaceCount = places.filter((place) => Boolean(getGooglePlaceHrefForPlace(place))).length;
   const bookings = trip.bookings ?? [];
   const packingItems = trip.packingItems ?? [];
+  const usablePackingItems = packingItems.filter(hasUsablePackingItem);
   const placeSummaryLabel = shareablePlaceCount > 0 ? `${shareablePlaceCount} 个地点` : "待整理";
   const bookingSummaryLabel = bookings.length > 0 ? `${bookings.length} 项确认` : "待整理";
-  const packingSummaryLabel = packingItems.length > 0 ? `${packingItems.filter((item) => item.packed).length}/${packingItems.length}` : "待整理";
+  const packingSummaryLabel = usablePackingItems.length > 0 ? `${usablePackingItems.filter((item) => item.packed).length}/${usablePackingItems.length}` : "待整理";
 
   return (
     <main className="share-page">
@@ -304,13 +310,13 @@ export default function SharePage() {
               <p className="eyebrow">出发清单</p>
               <h2>{packingSummaryLabel}</h2>
               <div className="share-packing-list">
-                {packingItems.slice(0, 8).map((item) => (
+                {usablePackingItems.slice(0, 8).map((item) => (
                   <div key={item.id}>
                     <CheckSquare size={15} />
                     <span>{item.title}</span>
                   </div>
                 ))}
-                {packingItems.length === 0 ? <span>暂未整理打包清单。</span> : null}
+                {usablePackingItems.length === 0 ? <span>暂未整理打包清单。</span> : null}
               </div>
             </section>
           </MotionDiv>

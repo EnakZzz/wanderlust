@@ -393,7 +393,7 @@ async function mockPublicShareWithEmptyDepartureRuntime(page: Page) {
           places: [],
           bookings: [],
           attachments: [],
-          packingItems: [],
+          packingItems: [{ id: "packing_blank", tripId, title: "   ", category: "documents", quantity: 1, packed: true }],
           weather: [],
           budgetMembers: [],
           budgetItems: [],
@@ -2178,6 +2178,7 @@ test("public share routebook uses customer-facing empty checklist copy", async (
   await expect(page.getByText("出发清单")).toBeVisible();
   await expect(page.locator(".share-side-card").filter({ hasText: "出发清单" }).getByRole("heading", { name: "待整理" })).toBeVisible();
   await expect(page.getByText("0/0")).toHaveCount(0);
+  await expect(page.getByText("1/1")).toHaveCount(0);
   await expect(page.getByText("暂未整理打包清单。")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
