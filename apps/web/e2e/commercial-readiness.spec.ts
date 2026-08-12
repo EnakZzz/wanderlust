@@ -1566,6 +1566,7 @@ test("signed-in journey cards keep destination imagery full bleed", async ({ pag
 });
 
 test("single journey card stays card-sized on desktop", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await mockSignedInRuntime(page);
 
   await page.goto("/journeys", { waitUntil: "domcontentloaded" });
@@ -1893,14 +1894,16 @@ test("public share routebook renders safely with legacy itinerary types", async 
   await expect(page.locator(".share-step-number").first()).toHaveText("01");
   await expect(page.getByRole("button", { name: "打开 AI 修改窗口" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "打开全局命令窗口" })).toHaveCount(0);
-  const stepPlaceLink = page.getByRole("link", { name: "显示地点" });
+  const stepPlaceLink = page.locator(".share-step").getByRole("link", { name: "打开 Google 地点 浅草寺" });
   await expect(stepPlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(stepPlaceLink).toHaveAttribute("href", /query_place_id=ChIJ8T1GpMGOGGARw6cSJo9lN4g/);
   await expect(stepPlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
+  await expect(page.getByRole("link", { name: "显示地点" })).toHaveCount(0);
   const placeDisplayLink = page.locator(".share-place-list a").filter({ hasText: "浅草寺" });
   await expect(placeDisplayLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(placeDisplayLink).toHaveAttribute("href", /query_place_id=ChIJ8T1GpMGOGGARw6cSJo9lN4g/);
   await expect(placeDisplayLink).not.toHaveAttribute("href", /\/maps\/dir\//);
+  await expect(page.getByRole("link", { name: "打开 Google 地点 浅草寺" })).toHaveCount(2);
   await expectVisibleTapTargetsAtLeast44(page, ".share-hero-actions a, .share-hero-actions span");
   const routePosition = await page.locator(".share-route").boundingBox();
   const viewport = page.viewportSize();

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, CheckSquare, Clock, MapPin, Navigation, Plane, Share2, Ticket } from "lucide-react";
+import { CalendarDays, CheckSquare, Clock, ExternalLink, MapPin, Plane, Share2, Ticket } from "lucide-react";
 import { buildGoogleMapsPlaceUrl, productBrand, sortItineraryItems, type ItineraryItem, type Place, type Trip } from "@wanderlust/domain";
 import { MotionDiv, MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
@@ -44,7 +44,7 @@ function getDescription(item: ItineraryItem, place?: Place): string {
   return item.reason?.trim() || item.notes?.trim() || place?.notes?.trim() || "这一步还没有补充说明。";
 }
 
-function getNavigationHref(item: ItineraryItem, place?: Place): string | undefined {
+function getGooglePlaceHref(item: ItineraryItem, place?: Place): string | undefined {
   const latitude = place?.latitude ?? item.latitude;
   const longitude = place?.longitude ?? item.longitude;
   if (typeof latitude !== "number" || typeof longitude !== "number") return undefined;
@@ -158,7 +158,8 @@ export default function SharePage() {
                   <div className="share-step-list">
                     {dayItems.map((item, itemIndex) => {
                       const place = getPlaceForItem(item, places);
-                      const href = getNavigationHref(item, place);
+                      const href = getGooglePlaceHref(item, place);
+                      const locationLabel = getLocationLabel(item, place);
                       return (
                         <article key={item.id} className="share-step">
                           <div className="share-step-number" aria-hidden="true">{String(itemIndex + 1).padStart(2, "0")}</div>
@@ -177,12 +178,12 @@ export default function SharePage() {
                             <p>{getDescription(item, place)}</p>
                             <div className="share-step-place">
                               <MapPin size={15} />
-                              <span>{getLocationLabel(item, place)}</span>
+                              <span>{locationLabel}</span>
                             </div>
                             {href ? (
-                              <a className="share-nav-link" href={href} target="_blank" rel="noreferrer">
-                                <Navigation size={15} />
-                                显示地点
+                              <a className="share-nav-link" aria-label={`打开 Google 地点 ${locationLabel}`} href={href} target="_blank" rel="noreferrer">
+                                <ExternalLink size={15} />
+                                打开 Google 地点
                               </a>
                             ) : null}
                           </div>
@@ -203,7 +204,13 @@ export default function SharePage() {
               <h2>{places.length} 个地点</h2>
               <div className="share-place-list">
                 {places.slice(0, 8).map((place) => (
-                  <a key={place.id} href={buildGoogleMapsPlaceUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name, googlePlaceId: place.googlePlaceId })} target="_blank" rel="noreferrer">
+                  <a
+                    key={place.id}
+                    aria-label={`打开 Google 地点 ${place.name}`}
+                    href={buildGoogleMapsPlaceUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name, googlePlaceId: place.googlePlaceId })}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     <MapPin size={15} />
                     <span>{place.name}</span>
                   </a>
