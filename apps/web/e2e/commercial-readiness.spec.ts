@@ -850,10 +850,12 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expect(page.getByPlaceholder("搜索或粘贴地点名称")).toBeVisible();
   await page.getByRole("button", { name: "添加地点" }).click();
   await expectAnyInputValue(page, "新的收藏地点");
+  await expect(page.getByLabel("新的收藏地点 notes")).toBeVisible();
 
   await page.getByRole("radio", { name: "预订" }).click();
   await page.getByRole("button", { name: "添加预订" }).click();
   await expectAnyInputValue(page, "新的预订");
+  await expect(page.getByLabel("新的预订 notes")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

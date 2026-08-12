@@ -2541,7 +2541,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       <span>标签</span>
                       <Input value={(place.tags ?? []).join(", ")} onChange={(event) => updatePlace(place.id, { tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
                     </label>
-                    <Textarea value={place.notes ?? ""} onChange={(event) => updatePlace(place.id, { notes: event.target.value })} />
+                    <Textarea aria-label={`${place.name} notes`} value={place.notes ?? ""} onChange={(event) => updatePlace(place.id, { notes: event.target.value })} />
                     <div className="row-actions">
                       <IconButton
                         className="row-ai-button"
@@ -2649,7 +2649,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         </SelectContent>
                       </Select>
                     </label>
-                    <Textarea value={booking.notes ?? ""} onChange={(event) => updateBooking(booking.id, { notes: event.target.value })} />
+                    <Textarea aria-label={`${booking.title} notes`} value={booking.notes ?? ""} onChange={(event) => updateBooking(booking.id, { notes: event.target.value })} />
                     {booking.segments?.length ? (
                       <div className="segment-list">
                         {booking.segments.map((segment) => (
