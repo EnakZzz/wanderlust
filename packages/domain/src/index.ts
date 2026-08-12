@@ -788,9 +788,11 @@ export function getOfflineReadiness(trip: Pick<Trip, "days" | "places" | "bookin
     { key: "places", label: "地点", ready: placeCount > 0, count: placeCount },
     { key: "bookings", label: "预订", ready: (trip.bookings?.length ?? 0) > 0, count: trip.bookings?.length ?? 0 },
     { key: "files", label: "文件", ready: (trip.attachments?.length ?? 0) > 0, count: trip.attachments?.length ?? 0 },
-    { key: "packing", label: "打包", ready: (trip.packingItems?.length ?? 0) > 0 && packedCount === trip.packingItems?.length, count: packedCount },
-    { key: "weather", label: "天气", ready: (trip.weather?.length ?? 0) > 0, count: trip.weather?.length ?? 0 }
+    { key: "packing", label: "打包", ready: (trip.packingItems?.length ?? 0) > 0 && packedCount === trip.packingItems?.length, count: packedCount }
   ];
+  if ((trip.weather?.length ?? 0) > 0) {
+    items.push({ key: "weather", label: "天气", ready: true, count: trip.weather?.length ?? 0 });
+  }
 
   return {
     readyCount: items.filter((item) => item.ready).length,

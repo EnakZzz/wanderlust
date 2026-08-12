@@ -1045,37 +1045,37 @@ test("routebook readiness strip shows missing departure work and routes to modul
 
   const readiness = page.getByRole("region", { name: "出发准备" });
   await expect(readiness).toBeVisible();
-  await expect(readiness).toContainText("0/6");
+  await expect(readiness).toContainText("0/5");
   await expect(page.getByRole("button", { name: "行程待补充" })).toBeVisible();
   await expect(page.getByRole("button", { name: "地点待补充" })).toBeVisible();
   await expect(page.getByRole("button", { name: "预订待补充" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "天气待补充" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "天气待补充" })).toHaveCount(0);
   await expectVisibleTapTargetsAtLeast44(page, ".routebook-readiness-chip");
 
-  await page.getByRole("button", { name: "天气待补充" }).click();
+  await page.getByRole("button", { name: "地点待补充" }).click();
   await expect(page.getByRole("radio", { name: "地点" })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByText("先补一个带坐标的地点，天气会基于目的地和路线生成。")).toBeVisible();
 
   await page.getByRole("button", { name: "行程待补充" }).click();
   await expect(page.getByRole("radio", { name: "行程" })).toHaveAttribute("aria-checked", "true");
   await page.getByRole("button", { name: "添加行程项" }).click();
-  await expect(readiness).toContainText("1/6");
+  await expect(readiness).toContainText("1/5");
   await expect(page.getByRole("button", { name: "行程已就绪" })).toBeVisible();
 
   await page.getByRole("button", { name: "地点待补充" }).click();
   await expect(page.getByRole("radio", { name: "地点" })).toHaveAttribute("aria-checked", "true");
   await page.getByRole("button", { name: "添加地点" }).click();
-  await expect(readiness).toContainText("1/6");
+  await expect(readiness).toContainText("1/5");
   await expect(page.getByRole("button", { name: "地点待补充" })).toBeVisible();
   await page.getByLabel("地点纬度").fill("35.6812");
   await page.getByLabel("地点经度").fill("139.7671");
-  await expect(readiness).toContainText("2/6");
+  await expect(readiness).toContainText("2/5");
   await expect(page.getByRole("button", { name: "地点已就绪" })).toBeVisible();
 
   await page.getByRole("button", { name: "预订待补充" }).click();
   await expect(page.getByRole("radio", { name: "预订" })).toHaveAttribute("aria-checked", "true");
   await page.getByRole("button", { name: "添加预订" }).click();
-  await expect(readiness).toContainText("3/6");
+  await expect(readiness).toContainText("3/5");
   await expect(page.getByRole("button", { name: "预订已就绪" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });

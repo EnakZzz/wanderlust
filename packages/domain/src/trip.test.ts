@@ -147,14 +147,13 @@ describe("getOfflineReadiness", () => {
     });
 
     expect(readiness.readyCount).toBe(3);
-    expect(readiness.totalCount).toBe(6);
+    expect(readiness.totalCount).toBe(5);
     expect(readiness.items.map((item) => `${item.key}:${item.ready}`)).toEqual([
       "itinerary:true",
       "places:true",
       "bookings:false",
       "files:false",
-      "packing:true",
-      "weather:false"
+      "packing:true"
     ]);
   });
 
@@ -190,6 +189,20 @@ describe("getOfflineReadiness", () => {
       ready: false,
       count: 0
     });
+  });
+
+  it("does not block readiness on weather when no forecast has been generated", () => {
+    const readiness = getOfflineReadiness({
+      days: [],
+      places: [],
+      bookings: [],
+      attachments: [],
+      packingItems: [],
+      weather: []
+    });
+
+    expect(readiness.totalCount).toBe(5);
+    expect(readiness.items.map((item) => item.key)).not.toContain("weather");
   });
 });
 
