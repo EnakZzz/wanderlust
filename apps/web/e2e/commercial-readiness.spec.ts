@@ -900,6 +900,21 @@ test("file upload entry points expose stable labels", async ({ page }) => {
   await expect(page.getByLabel("上传旅行文件")).toBeVisible();
 });
 
+test("file attachment fields expose stable labels", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "文件" }).click();
+  await page.getByLabel("上传旅行文件").locator("input[type='file']").setInputFiles({
+    name: "boarding-pass.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n")
+  });
+
+  await expect(page.getByLabel("boarding-pass.pdf file title")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "boarding-pass.pdf file category" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "boarding-pass.pdf linked target" })).toBeVisible();
+});
+
 test("AI planning and import prompts expose stable labels", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
