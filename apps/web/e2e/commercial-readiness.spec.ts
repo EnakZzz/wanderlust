@@ -876,13 +876,13 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expect(page.getByPlaceholder("搜索或粘贴地点名称")).toBeVisible();
   await page.getByRole("button", { name: "添加地点" }).click();
   await expectAnyInputValue(page, "新的收藏地点");
-  await expect(page.getByLabel("新的收藏地点 place name")).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "新的收藏地点 place category" })).toBeVisible();
-  await expect(page.getByLabel("新的收藏地点 latitude")).toBeVisible();
-  await expect(page.getByLabel("新的收藏地点 longitude")).toBeVisible();
-  await expect(page.getByLabel("新的收藏地点 address")).toBeVisible();
-  await expect(page.getByLabel("新的收藏地点 tags")).toBeVisible();
-  await expect(page.getByLabel("新的收藏地点 notes")).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "地点名称", exact: true })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "地点分类" })).toBeVisible();
+  await expect(page.getByLabel("地点纬度")).toBeVisible();
+  await expect(page.getByLabel("地点经度")).toBeVisible();
+  await expect(page.getByLabel("地点地址")).toBeVisible();
+  await expect(page.getByLabel("地点标签")).toBeVisible();
+  await expect(page.getByLabel("地点备注")).toBeVisible();
 
   await page.getByRole("radio", { name: "预订" }).click();
   await page.getByRole("button", { name: "添加预订" }).click();
