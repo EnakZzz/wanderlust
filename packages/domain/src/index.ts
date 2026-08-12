@@ -783,12 +783,13 @@ export function getOfflineReadiness(trip: Pick<Trip, "days" | "places" | "bookin
   const itineraryCount = trip.days.reduce((total, day) => total + (day.items?.length ?? 0), 0);
   const placeCount = trip.places?.filter(hasUsablePlaceCoordinates).length ?? 0;
   const bookingCount = trip.bookings?.filter(hasUsableBookingDetails).length ?? 0;
+  const attachmentCount = trip.attachments?.filter(hasRetrievableAttachment).length ?? 0;
   const packedCount = trip.packingItems?.filter((item) => item.packed).length ?? 0;
   const items: OfflineReadinessItem[] = [
     { key: "itinerary", label: "行程", ready: itineraryCount > 0, count: itineraryCount },
     { key: "places", label: "地点", ready: placeCount > 0, count: placeCount },
     { key: "bookings", label: "预订", ready: bookingCount > 0, count: bookingCount },
-    { key: "files", label: "文件", ready: (trip.attachments?.length ?? 0) > 0, count: trip.attachments?.length ?? 0 },
+    { key: "files", label: "文件", ready: attachmentCount > 0, count: attachmentCount },
     { key: "packing", label: "打包", ready: (trip.packingItems?.length ?? 0) > 0 && packedCount === trip.packingItems?.length, count: packedCount }
   ];
   if ((trip.weather?.length ?? 0) > 0) {
@@ -817,6 +818,10 @@ function hasUsableBookingDetails(booking: Pick<Booking, "status" | "confirmation
       || (booking.attachmentIds?.length ?? 0) > 0
       || (booking.segments?.length ?? 0) > 0
   );
+}
+
+function hasRetrievableAttachment(attachment: Pick<Attachment, "storagePath" | "localUri">): boolean {
+  return Boolean(attachment.storagePath?.trim() || attachment.localUri?.trim());
 }
 
 export function buildMapsUrl(target: NavigationTarget, provider: MapProvider): string {

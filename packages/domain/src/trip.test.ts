@@ -224,6 +224,39 @@ describe("getOfflineReadiness", () => {
     });
   });
 
+  it("does not mark attachments without a retrievable file reference as ready", () => {
+    const readiness = getOfflineReadiness({
+      days: [],
+      places: [],
+      bookings: [],
+      attachments: [{ id: "file_1", tripId: "trip_1", type: "pdf", category: "ticket", linkedType: "trip", title: "Ticket PDF" } as never],
+      packingItems: [],
+      weather: []
+    });
+
+    expect(readiness.readyCount).toBe(0);
+    expect(readiness.items.find((item) => item.key === "files")).toMatchObject({
+      ready: false,
+      count: 0
+    });
+  });
+
+  it("marks attachments with a retrievable file reference as ready", () => {
+    const readiness = getOfflineReadiness({
+      days: [],
+      places: [],
+      bookings: [],
+      attachments: [{ id: "file_1", tripId: "trip_1", type: "pdf", category: "ticket", linkedType: "trip", storagePath: "tickets/ticket.pdf", title: "Ticket PDF" }],
+      packingItems: [],
+      weather: []
+    });
+
+    expect(readiness.items.find((item) => item.key === "files")).toMatchObject({
+      ready: true,
+      count: 1
+    });
+  });
+
   it("does not block readiness on weather when no forecast has been generated", () => {
     const readiness = getOfflineReadiness({
       days: [],
