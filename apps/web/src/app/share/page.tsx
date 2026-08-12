@@ -194,6 +194,8 @@ export default function SharePage() {
   const hiddenBookingCount = Math.max(0, usableBookings.length - visibleBookings.length);
   const packingItems = trip.packingItems ?? [];
   const usablePackingItems = packingItems.filter(hasUsablePackingItem);
+  const visiblePackingItems = usablePackingItems.slice(0, 8);
+  const hiddenPackingItemCount = Math.max(0, usablePackingItems.length - visiblePackingItems.length);
   const placeSummaryLabel = shareablePlaces.length > 0 ? `${shareablePlaces.length} 个地点` : "待整理";
   const bookingSummaryLabel = usableBookings.length > 0 ? `${usableBookings.length} 项预订` : "待整理";
   const packingSummaryLabel = usablePackingItems.length > 0 ? `${usablePackingItems.filter((item) => item.packed).length}/${usablePackingItems.length} 已打包` : "待整理";
@@ -331,12 +333,13 @@ export default function SharePage() {
               <p className="eyebrow">出发清单</p>
               <h2>{packingSummaryLabel}</h2>
               <div className="share-packing-list">
-                {usablePackingItems.slice(0, 8).map((item) => (
+                {visiblePackingItems.map((item) => (
                   <div key={item.id}>
                     <CheckSquare size={15} />
                     <span>{item.title}</span>
                   </div>
                 ))}
+                {hiddenPackingItemCount > 0 ? <span>另有 {hiddenPackingItemCount} 项清单未显示。</span> : null}
                 {usablePackingItems.length === 0 ? <span>暂未整理打包清单。</span> : null}
               </div>
             </section>

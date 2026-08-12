@@ -569,6 +569,54 @@ async function mockPublicShareWithManyBookingsRuntime(page: Page) {
   );
 }
 
+async function mockPublicShareWithManyPackingItemsRuntime(page: Page) {
+  const tripId = "trip_public_many_packing";
+  const packingItems = Array.from({ length: 10 }, (_, index) => ({
+    id: `packing_many_${index + 1}`,
+    tripId,
+    title: `出发物品 ${index + 1}`,
+    category: "documents",
+    quantity: 1,
+    packed: false
+  }));
+
+  await page.route("**/api/share/public_many_packing", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        share: {
+          id: "share_many_packing",
+          tripId,
+          token: "public_many_packing",
+          visibility: "public",
+          allowCopy: true,
+          revokedAt: null,
+          expiresAt: null
+        },
+        trip: {
+          id: tripId,
+          ownerId: "google:test-user",
+          title: "巴厘岛公开路书",
+          destination: "Bali, Indonesia",
+          startDate: "2027-01-06",
+          endDate: "2027-01-11",
+          timezone: "Asia/Singapore",
+          status: "published",
+          places: [],
+          bookings: [],
+          attachments: [],
+          packingItems,
+          weather: [],
+          budgetMembers: [],
+          budgetItems: [],
+          days: []
+        }
+      })
+    })
+  );
+}
+
 async function mockPublicShareWithDraftCoordinatesRuntime(page: Page) {
   const tripId = "trip_public_draft_coordinates";
   await page.route("**/api/share/public_draft_coordinates", (route) =>
@@ -2382,6 +2430,19 @@ test("public share routebook explains truncated booking lists", async ({ page })
   await expect(bookingSideCard.getByText("预订项目 6")).toBeVisible();
   await expect(bookingSideCard.getByText("预订项目 7")).toHaveCount(0);
   await expect(bookingSideCard.getByText("另有 2 项预订未显示。")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("public share routebook explains truncated packing lists", async ({ page }) => {
+  await mockPublicShareWithManyPackingItemsRuntime(page);
+  await page.goto("/share?token=public_many_packing", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "巴厘岛公开路书" })).toBeVisible();
+  const packingSideCard = page.locator(".share-side-card").filter({ hasText: "出发清单" });
+  await expect(packingSideCard.getByRole("heading", { name: "0/10 已打包" })).toBeVisible();
+  await expect(packingSideCard.getByText("出发物品 8")).toBeVisible();
+  await expect(packingSideCard.getByText("出发物品 9")).toHaveCount(0);
+  await expect(packingSideCard.getByText("另有 2 项清单未显示。")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
