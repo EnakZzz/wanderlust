@@ -1544,6 +1544,11 @@ test("signed-in routebook lists show customer-facing status labels", async ({ pa
   await expect(page.getByText("2026-09-01 - 2026-09-05")).toHaveCount(0);
   await expect(page.getByText("2026-10-01 - 2026-10-09")).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
+
+  await page.goto("/journeys/trip_tokyo", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("button", { name: /打开 东京亲子路书/ })).toContainText("2026年9月1日 - 9月5日");
+  await expect(page.getByText("2026-09-01 - 2026-09-05")).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
 });
 
 test("signed-in journey cards keep destination imagery full bleed", async ({ page }) => {

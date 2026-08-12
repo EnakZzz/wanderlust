@@ -77,6 +77,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { formatTripDateRange } from "@/lib/date-format";
 import { getDestinationTheme, getItineraryTypeVisual } from "@/lib/travel-visuals";
 import {
   createTripShare,
@@ -613,7 +614,7 @@ function getAttachmentLinkedLabel(attachment: Attachment, places: Place[], booki
 }
 
 function formatTripSummaryLine(trip: TripSummary): string {
-  const dates = trip.startDate && trip.endDate ? `${trip.startDate} - ${trip.endDate}` : "日期未设置";
+  const dates = formatTripDateRange(trip.startDate, trip.endDate);
   const dayCount = trip.dayCount || 0;
   const placeCount = trip.placeCount || 0;
   const bookingCount = trip.bookingCount || 0;
@@ -2245,7 +2246,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       : trips.length > 0
                         ? "打开路书列表选择一个路书。"
                         : "先创建一个路书开始。"
-                    : `${displayDestination} · ${draft.startDate} - ${draft.endDate} · ${draft.days.length} 天 · 登录后同步`}
+                    : `${displayDestination} · ${formatTripDateRange(draft.startDate, draft.endDate)} · ${draft.days.length} 天 · 登录后同步`}
                 </small>
               </span>
             </button>
