@@ -1123,6 +1123,9 @@ test("routebook readiness strip shows missing departure work and routes to modul
   await page.getByRole("button", { name: "预订待补充" }).click();
   await expect(page.getByRole("radio", { name: "预订" })).toHaveAttribute("aria-checked", "true");
   await page.getByRole("button", { name: "添加预订" }).click();
+  await expect(readiness).toContainText("2/5");
+  await expect(page.getByRole("button", { name: "预订待补充" })).toBeVisible();
+  await page.getByLabel("预订确认号").fill("ABC123");
   await expect(readiness).toContainText("3/5");
   await expect(page.getByRole("button", { name: "预订已就绪" })).toBeVisible();
   await expectNoHorizontalOverflow(page);

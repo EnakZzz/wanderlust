@@ -782,11 +782,12 @@ export function parseTripIdFromEditorPath(pathname: string): string | null {
 export function getOfflineReadiness(trip: Pick<Trip, "days" | "places" | "bookings" | "attachments" | "packingItems" | "weather">): OfflineReadiness {
   const itineraryCount = trip.days.reduce((total, day) => total + (day.items?.length ?? 0), 0);
   const placeCount = trip.places?.filter(hasUsablePlaceCoordinates).length ?? 0;
+  const bookingCount = trip.bookings?.filter(hasUsableBookingDetails).length ?? 0;
   const packedCount = trip.packingItems?.filter((item) => item.packed).length ?? 0;
   const items: OfflineReadinessItem[] = [
     { key: "itinerary", label: "行程", ready: itineraryCount > 0, count: itineraryCount },
     { key: "places", label: "地点", ready: placeCount > 0, count: placeCount },
-    { key: "bookings", label: "预订", ready: (trip.bookings?.length ?? 0) > 0, count: trip.bookings?.length ?? 0 },
+    { key: "bookings", label: "预订", ready: bookingCount > 0, count: bookingCount },
     { key: "files", label: "文件", ready: (trip.attachments?.length ?? 0) > 0, count: trip.attachments?.length ?? 0 },
     { key: "packing", label: "打包", ready: (trip.packingItems?.length ?? 0) > 0 && packedCount === trip.packingItems?.length, count: packedCount }
   ];
@@ -803,6 +804,19 @@ export function getOfflineReadiness(trip: Pick<Trip, "days" | "places" | "bookin
 
 function hasUsablePlaceCoordinates(place: Pick<Place, "latitude" | "longitude">): boolean {
   return Number.isFinite(place.latitude) && Number.isFinite(place.longitude) && !(place.latitude === 0 && place.longitude === 0);
+}
+
+function hasUsableBookingDetails(booking: Pick<Booking, "status" | "confirmationCode" | "startsAt" | "endsAt" | "address" | "provider" | "attachmentIds" | "segments">): boolean {
+  if (booking.status === "cancelled") return false;
+  return Boolean(
+    booking.confirmationCode?.trim()
+      || booking.startsAt?.trim()
+      || booking.endsAt?.trim()
+      || booking.address?.trim()
+      || booking.provider?.trim()
+      || (booking.attachmentIds?.length ?? 0) > 0
+      || (booking.segments?.length ?? 0) > 0
+  );
 }
 
 export function buildMapsUrl(target: NavigationTarget, provider: MapProvider): string {

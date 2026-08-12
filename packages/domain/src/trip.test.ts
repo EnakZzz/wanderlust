@@ -191,6 +191,39 @@ describe("getOfflineReadiness", () => {
     });
   });
 
+  it("does not mark placeholder bookings without confirmation details as ready", () => {
+    const readiness = getOfflineReadiness({
+      days: [],
+      places: [],
+      bookings: [{ id: "booking_1", tripId: "trip_1", type: "ticket", title: "新的预订", status: "todo", attachmentIds: [], segments: [] }],
+      attachments: [],
+      packingItems: [],
+      weather: []
+    });
+
+    expect(readiness.readyCount).toBe(0);
+    expect(readiness.items.find((item) => item.key === "bookings")).toMatchObject({
+      ready: false,
+      count: 0
+    });
+  });
+
+  it("marks bookings with confirmation details as ready", () => {
+    const readiness = getOfflineReadiness({
+      days: [],
+      places: [],
+      bookings: [{ id: "booking_1", tripId: "trip_1", type: "hotel", title: "Hotel Niwa", status: "confirmed", confirmationCode: "ABC123", attachmentIds: [], segments: [] }],
+      attachments: [],
+      packingItems: [],
+      weather: []
+    });
+
+    expect(readiness.items.find((item) => item.key === "bookings")).toMatchObject({
+      ready: true,
+      count: 1
+    });
+  });
+
   it("does not block readiness on weather when no forecast has been generated", () => {
     const readiness = getOfflineReadiness({
       days: [],
