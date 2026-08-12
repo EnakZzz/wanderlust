@@ -783,7 +783,7 @@ export function getOfflineReadiness(trip: Pick<Trip, "days" | "places" | "bookin
   const itineraryCount = trip.days.reduce((total, day) => total + (day.items?.length ?? 0), 0);
   const packedCount = trip.packingItems?.filter((item) => item.packed).length ?? 0;
   const items: OfflineReadinessItem[] = [
-    { key: "itinerary", label: "行程", ready: trip.days.length > 0, count: itineraryCount },
+    { key: "itinerary", label: "行程", ready: itineraryCount > 0, count: itineraryCount },
     { key: "places", label: "地点", ready: (trip.places?.length ?? 0) > 0, count: trip.places?.length ?? 0 },
     { key: "bookings", label: "预订", ready: (trip.bookings?.length ?? 0) > 0, count: trip.bookings?.length ?? 0 },
     { key: "files", label: "文件", ready: (trip.attachments?.length ?? 0) > 0, count: trip.attachments?.length ?? 0 },

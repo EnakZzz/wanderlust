@@ -1045,11 +1045,17 @@ test("routebook readiness strip shows missing departure work and routes to modul
 
   const readiness = page.getByRole("region", { name: "出发准备" });
   await expect(readiness).toBeVisible();
-  await expect(readiness).toContainText("1/6");
-  await expect(page.getByRole("button", { name: "行程已就绪" })).toBeVisible();
+  await expect(readiness).toContainText("0/6");
+  await expect(page.getByRole("button", { name: "行程待补充" })).toBeVisible();
   await expect(page.getByRole("button", { name: "地点待补充" })).toBeVisible();
   await expect(page.getByRole("button", { name: "预订待补充" })).toBeVisible();
   await expectVisibleTapTargetsAtLeast44(page, ".routebook-readiness-chip");
+
+  await page.getByRole("button", { name: "行程待补充" }).click();
+  await expect(page.getByRole("radio", { name: "行程" })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("button", { name: "添加行程项" }).click();
+  await expect(readiness).toContainText("1/6");
+  await expect(page.getByRole("button", { name: "行程已就绪" })).toBeVisible();
 
   await page.getByRole("button", { name: "地点待补充" }).click();
   await expect(page.getByRole("radio", { name: "地点" })).toHaveAttribute("aria-checked", "true");

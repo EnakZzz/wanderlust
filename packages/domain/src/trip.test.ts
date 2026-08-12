@@ -123,7 +123,22 @@ describe("TripSchema", () => {
 describe("getOfflineReadiness", () => {
   it("summarizes the pre-departure offline package status", () => {
     const readiness = getOfflineReadiness({
-      days: createTripDays("trip_1", "2026-10-12", "2026-10-13"),
+      days: [
+        {
+          ...createTripDays("trip_1", "2026-10-12", "2026-10-12")[0]!,
+          items: [
+            {
+              id: "item_1",
+              dayId: "trip_1-2026-10-12",
+              type: "activity",
+              title: "Fushimi Inari",
+              sortOrder: 0,
+              attachmentIds: []
+            }
+          ]
+        },
+        ...createTripDays("trip_1", "2026-10-13", "2026-10-13")
+      ],
       places: [{ id: "place_1", tripId: "trip_1", name: "Fushimi Inari", category: "culture", latitude: 34.9671, longitude: 135.7727 }],
       bookings: [],
       attachments: [],
@@ -141,6 +156,23 @@ describe("getOfflineReadiness", () => {
       "packing:true",
       "weather:false"
     ]);
+  });
+
+  it("does not mark an empty dated itinerary as ready", () => {
+    const readiness = getOfflineReadiness({
+      days: createTripDays("trip_1", "2026-10-12", "2026-10-13"),
+      places: [],
+      bookings: [],
+      attachments: [],
+      packingItems: [],
+      weather: []
+    });
+
+    expect(readiness.readyCount).toBe(0);
+    expect(readiness.items.find((item) => item.key === "itinerary")).toMatchObject({
+      ready: false,
+      count: 0
+    });
   });
 });
 
