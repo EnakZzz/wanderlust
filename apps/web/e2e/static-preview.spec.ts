@@ -55,3 +55,30 @@ test("static preview carries destination timezone into routebook creation", asyn
   await expect(page.getByLabel("时区")).toHaveValue("Asia/Tokyo");
   await expect(page.getByLabel("路书标题")).toHaveValue("Kyoto, Japan 路书");
 });
+
+test("static preview empty map avoids maps config 404 and guides adding places", async ({ page }) => {
+  const consoleErrors: string[] = [];
+  const failedResponses: Array<{ status: number; url: string }> = [];
+
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("response", (response) => {
+    if (response.status() >= 400) {
+      failedResponses.push({ status: response.status(), url: response.url() });
+    }
+  });
+
+  await page.goto("/search", { waitUntil: "domcontentloaded" });
+  await page.getByLabel("搜索目的地").fill("Kyoto");
+  await page.waitForTimeout(750);
+  await page.getByRole("link", { name: /Kyoto/ }).first().click();
+  await page.getByRole("button", { name: "创建路书" }).click();
+  await page.getByRole("radio", { name: "地图" }).click();
+  await page.waitForTimeout(750);
+
+  expect(failedResponses.filter((response) => /\/api\/maps\/client-config/.test(response.url))).toEqual([]);
+  expect(consoleErrors.filter((message) => /404|Failed to load resource/i.test(message))).toEqual([]);
+  await expect(page.getByText("先添加地点")).toBeVisible();
+  await expect(page.getByText("添加带坐标的地点后，这里会显示路线分布。")).toBeVisible();
+});

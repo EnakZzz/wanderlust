@@ -3130,6 +3130,31 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   font-weight: 850;
   box-shadow: 0 10px 26px rgba(45,35,26,0.18);
 }
+.map-empty-state {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  padding: 28px;
+  text-align: center;
+  background:
+    linear-gradient(135deg, rgba(255,248,238,0.92), rgba(232,239,228,0.86)),
+    repeating-linear-gradient(45deg, rgba(71,104,120,0.08) 0 1px, transparent 1px 18px);
+}
+.map-empty-state strong {
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 950;
+}
+.map-empty-state span {
+  max-width: 260px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.5;
+}
 .map-pin::before {
   content: "";
   width: 30px;

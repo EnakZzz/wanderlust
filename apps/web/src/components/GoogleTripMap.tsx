@@ -65,6 +65,13 @@ export function GoogleTripMap({
   const canRenderInteractive = Boolean(config?.configured && config.apiKey && points.length && !interactiveFailed);
 
   useEffect(() => {
+    if (!points.length) {
+      setConfig(null);
+      setConfigFailed(false);
+      setInteractiveFailed(false);
+      return;
+    }
+
     let isCurrent = true;
 
     async function loadConfig() {
@@ -82,7 +89,7 @@ export function GoogleTripMap({
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [points.length]);
 
   return (
     <div className={`map-card interactive-map${staticPreviewUrl && !staticPreviewFailed ? " has-google-preview" : ""}`}>
@@ -113,7 +120,13 @@ export function GoogleTripMap({
           focusedPlaceId={focusedPlaceId}
         />
       )}
-      {!canRenderInteractive && !configFailed && config === null ? <span className="map-loading">正在加载可缩放地图</span> : null}
+      {!points.length ? (
+        <div className="map-empty-state">
+          <strong>先添加地点</strong>
+          <span>添加带坐标的地点后，这里会显示路线分布。</span>
+        </div>
+      ) : null}
+      {points.length && !canRenderInteractive && !configFailed && config === null ? <span className="map-loading">正在加载可缩放地图</span> : null}
       <span className="map-caption">{destination} 路线分布</span>
     </div>
   );
