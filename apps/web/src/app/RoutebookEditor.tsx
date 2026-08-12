@@ -317,11 +317,18 @@ function createInitialMetaForm(): RoutebookMetaForm {
   };
 }
 
+function formatDefaultRoutebookTitle(destination: string): string {
+  const trimmed = destination.trim();
+  if (!trimmed) return "";
+  return /[A-Za-z0-9]$/.test(trimmed) ? `${trimmed} 路书` : `${trimmed}路书`;
+}
+
 function createMetaFormFromDestination(destination: string): RoutebookMetaForm {
+  const trimmed = destination.trim();
   return {
     ...createInitialMetaForm(),
-    title: destination.trim() ? `${destination.trim()}路书` : "",
-    destination: destination.trim()
+    title: formatDefaultRoutebookTitle(trimmed),
+    destination: trimmed
   };
 }
 

@@ -51,6 +51,7 @@ test("static preview carries destination timezone into routebook creation", asyn
 
   await expect(page.getByRole("dialog", { name: "开始一个新的路书" })).toBeVisible();
   await expect(page.getByLabel("目的地")).toHaveValue("Kyoto, Japan");
-  await expect(page.getByText("KYOTO, JAPAN")).toBeVisible();
+  await expect(page.getByText("Standardized as Kyoto, Japan · JP · Asia/Tokyo")).toBeVisible();
   await expect(page.getByLabel("时区")).toHaveValue("Asia/Tokyo");
+  await expect(page.getByLabel("路书标题")).toHaveValue("Kyoto, Japan 路书");
 });
