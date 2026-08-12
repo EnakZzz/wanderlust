@@ -51,6 +51,13 @@ function getNavigationHref(item: ItineraryItem, place?: Place): string | undefin
   return buildMapsUrl({ latitude, longitude, label: getLocationLabel(item, place), googlePlaceId: place?.googlePlaceId ?? item.googlePlaceId }, "google");
 }
 
+function getDaySummary(items: ItineraryItem[]): string {
+  const sorted = sortItineraryItems(items);
+  const times = sorted.flatMap((item) => [item.startTime, item.endTime]).filter((time): time is string => Boolean(time));
+  const timeRange = times.length ? `${times[0]} - ${times[times.length - 1]}` : "时间待定";
+  return `${sorted.length} 项安排 · ${timeRange}`;
+}
+
 export default function SharePage() {
   const [token, setToken] = useState<string | null | undefined>(undefined);
 
@@ -134,21 +141,27 @@ export default function SharePage() {
 
         <div className="share-layout">
           <MotionSection className="share-route" transition={{ delay: 0.16, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}>
-            {days.map((day, dayIndex) => (
+            {days.map((day, dayIndex) => {
+              const dayItems = sortItineraryItems(day.items ?? []);
+              return (
               <article key={day.id} className="share-day">
                 <div className="share-day-marker"><span>{String(dayIndex + 1).padStart(2, "0")}</span></div>
                 <div className="share-day-content">
                   <div className="share-day-heading">
-                    <p className="eyebrow">DAY {String(dayIndex + 1).padStart(2, "0")}</p>
-                    <h2>{day.title}</h2>
+                    <div>
+                      <p className="eyebrow">DAY {String(dayIndex + 1).padStart(2, "0")}</p>
+                      <h2>{day.title}</h2>
+                    </div>
                     <span>{day.date}</span>
+                    <em>{getDaySummary(dayItems)}</em>
                   </div>
                   <div className="share-step-list">
-                    {sortItineraryItems(day.items ?? []).map((item) => {
+                    {dayItems.map((item, itemIndex) => {
                       const place = getPlaceForItem(item, places);
                       const href = getNavigationHref(item, place);
                       return (
                         <article key={item.id} className="share-step">
+                          <div className="share-step-number" aria-hidden="true">{String(itemIndex + 1).padStart(2, "0")}</div>
                           <TravelImage
                             className="share-step-image"
                             src={place?.imageUrl ?? getItineraryTypeVisual(item.type).image}
@@ -180,7 +193,8 @@ export default function SharePage() {
                   </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </MotionSection>
 
           <MotionDiv className="share-sidebar" transition={{ delay: 0.2, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}>

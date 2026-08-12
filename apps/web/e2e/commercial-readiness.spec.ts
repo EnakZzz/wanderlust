@@ -1806,6 +1806,8 @@ test("public share routebook renders safely with legacy itinerary types", async 
   await expect(page.getByRole("heading", { name: "东京公开路书" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "浅草寺散步" })).toBeVisible();
   await expect(page.getByText("活动").first()).toBeVisible();
+  await expect(page.locator(".share-day-heading").first()).toContainText("1 项安排");
+  await expect(page.locator(".share-step-number").first()).toHaveText("01");
   await expect(page.getByRole("button", { name: "打开 AI 修改窗口" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "打开全局命令窗口" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "打开导航" })).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/dir\/\?api=1/);
@@ -1817,7 +1819,19 @@ test("public share routebook renders safely with legacy itinerary types", async 
   const routePosition = await page.locator(".share-route").boundingBox();
   const viewport = page.viewportSize();
   expect(routePosition?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(viewport?.height ?? 0);
+  await page.locator(".share-nav-link").scrollIntoViewIfNeeded();
+  await expectVisibleTapTargetsAtLeast44(page, ".share-nav-link");
+  await page.locator(".share-sidebar").scrollIntoViewIfNeeded();
+  await expectVisibleTapTargetsAtLeast44(page, ".share-place-list a, .share-booking-list div, .share-packing-list div");
   expect(browserErrors).toEqual([]);
+  await expectNoHorizontalOverflow(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".share-day-heading").first()).toBeVisible();
+  await page.locator(".share-nav-link").scrollIntoViewIfNeeded();
+  await expectVisibleTapTargetsAtLeast44(page, ".share-nav-link");
+  await page.locator(".share-sidebar").scrollIntoViewIfNeeded();
+  await expectVisibleTapTargetsAtLeast44(page, ".share-place-list a, .share-booking-list div, .share-packing-list div");
   await expectNoHorizontalOverflow(page);
 });
 
