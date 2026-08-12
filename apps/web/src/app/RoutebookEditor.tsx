@@ -2814,7 +2814,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   {draft.budgetMembers.map((member) => (
                     <label key={member.id}>
                       <span>同行人</span>
-                      <Input value={member.name} onChange={(event) => updateBudgetMember(member.id, { name: event.target.value })} />
+                      <Input aria-label={`${member.name} budget member name`} value={member.name} onChange={(event) => updateBudgetMember(member.id, { name: event.target.value })} />
                     </label>
                   ))}
                   <IconButton className="new-trip-button" type="button" onClick={addBudgetMember} label="添加同行人">
@@ -2849,7 +2849,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <div className="member-toggle-group">
                       <span>付款人</span>
                       {draft.budgetMembers.map((member) => (
-                        <button key={member.id} className={item.paidByMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"} type="button" onClick={() => toggleBudgetMember(item, "paidByMemberIds", member.id)}>
+                        <button
+                          key={member.id}
+                          aria-label={`${item.title} payer ${member.name}`}
+                          aria-pressed={item.paidByMemberIds?.includes(member.id) ? "true" : "false"}
+                          className={item.paidByMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"}
+                          type="button"
+                          onClick={() => toggleBudgetMember(item, "paidByMemberIds", member.id)}
+                        >
                           {member.name}
                         </button>
                       ))}
@@ -2857,7 +2864,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <div className="member-toggle-group">
                       <span>分摊人</span>
                       {draft.budgetMembers.map((member) => (
-                        <button key={member.id} className={item.splitWithMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"} type="button" onClick={() => toggleBudgetMember(item, "splitWithMemberIds", member.id)}>
+                        <button
+                          key={member.id}
+                          aria-label={`${item.title} split with ${member.name}`}
+                          aria-pressed={item.splitWithMemberIds?.includes(member.id) ? "true" : "false"}
+                          className={item.splitWithMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"}
+                          type="button"
+                          onClick={() => toggleBudgetMember(item, "splitWithMemberIds", member.id)}
+                        >
                           {member.name}
                         </button>
                       ))}

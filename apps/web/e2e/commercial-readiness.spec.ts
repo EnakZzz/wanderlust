@@ -928,10 +928,14 @@ test("budget member toggles keep mobile tap targets", async ({ page }) => {
   await page.getByRole("radio", { name: "预算" }).click();
   await page.getByRole("button", { name: "添加账单" }).click();
 
+  await expect(page.getByLabel("我 budget member name")).toBeVisible();
   await expect(page.getByLabel("新的共同账单 budget title")).toBeVisible();
   await expect(page.getByLabel("新的共同账单 amount")).toBeVisible();
   await expect(page.getByLabel("新的共同账单 currency")).toBeVisible();
   await expect(page.getByLabel("新的共同账单 notes")).toBeVisible();
+
+  await expect(page.getByRole("button", { name: "新的共同账单 payer 我" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "新的共同账单 split with 我" })).toHaveAttribute("aria-pressed", "true");
 
   const memberPill = page.locator(".member-toggle-group").first().locator(".member-pill").first();
   await memberPill.scrollIntoViewIfNeeded();
