@@ -901,6 +901,12 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expect(page.getByLabel("地点地址")).toBeVisible();
   await expect(page.getByLabel("地点标签")).toBeVisible();
   await expect(page.getByLabel("地点备注")).toBeVisible();
+  await page.getByLabel("Google Maps 链接").fill("https://www.google.com/maps/@35.6812,139.7671,17z");
+  await page.getByRole("button", { name: "导入链接" }).click();
+  await expectAnyInputValue(page, "地图地点 1");
+  await expect
+    .poll(async () => page.locator("input").evaluateAll((inputs) => inputs.some((input) => (input as HTMLInputElement).value === "Google Maps place 1")))
+    .toBe(false);
 
   await page.getByRole("radio", { name: "预订" }).click();
   await page.getByRole("button", { name: "添加预订" }).click();

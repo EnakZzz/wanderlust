@@ -792,7 +792,7 @@ function parseGoogleMapsLinks(input: string): ImportedPlaceInput[] {
       const atMatch = decoded.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
       const query = new URLSearchParams(line.includes("?") ? line.slice(line.indexOf("?")) : "").get("query");
       const placeMatch = decoded.match(/\/place\/([^/@?]+)/);
-      const name = (query || placeMatch?.[1] || `Google Maps place ${index + 1}`).replace(/\+/g, " ");
+      const name = (query || placeMatch?.[1] || `地图地点 ${index + 1}`).replace(/\+/g, " ");
       return {
         name,
         latitude: atMatch ? Number(atMatch[1]) : 0,
