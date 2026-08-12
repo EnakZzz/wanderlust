@@ -219,6 +219,13 @@ export default function SharePage() {
 
         <div className="share-layout">
           <MotionSection className="share-route" transition={{ delay: 0.16, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}>
+            {days.length === 0 ? (
+              <section className="share-empty-route">
+                <p className="eyebrow">每日行程</p>
+                <h2>暂未整理每日行程。</h2>
+                <span>这本路书还没有公开具体日期安排，可先查看右侧已整理的地点、预订和出发清单。</span>
+              </section>
+            ) : null}
             {days.map((day, dayIndex) => {
               const dayItems = sortItineraryItems(day.items ?? []);
               return (

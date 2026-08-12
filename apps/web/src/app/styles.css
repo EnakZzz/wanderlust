@@ -4081,6 +4081,26 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   display: grid;
   gap: 24px;
 }
+.share-empty-route {
+  display: grid;
+  gap: 10px;
+  min-height: 220px;
+  align-content: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: 22px;
+  padding: 28px;
+  background: rgba(255, 248, 238, 0.66);
+}
+.share-empty-route h2 {
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.25;
+}
+.share-empty-route span {
+  max-width: 560px;
+  color: var(--muted);
+  font-weight: 850;
+  line-height: 1.6;
+}
 .share-day {
   display: grid;
   grid-template-columns: 54px minmax(0, 1fr);

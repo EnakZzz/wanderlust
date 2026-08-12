@@ -2254,6 +2254,7 @@ test("public share routebook does not label pending bookings as confirmed", asyn
   await expect(bookingSideCard).toContainText("2026-11-05 19:00");
   await expect(bookingSideCard).not.toContainText("已确认");
   await expect(page.locator(".share-stat-grid div").filter({ hasText: "预订" }).locator("strong")).toHaveText("1");
+  await expect(page.getByText("暂未整理每日行程。")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
