@@ -391,7 +391,15 @@ async function mockPublicShareWithEmptyDepartureRuntime(page: Page) {
           timezone: "Europe/Lisbon",
           status: "published",
           places: [],
-          bookings: [],
+          bookings: [{
+            id: "booking_blank",
+            tripId,
+            type: "ticket",
+            title: "新的预订",
+            status: "todo",
+            attachmentIds: [],
+            segments: []
+          }],
           attachments: [],
           packingItems: [{ id: "packing_blank", tripId, title: "   ", category: "documents", quantity: 1, packed: true }],
           weather: [],
@@ -2173,7 +2181,10 @@ test("public share routebook uses customer-facing empty checklist copy", async (
   await expect(page.getByText("0 个地点")).toHaveCount(0);
   await expect(page.getByText("暂未整理地点。")).toBeVisible();
   await expect(page.locator(".share-side-card").filter({ hasText: "预订" }).getByRole("heading", { name: "待整理" })).toBeVisible();
+  await expect(page.locator(".share-stat-grid div").filter({ hasText: "预订" }).locator("strong")).toHaveText("0");
   await expect(page.getByText("0 项确认")).toHaveCount(0);
+  await expect(page.getByText("1 项确认")).toHaveCount(0);
+  await expect(page.getByText("新的预订")).toHaveCount(0);
   await expect(page.getByText("暂未整理预订。")).toBeVisible();
   await expect(page.getByText("出发清单")).toBeVisible();
   await expect(page.locator(".share-side-card").filter({ hasText: "出发清单" }).getByRole("heading", { name: "待整理" })).toBeVisible();

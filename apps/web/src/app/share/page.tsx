@@ -98,6 +98,19 @@ function hasUsablePackingItem(item: PackingItem): boolean {
   return Boolean(item.title?.trim() && typeof quantity === "number" && Number.isInteger(quantity) && quantity > 0);
 }
 
+function hasUsableBookingDetails(booking: Booking): boolean {
+  if (booking.status === "cancelled") return false;
+  return Boolean(
+    booking.confirmationCode?.trim()
+      || booking.startsAt?.trim()
+      || booking.endsAt?.trim()
+      || booking.address?.trim()
+      || booking.provider?.trim()
+      || (booking.attachmentIds?.length ?? 0) > 0
+      || (booking.segments?.length ?? 0) > 0
+  );
+}
+
 function getDaySummary(items: ItineraryItem[]): string {
   const sorted = sortItineraryItems(items);
   const times = sorted.flatMap((item) => [item.startTime, item.endTime]).filter((time): time is string => Boolean(time));
@@ -133,13 +146,13 @@ export default function SharePage() {
     const days = trip.days ?? [];
     const places = trip.places ?? [];
     const shareablePlaces = places.filter((place) => Boolean(getGooglePlaceHrefForPlace(place)));
-    const bookings = trip.bookings ?? [];
+    const usableBookings = (trip.bookings ?? []).filter(hasUsableBookingDetails);
     const itemCount = days.reduce((total, day) => total + (day.items?.length ?? 0), 0);
     return [
       { label: "天数", value: days.length },
       { label: "安排", value: itemCount },
       { label: "地点", value: shareablePlaces.length },
-      { label: "预订", value: bookings.length }
+      { label: "预订", value: usableBookings.length }
     ];
   }, [payload]);
 
@@ -172,10 +185,11 @@ export default function SharePage() {
   const places = trip.places ?? [];
   const shareablePlaceCount = places.filter((place) => Boolean(getGooglePlaceHrefForPlace(place))).length;
   const bookings = trip.bookings ?? [];
+  const usableBookings = bookings.filter(hasUsableBookingDetails);
   const packingItems = trip.packingItems ?? [];
   const usablePackingItems = packingItems.filter(hasUsablePackingItem);
   const placeSummaryLabel = shareablePlaceCount > 0 ? `${shareablePlaceCount} 个地点` : "待整理";
-  const bookingSummaryLabel = bookings.length > 0 ? `${bookings.length} 项确认` : "待整理";
+  const bookingSummaryLabel = usableBookings.length > 0 ? `${usableBookings.length} 项确认` : "待整理";
   const packingSummaryLabel = usablePackingItems.length > 0 ? `${usablePackingItems.filter((item) => item.packed).length}/${usablePackingItems.length}` : "待整理";
 
   return (
@@ -295,14 +309,14 @@ export default function SharePage() {
               <p className="eyebrow">预订</p>
               <h2>{bookingSummaryLabel}</h2>
               <div className="share-booking-list">
-                {bookings.slice(0, 6).map((booking) => (
+                {usableBookings.slice(0, 6).map((booking) => (
                   <div key={booking.id}>
                     <Ticket size={15} />
                     <span>{booking.title}</span>
                     <small>{formatBookingTimeOrStatus(booking)}</small>
                   </div>
                 ))}
-                {bookings.length === 0 ? <span>暂未整理预订。</span> : null}
+                {usableBookings.length === 0 ? <span>暂未整理预订。</span> : null}
               </div>
             </section>
 
