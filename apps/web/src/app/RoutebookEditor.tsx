@@ -952,6 +952,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [isSaved, setIsSaved] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [deletingTripId, setDeletingTripId] = useState<string | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<TripSummary | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [shareInfo, setShareInfo] = useState<RoutebookShare | null>(null);
   const [isSharing, setIsSharing] = useState(false);
@@ -1557,10 +1558,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     }
   }
 
-  async function deleteTrip(trip: TripSummary) {
+  function requestDeleteTrip(trip: TripSummary) {
     if (!user || deletingTripId) return;
-    const confirmed = window.confirm(`删除“${trip.title}”？这会从账号中移除这本路书和它关联的附件。`);
-    if (!confirmed) return;
+    setSyncError(null);
+    setDeleteCandidate(trip);
+  }
+
+  async function confirmDeleteTrip() {
+    const trip = deleteCandidate;
+    if (!user || deletingTripId || !trip) return;
 
     setDeletingTripId(trip.id);
     setSyncError(null);
@@ -1580,6 +1586,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
         setMetaDialogMode(null);
         clearDeletedTripRoute(trip.id);
       }
+      setDeleteCandidate(null);
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "无法删除路书");
     } finally {
@@ -2015,7 +2022,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
             className="trip-delete-button"
             type="button"
             label={`删除 ${trip.title}`}
-            onClick={() => deleteTrip(trip)}
+            onClick={() => requestDeleteTrip(trip)}
             disabled={deletingTripId === trip.id}
           >
             <Trash2 size={16} />
@@ -2287,6 +2294,35 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
             </DialogContent>
           </Dialog>
         ) : null}
+        <Dialog open={Boolean(deleteCandidate)} onOpenChange={(open) => {
+          if (!open && !deletingTripId) setDeleteCandidate(null);
+        }}>
+          <DialogContent className="danger-dialog-content" aria-label="删除路书">
+            <DialogHeader className="danger-dialog-heading">
+              <div className="danger-dialog-mark" aria-hidden="true">
+                <Trash2 size={18} />
+              </div>
+              <div>
+                <DialogTitle>删除路书</DialogTitle>
+                <DialogDescription>删除后无法在当前账号中恢复，请确认这不是还会继续编辑的行程。</DialogDescription>
+              </div>
+            </DialogHeader>
+            <div className="danger-dialog-panel">
+              <strong>删除“{deleteCandidate?.title ?? "这本路书"}”？</strong>
+              <span>这会从账号中移除这本路书和它关联的附件。</span>
+            </div>
+            <DialogFooter className="danger-dialog-actions">
+              <Button variant="ghost" type="button" onClick={() => setDeleteCandidate(null)} disabled={Boolean(deletingTripId)}>
+                <X size={17} />
+                <span>取消</span>
+              </Button>
+              <Button variant="secondary" type="button" onClick={confirmDeleteTrip} disabled={Boolean(deletingTripId)}>
+                <Trash2 size={17} />
+                <span>{deletingTripId ? "删除中" : "确认删除"}</span>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {showPlanHome ? (
           <div className="plan-home">

@@ -2982,6 +2982,50 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   gap: 9px;
 }
 
+.danger-dialog-content {
+  max-width: min(500px, calc(100vw - 24px));
+}
+.danger-dialog-heading {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.danger-dialog-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  color: #fff7f4;
+  background: linear-gradient(145deg, #9f3f34, #d46f4d);
+  box-shadow: 0 14px 30px rgba(159, 63, 52, 0.22);
+}
+.danger-dialog-panel {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(159, 63, 52, 0.22);
+  border-radius: 18px;
+  background: #fff3ee;
+  color: var(--ink);
+}
+.danger-dialog-panel strong {
+  font-size: 16px;
+  font-weight: 950;
+}
+.danger-dialog-panel span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+}
+.danger-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
 .share-page {
   min-height: 100vh;
   background:

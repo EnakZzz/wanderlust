@@ -1272,17 +1272,25 @@ test("deleting the current routebook uses a clear confirmation and leaves the de
   await mockSignedInRuntime(page);
   await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111", { waitUntil: "domcontentloaded" });
 
-  page.once("dialog", async (dialog) => {
-    expect(dialog.message()).toBe("删除“东京商业路书”？这会从账号中移除这本路书和它关联的附件。");
-    await dialog.accept();
+  const nativeDialogs: string[] = [];
+  page.on("dialog", async (dialog) => {
+    nativeDialogs.push(dialog.message());
+    await dialog.dismiss();
   });
 
   await page.getByRole("button", { name: "打开 东京商业路书" }).click();
   await expectVisibleTapTargetsAtLeast44(page, ".trip-delete-button");
   await page.getByRole("button", { name: "删除 东京商业路书" }).click();
 
+  await expect(page.getByRole("dialog", { name: "删除路书" })).toBeVisible();
+  await expect(page.getByText("删除“东京商业路书”？")).toBeVisible();
+  await expect(page.getByText("这会从账号中移除这本路书和它关联的附件。")).toBeVisible();
+  await expect(page.locator(".danger-dialog-actions").getByRole("button", { name: "取消" })).toBeVisible();
+  await page.locator(".danger-dialog-actions").getByRole("button", { name: "确认删除" }).click();
+
   await expect(page).toHaveURL(/\/journeys\/edit#editor$/);
   await expect(page.getByRole("heading", { name: "创建你的第一本路书" })).toBeVisible();
+  expect(nativeDialogs).toEqual([]);
   await expect
     .poll(async () => page.evaluate(async () => (window as unknown as { getCommercialApiCalls: () => Promise<{ saves: number; shares: number; deletes: number }> }).getCommercialApiCalls()))
     .toMatchObject({ deletes: 1 });
