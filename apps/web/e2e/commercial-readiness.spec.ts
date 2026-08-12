@@ -1226,6 +1226,17 @@ test("id based journey URL fallback preserves requested editor module", async ({
   await expect(page.getByRole("button", { name: "添加地点" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => new URL(window.location.href).searchParams.get("module"))).toBe("places");
   await expect(page).toHaveURL(/\/journeys\/trip_11111111-1111-4111-8111-111111111111\?module=places#editor$/);
+  if ((page.viewportSize()?.width ?? 0) <= 500) {
+    const clearance = await page.evaluate(() => {
+      const floaters = Array.from(document.querySelectorAll<HTMLElement>(".global-ai-launcher, .global-command-launcher")).map((element) => element.getBoundingClientRect());
+      const routebook = document.querySelector<HTMLElement>(".routebook-current")?.getBoundingClientRect();
+      return {
+        floaterBottom: Math.max(...floaters.map((rect) => rect.bottom)),
+        routebookTop: routebook?.top ?? 0
+      };
+    });
+    expect(clearance.routebookTop, JSON.stringify(clearance)).toBeGreaterThanOrEqual(clearance.floaterBottom + 12);
+  }
   await expectNoHorizontalOverflow(page);
 });
 

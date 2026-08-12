@@ -4122,6 +4122,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .workspace.workspace-plan-home:not(.workspace-loading) {
     width: calc(100% - 32px);
     grid-template-columns: minmax(0, 1fr);
+    scroll-margin-top: 88px;
   }
   .rail { top: 8px; width: 100%; overflow-x: auto; justify-content: flex-start; padding: 5px; scrollbar-width: none; transform: none; left: auto; }
   .rail::-webkit-scrollbar { display: none; }
