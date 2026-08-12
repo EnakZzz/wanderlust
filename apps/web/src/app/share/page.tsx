@@ -180,7 +180,7 @@ export default function SharePage() {
                       <p className="eyebrow">DAY {String(dayIndex + 1).padStart(2, "0")}</p>
                       <h2>{day.title}</h2>
                     </div>
-                    <span>{day.date}</span>
+                    <span>{formatTripDateRange(day.date, day.date)}</span>
                     <em>{getDaySummary(dayItems)}</em>
                   </div>
                   <div className="share-step-list">

@@ -1921,6 +1921,8 @@ test("public share routebook renders safely with legacy itinerary types", async 
   await expect(page.getByRole("heading", { name: "东京公开路书" })).toBeVisible();
   await expect(page.getByText("Tokyo, Japan · 2026年9月1日 - 9月3日")).toBeVisible();
   await expect(page.getByText("Tokyo, Japan · 2026-09-01 - 2026-09-03")).toHaveCount(0);
+  await expect(page.locator(".share-day-heading").first()).toContainText("2026年9月1日");
+  await expect(page.getByText("2026-09-01", { exact: true })).toHaveCount(0);
   await expect(page.getByText("当地时间：东京")).toBeVisible();
   await expect(page.getByText("Asia/Tokyo")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "浅草寺散步" })).toBeVisible();
