@@ -1247,6 +1247,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   }, [draft.packingItems]);
   const shareUrl = shareInfo ? buildShareUrl(shareInfo.token) : null;
   const shareButtonTitle = !user ? "登录后可分享只读路书" : shareUrl ? "复制只读分享链接" : "分享只读路书";
+  const shareLoginHref = useMemo(() => {
+    if (typeof window === "undefined") return "/auth/google/login?returnTo=%2F";
+    const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash || "#editor"}`;
+    return `/auth/google/login?returnTo=${encodeURIComponent(returnTo)}`;
+  }, []);
   const mapPlaces = useMemo(() => sortPlacesByVisitOrder(draft.places, draft.days).filter(hasUsablePlaceCoordinates), [draft.days, draft.places]);
   const mapPreviewUrl = useMemo(() => buildStaticMapPreviewUrl(mapPlaces), [mapPlaces]);
   const destinationTheme = useMemo(() => getDestinationTheme(draft.destination), [draft.destination]);
@@ -2511,7 +2516,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 </div>
               )}
               <DialogFooter className="share-dialog-actions">
-                {shareUrl ? (
+                {!user ? (
+                  <Button asChild className="share-open-link-button">
+                    <a href={shareLoginHref}>
+                      <Share2 size={17} />
+                      <span>登录后分享</span>
+                    </a>
+                  </Button>
+                ) : shareUrl ? (
                   <>
                     <Button variant="secondary" type="button" onClick={() => copyShareUrl(shareUrl)}>
                       <Share2 size={17} />
