@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyItineraryPatchOperations,
+  buildGoogleMapsPlaceUrl,
   buildTripEditorPath,
   buildMapsUrl,
   createPersistedTripId,
@@ -615,5 +616,19 @@ describe("buildMapsUrl", () => {
 
     expect(apple).toBe("http://maps.apple.com/?daddr=34.9671,135.7727&q=Fushimi%20Inari");
     expect(google).toBe("https://www.google.com/maps/dir/?api=1&destination=34.9671,135.7727&destination_place_id=&travelmode=walking");
+  });
+});
+
+describe("buildGoogleMapsPlaceUrl", () => {
+  it("builds Google Maps place display links instead of navigation routes", () => {
+    const href = buildGoogleMapsPlaceUrl({
+      latitude: 34.9671,
+      longitude: 135.7727,
+      label: "Fushimi Inari",
+      googlePlaceId: "ChIJBSFD3ur_AWARsrB-oN69U5w"
+    });
+
+    expect(href).toBe("https://www.google.com/maps/search/?api=1&query=Fushimi+Inari+34.9671%2C135.7727&query_place_id=ChIJBSFD3ur_AWARsrB-oN69U5w");
+    expect(href).not.toContain("/maps/dir/");
   });
 });

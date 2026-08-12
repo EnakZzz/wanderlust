@@ -312,6 +312,7 @@ async function mockPublicShareRuntime(page: Page) {
               category: "culture",
               latitude: 35.7148,
               longitude: 139.7967,
+              googlePlaceId: "ChIJ8T1GpMGOGGARw6cSJo9lN4g",
               address: "2 Chome-3-1 Asakusa, Taito City, Tokyo",
               tags: ["temple"],
               isFavorite: true
@@ -1618,6 +1619,11 @@ test("public share routebook renders safely with legacy itinerary types", async 
   await expect(page.getByText("活动").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "打开 AI 修改窗口" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "打开全局命令窗口" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "打开导航" })).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/dir\/\?api=1/);
+  const placeDisplayLink = page.locator(".share-place-list a").filter({ hasText: "浅草寺" });
+  await expect(placeDisplayLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
+  await expect(placeDisplayLink).toHaveAttribute("href", /query_place_id=ChIJ8T1GpMGOGGARw6cSJo9lN4g/);
+  await expect(placeDisplayLink).not.toHaveAttribute("href", /\/maps\/dir\//);
   await expectVisibleTapTargetsAtLeast44(page, ".share-hero-actions a, .share-hero-actions span");
   const routePosition = await page.locator(".share-route").boundingBox();
   const viewport = page.viewportSize();

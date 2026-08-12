@@ -814,6 +814,20 @@ export function buildMapsUrl(target: NavigationTarget, provider: MapProvider): s
   ].join("&");
 }
 
+export function buildGoogleMapsPlaceUrl(target: NavigationTarget): string {
+  const query = target.label?.trim()
+    ? `${target.label.trim()} ${target.latitude},${target.longitude}`
+    : `${target.latitude},${target.longitude}`;
+  const params = new URLSearchParams({
+    api: "1",
+    query
+  });
+  if (target.googlePlaceId?.trim()) {
+    params.set("query_place_id", target.googlePlaceId.trim());
+  }
+  return `https://www.google.com/maps/search/?${params.toString()}`;
+}
+
 export function canCreateAiJob(entitlement: Entitlement): GateResult {
   if (!isEntitlementUsable(entitlement)) {
     return { allowed: false, reason: "subscription_inactive" };

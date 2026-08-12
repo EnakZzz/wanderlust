@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import {
   buildTripEditorPath,
+  buildGoogleMapsPlaceUrl,
   buildMapsUrl,
   applyItineraryPatchOperations,
   createPersistedTripId,
@@ -643,13 +644,21 @@ function sortPlacesByVisitOrder(places: Place[], days: TripDay[]): Place[] {
   ];
 }
 
-function googleSearchUrl(query: string): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+function googlePlaceDisplayUrl(place: Place): string {
+  return buildGoogleMapsPlaceUrl({
+    latitude: place.latitude,
+    longitude: place.longitude,
+    label: place.name,
+    googlePlaceId: place.googlePlaceId
+  });
 }
 
-function googlePlaceDisplayUrl(place: Place): string {
-  const query = `${place.name} ${place.latitude.toFixed(6)},${place.longitude.toFixed(6)}`;
-  return googleSearchUrl(query);
+function googleMapsSearchUrl(query: string): string {
+  const params = new URLSearchParams({
+    api: "1",
+    query
+  });
+  return `https://www.google.com/maps/search/?${params.toString()}`;
 }
 
 function migratePlaceAssignments(days: TripDay[], places: Place[], tripId: string): { days: TripDay[]; places: Place[] } {
@@ -2719,7 +2728,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   <Search size={18} />
                   <Input aria-label="搜索或粘贴地点名称" value={placeSearch} placeholder="搜索或粘贴地点名称" onChange={(event) => setPlaceSearch(event.target.value)} />
                   <Button asChild variant="secondary">
-                    <a href={googleSearchUrl(placeSearch || draft.destination)} target="_blank" rel="noreferrer">
+                    <a href={googleMapsSearchUrl(placeSearch || draft.destination)} target="_blank" rel="noreferrer">
                       <MapIcon size={16} />
                       <span>Google Maps</span>
                     </a>

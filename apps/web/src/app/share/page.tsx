@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, CheckSquare, Clock, MapPin, Navigation, Plane, Share2, Ticket } from "lucide-react";
-import { buildMapsUrl, productBrand, sortItineraryItems, type ItineraryItem, type Place, type Trip } from "@wanderlust/domain";
+import { buildGoogleMapsPlaceUrl, buildMapsUrl, productBrand, sortItineraryItems, type ItineraryItem, type Place, type Trip } from "@wanderlust/domain";
 import { MotionDiv, MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
 import { getItineraryTypeVisual, heroVisuals } from "@/lib/travel-visuals";
@@ -189,7 +189,7 @@ export default function SharePage() {
               <h2>{places.length} 个地点</h2>
               <div className="share-place-list">
                 {places.slice(0, 8).map((place) => (
-                  <a key={place.id} href={buildMapsUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name, googlePlaceId: place.googlePlaceId }, "google")} target="_blank" rel="noreferrer">
+                  <a key={place.id} href={buildGoogleMapsPlaceUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name, googlePlaceId: place.googlePlaceId })} target="_blank" rel="noreferrer">
                     <MapPin size={15} />
                     <span>{place.name}</span>
                   </a>
