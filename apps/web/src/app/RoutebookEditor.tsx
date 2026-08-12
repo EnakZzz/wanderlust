@@ -2808,7 +2808,6 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         onClick={() => selectEditorModule("places", { scrollIntoView: true })}
                         title={place.name}
                       >
-                        <MapPin size={16} />
                         <span>{placeIndex + 1}</span>
                       </button>
                     );
@@ -2816,9 +2815,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   <span className="map-caption">{draft.destination} 路线分布</span>
                 </div>
                 <div className="map-place-list">
-                  {draft.places.map((place) => (
+                  {draft.places.map((place, placeIndex) => (
                     <a key={place.id} href={buildMapsUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name }, "google")} target="_blank" rel="noreferrer">
-                      <Navigation size={16} />
+                      <span className="map-place-index">{placeIndex + 1}</span>
                       <strong>{place.name}</strong>
                       <span>{placeCategoryLabels[place.category]} · {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}</span>
                     </a>
