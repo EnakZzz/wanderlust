@@ -444,6 +444,10 @@ export const onRequest: PagesFunction<AuthEnv> = async ({ request, env, params }
     return getStaticMapPreview(request, env);
   }
 
+  if (path === "maps/client-config" && request.method === "GET") {
+    return getMapsClientConfig(env);
+  }
+
   const publicShareMatch = path.match(/^share\/([^/]+)$/);
   if (publicShareMatch && request.method === "GET") {
     return getPublicShare(env, decodeURIComponent(publicShareMatch[1]!));
@@ -618,6 +622,13 @@ async function getStaticMapPreview(request: Request, env: AuthEnv): Promise<Resp
       "cache-control": "public, max-age=86400, s-maxage=1209600, stale-while-revalidate=604800"
     }
   });
+}
+
+function getMapsClientConfig(env: AuthEnv): Response {
+  const apiKey = env.GOOGLE_MAPS_API_KEY?.trim();
+  const response = json(apiKey ? { configured: true, apiKey } : { configured: false });
+  response.headers.set("cache-control", "private, max-age=300");
+  return response;
 }
 
 function parseMapCoordinate(value: string): { latitude: number; longitude: number } | undefined {

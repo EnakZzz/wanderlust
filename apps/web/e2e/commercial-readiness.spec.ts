@@ -146,6 +146,14 @@ async function mockSignedInRuntime(page: Page, options: { saveDelayMs?: number }
 }
 
 async function mockGoogleStaticMapPreview(page: Page) {
+  await page.route("**/api/maps/client-config", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ configured: false })
+    })
+  );
+
   await page.route("**/api/maps/static-preview**", (route) =>
     route.fulfill({
       status: 200,

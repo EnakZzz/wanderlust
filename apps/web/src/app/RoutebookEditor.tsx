@@ -54,6 +54,7 @@ import {
 } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
 import { FileUploadButton } from "@/components/FileUploadButton";
+import { GoogleTripMap } from "@/components/GoogleTripMap";
 import { IconButton } from "@/components/IconButton";
 import { TravelImage } from "@/components/TravelImage";
 import {
@@ -607,28 +608,6 @@ function readLocalDraft(): TripDraft {
     window.localStorage.removeItem(storageKey);
     return createEmptyTripDraft();
   }
-}
-
-function calculateMapPosition(place: Place, places: Place[], index = 0): { left: string; top: string; "--pin-index": number } {
-  const lats = places.map((item) => item.latitude);
-  const lngs = places.map((item) => item.longitude);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const projectedLeft = maxLng === minLng ? 50 : 14 + ((place.longitude - minLng) / (maxLng - minLng)) * 72;
-  const projectedTop = maxLat === minLat ? 50 : 14 + ((maxLat - place.latitude) / (maxLat - minLat)) * 72;
-  const nearbyBefore = places.slice(0, index).filter((candidate) => {
-    const candidateLeft = maxLng === minLng ? 50 : 14 + ((candidate.longitude - minLng) / (maxLng - minLng)) * 72;
-    const candidateTop = maxLat === minLat ? 50 : 14 + ((maxLat - candidate.latitude) / (maxLat - minLat)) * 72;
-    return Math.hypot(projectedLeft - candidateLeft, projectedTop - candidateTop) < 7.2;
-  }).length;
-  const ring = Math.floor(nearbyBefore / 6) + 1;
-  const angle = nearbyBefore * 1.18;
-  const spread = nearbyBefore ? Math.min(15.5, 9.5 + ring * 2.8) : 0;
-  const left = Math.min(92, Math.max(8, projectedLeft + Math.cos(angle) * spread));
-  const top = Math.min(92, Math.max(8, projectedTop + Math.sin(angle) * spread));
-  return { left: `${left}%`, top: `${top}%`, "--pin-index": index + 1 };
 }
 
 function buildStaticMapPreviewUrl(places: Place[]): string | undefined {
@@ -2787,33 +2766,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
             {activeModule === "map" ? (
               <div className="map-editor">
-                <div className={`map-card interactive-map${mapPreviewUrl && !mapPreviewFailed ? " has-google-preview" : ""}`}>
-                  {mapPreviewUrl && !mapPreviewFailed ? (
-                    <img
-                      alt={`${draft.destination} Google 地图预览`}
-                      className="map-preview-image"
-                      src={mapPreviewUrl}
-                      onError={() => setMapPreviewFailed(true)}
-                    />
-                  ) : null}
-                  {draft.places.map((place, placeIndex) => {
-                    const position = calculateMapPosition(place, draft.places, placeIndex);
-                    return (
-                      <button
-                        key={place.id}
-                        aria-label={`地图地点 ${placeIndex + 1}：${place.name}`}
-                        className="map-pin"
-                        style={position}
-                        type="button"
-                        onClick={() => selectEditorModule("places", { scrollIntoView: true })}
-                        title={place.name}
-                      >
-                        <span>{placeIndex + 1}</span>
-                      </button>
-                    );
-                  })}
-                  <span className="map-caption">{draft.destination} 路线分布</span>
-                </div>
+                <GoogleTripMap
+                  destination={draft.destination}
+                  places={draft.places}
+                  staticPreviewFailed={mapPreviewFailed}
+                  staticPreviewUrl={mapPreviewUrl}
+                  onSelectPlaces={() => selectEditorModule("places", { scrollIntoView: true })}
+                  onStaticPreviewFailed={() => setMapPreviewFailed(true)}
+                />
                 <div className="map-place-list">
                   {draft.places.map((place, placeIndex) => (
                     <a key={place.id} href={buildMapsUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name }, "google")} target="_blank" rel="noreferrer">
