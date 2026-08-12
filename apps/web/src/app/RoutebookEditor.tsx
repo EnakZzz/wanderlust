@@ -647,6 +647,11 @@ function googleSearchUrl(query: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
+function googlePlaceDisplayUrl(place: Place): string {
+  const query = `${place.name} ${place.latitude.toFixed(6)},${place.longitude.toFixed(6)}`;
+  return googleSearchUrl(query);
+}
+
 function migratePlaceAssignments(days: TripDay[], places: Place[], tripId: string): { days: TripDay[]; places: Place[] } {
   const nextPlaces = [...places];
   const findOrCreatePlace = (item: ItineraryItem): Place | undefined => {
@@ -2843,9 +2848,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         <strong>{place.name}</strong>
                         <span>{placeCategoryLabels[place.category]} · {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}</span>
                       </button>
-                      <button className="map-place-jump" type="button" aria-label={`跳转到地点 ${place.name}`} onClick={() => openPlaceFromMap(place.id)}>
+                      <a className="map-place-jump" aria-label={`在 Google Maps 显示 ${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer">
                         <Navigation size={16} />
-                      </button>
+                      </a>
                     </div>
                   ))}
                 </div>

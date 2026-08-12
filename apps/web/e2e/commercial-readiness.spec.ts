@@ -1149,9 +1149,9 @@ test("map place list follows itinerary visit order", async ({ page }) => {
 
   await expect(page.locator(".map-place-item strong").nth(0)).toHaveText("First stop");
   await expect(page.locator(".map-place-item strong").nth(1)).toHaveText("Second stop");
-  await page.getByRole("button", { name: "跳转到地点 First stop" }).click();
-  await expect(page.getByRole("radio", { name: "地点" })).toHaveAttribute("aria-checked", "true");
-  await expect(page.locator(".place-row.focused").getByLabel("地点名称")).toHaveValue("First stop");
+  const googlePlaceLink = page.getByRole("link", { name: "在 Google Maps 显示 First stop" });
+  await expect(googlePlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
+  await expect(googlePlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
 });
 
 test("budget member toggles keep mobile tap targets", async ({ page }) => {

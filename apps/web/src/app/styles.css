@@ -2859,6 +2859,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   background: transparent;
   color: var(--blue);
   cursor: pointer;
+  text-decoration: none;
 }
 .map-place-jump:hover,
 .map-place-jump:focus-visible {
