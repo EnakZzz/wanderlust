@@ -1,10 +1,13 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useMemo } from "react";
 import { Compass, Flag, MapPinned, Plus, Route } from "lucide-react";
 import { buildTripEditorPath } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
 import { MotionSection } from "@/components/MotionShell";
+import { TravelImage } from "@/components/TravelImage";
+import { getDestinationTheme } from "@/lib/travel-visuals";
 import { useDashboardData } from "@/lib/web-api";
 import type { TripSummary } from "./routebook/types";
 
@@ -15,18 +18,50 @@ type Footprint = {
 };
 
 const worldCountryCount = 195;
+const cityFirstSeparators = ["，", ","];
+const countryFirstSeparators = ["：", ":", " - ", " – ", " — ", " / ", "/", "｜", "|"];
 
 function parseDestination(destination: string): { city: string; country: string } {
-  const parts = destination.split(",").map((part) => part.trim()).filter(Boolean);
-  if (parts.length >= 2) {
+  const normalized = destination.trim();
+  if (!normalized) {
     return {
-      city: parts[0]!,
-      country: parts[parts.length - 1]!
+      city: "Destination not set",
+      country: "未分类"
+    };
+  }
+
+  for (const separator of cityFirstSeparators) {
+    if (!normalized.includes(separator)) continue;
+    const parts = normalized.split(separator).map((part) => part.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      return {
+        city: parts[0]!,
+        country: parts[parts.length - 1]!
+      };
+    }
+  }
+
+  for (const separator of countryFirstSeparators) {
+    if (!normalized.includes(separator)) continue;
+    const parts = normalized.split(separator).map((part) => part.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      return {
+        country: parts[0]!,
+        city: parts.slice(1).join(" / ")
+      };
+    }
+  }
+
+  const words = normalized.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    return {
+      country: words[0]!,
+      city: words.slice(1).join(" ")
     };
   }
 
   return {
-    city: destination.trim() || "Destination not set",
+    city: normalized,
     country: "未分类"
   };
 }
@@ -111,10 +146,26 @@ export function PassportClient() {
           </div>
           <div className="passport-footprint-list">
             {recentFootprint.map((item) => (
-              <a key={item.trip.id} href={tripEditorHref(item.trip.id)}>
-                <span>{item.country}</span>
-                <strong>{item.city}</strong>
-                <small>{item.trip.title} · {item.trip.dayCount} 天 · {item.trip.placeCount} 个地点</small>
+              <a
+                key={item.trip.id}
+                href={tripEditorHref(item.trip.id)}
+                className="passport-footprint-card"
+                style={{
+                  "--passport-card-accent": getDestinationTheme(item.trip.destination).accent
+                } as CSSProperties}
+              >
+                <TravelImage
+                  src={getDestinationTheme(item.trip.destination).image}
+                  alt=""
+                  className="passport-footprint-image"
+                  overlayClassName="passport-footprint-image-overlay"
+                  sizes="(max-width: 720px) 100vw, 320px"
+                />
+                <div className="passport-footprint-copy">
+                  <span>{item.country}</span>
+                  <strong>{item.city}</strong>
+                  <small>{item.trip.title} · {item.trip.dayCount} 天 · {item.trip.placeCount} 个地点</small>
+                </div>
               </a>
             ))}
             {state.loaded && recentFootprint.length === 0 ? (

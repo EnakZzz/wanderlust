@@ -1414,12 +1414,63 @@ label span {
     var(--surface);
 }
 
-.passport-footprint-list a > span {
+.passport-footprint-card {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(255, 255, 255, 0.52);
+  color: #fff8ee;
+  background: var(--passport-card-accent, var(--accent));
+  box-shadow: 0 16px 38px rgba(45, 45, 45, 0.08);
+}
+
+.passport-footprint-image,
+.passport-footprint-image img,
+.passport-footprint-image-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.passport-footprint-image {
+  width: 100%;
+  height: 100%;
+}
+
+.passport-footprint-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.passport-footprint-image-overlay {
+  background: linear-gradient(180deg, rgba(19, 31, 32, 0.1), rgba(19, 31, 32, 0.8));
+}
+
+.passport-footprint-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 7px;
+}
+
+.passport-footprint-list a > span:not(.travel-image) {
   width: fit-content;
   border-radius: 999px;
   padding: 5px 9px;
   background: var(--paper-deep);
   color: var(--accent);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.passport-footprint-copy > span {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(255, 248, 238, 0.18);
+  color: #fff8ee;
+  backdrop-filter: blur(10px);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -1433,6 +1484,10 @@ label span {
   font-style: italic;
   font-weight: 500;
   line-height: 1.02;
+}
+
+.passport-footprint-card small {
+  color: rgba(255, 248, 238, 0.88);
 }
 
 .passport-empty svg {

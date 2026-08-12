@@ -200,7 +200,7 @@ async function mockSignedInTripListRuntime(page: Page) {
     id: "trip_legacy_published",
     ownerId: "google:test-user",
     title: "埃及红海路书",
-    destination: "Egypt Cairo Red Sea",
+    destination: "埃及：开罗 / 红海",
     startDate: "2026-10-01",
     endDate: "2026-10-09",
     timezone: "Africa/Cairo",
@@ -264,7 +264,7 @@ async function mockSignedInTripListRuntime(page: Page) {
           {
             id: "trip_legacy_published",
             title: "埃及红海路书",
-            destination: "Egypt Cairo Red Sea",
+            destination: "埃及：开罗 / 红海",
             status: "published",
             startDate: "2026-10-01",
             endDate: "2026-10-09",
@@ -1558,6 +1558,41 @@ test("single journey card stays card-sized on desktop", async ({ page }) => {
   expect(card.width, JSON.stringify(card)).toBeLessThanOrEqual(460);
   expect(card.width, JSON.stringify(card)).toBeLessThan(card.viewport * 0.5);
   expect(card.height, JSON.stringify(card)).toBeGreaterThanOrEqual(320);
+  await expectNoHorizontalOverflow(page);
+});
+
+test("passport parses mixed destination formats into commercial footprint cards", async ({ page }) => {
+  await mockSignedInTripListRuntime(page);
+
+  await page.goto("/passport", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator(".passport-stat-card").first()).toContainText("2");
+  await expect(page.locator(".passport-stat-card").nth(1)).toContainText("2");
+  await expect(page.locator(".passport-footprint-card")).toHaveCount(2);
+  await expect(page.locator(".passport-footprint-card").filter({ hasText: "Japan" })).toContainText("Tokyo");
+  await expect(page.locator(".passport-footprint-card").filter({ hasText: "埃及" })).toContainText("开罗 / 红海");
+
+  const cards = await page.locator(".passport-footprint-card").evaluateAll((elements) =>
+    elements.map((element) => {
+      const card = element.getBoundingClientRect();
+      const image = element.querySelector<HTMLElement>(".passport-footprint-image")?.getBoundingClientRect();
+      return {
+        width: Math.round(card.width),
+        height: Math.round(card.height),
+        imageWidth: Math.round(image?.width ?? 0),
+        imageHeight: Math.round(image?.height ?? 0)
+      };
+    })
+  );
+
+  for (const card of cards) {
+    expect(card.width, JSON.stringify(card)).toBeGreaterThanOrEqual(240);
+    expect(card.height, JSON.stringify(card)).toBeGreaterThanOrEqual(170);
+    expect(card.imageWidth, JSON.stringify(card)).toBeGreaterThanOrEqual(card.width - 2);
+    expect(card.imageHeight, JSON.stringify(card)).toBeGreaterThanOrEqual(card.height - 2);
+  }
+  await page.locator(".passport-footprint-card").first().scrollIntoViewIfNeeded();
+  await expectVisibleTapTargetsAtLeast44(page, ".passport-footprint-card");
   await expectNoHorizontalOverflow(page);
 });
 
