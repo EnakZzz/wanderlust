@@ -1809,7 +1809,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   function addBudgetMember() {
     setDraft((current) => ({
       ...current,
-      budgetMembers: [...current.budgetMembers, { id: createDraftId("member"), tripId: current.id, name: "New traveler" }]
+      budgetMembers: [...current.budgetMembers, { id: createDraftId("member"), tripId: current.id, name: "同行人" }]
     }));
     markDirty();
   }

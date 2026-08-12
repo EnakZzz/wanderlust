@@ -979,9 +979,14 @@ test("budget member toggles keep mobile tap targets", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
   await page.getByRole("radio", { name: "预算" }).click();
+  await page.getByRole("button", { name: "添加同行人" }).click();
+  await expect(page.getByLabel("预算成员姓名").nth(1)).toHaveValue("同行人");
+  await expect(page.getByLabel("预算成员姓名").nth(1)).not.toHaveValue("New traveler");
+
   await page.getByRole("button", { name: "添加账单" }).click();
 
-  await expect(page.getByLabel("预算成员姓名")).toBeVisible();
+  await expect(page.getByLabel("预算成员姓名")).toHaveCount(2);
+  await expect(page.getByLabel("预算成员姓名").first()).toBeVisible();
   await expect(page.getByLabel("账单标题")).toBeVisible();
   await expect(page.getByRole("combobox", { name: "账单分类" })).toBeVisible();
   await expect(page.getByLabel("账单金额")).toBeVisible();
