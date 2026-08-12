@@ -465,7 +465,9 @@ for (const pageSpec of shellPages) {
       await expect(page.getByRole("heading", { name: pageSpec.headingPattern }).first()).toBeVisible();
     }
 
-    await expect(page.getByRole("button", { name: "打开 AI 修改窗口" })).toBeVisible();
+    if ((page.viewportSize()?.width ?? 0) > 500) {
+      await expect(page.getByRole("button", { name: "打开 AI 修改窗口" })).toBeVisible();
+    }
     await expectNoHorizontalOverflow(page);
     expect(browserErrors).toEqual([]);
   });
@@ -604,6 +606,7 @@ test("anonymous contextual AI entry opens the preview assistant with login guida
 test("global command has a visible launcher and can hand prompts to AI", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await expect(page.getByRole("button", { name: "打开全局命令窗口" })).toBeVisible();
   await expectVisibleTapTargetsAtLeast44(page, ".global-command-launcher");
   await page.getByRole("button", { name: "打开全局命令窗口" }).click();
@@ -862,75 +865,37 @@ test("routebook drawer keeps the new trip action below the trip list", async ({ 
   await expectNoHorizontalOverflow(page);
 });
 
-test("mobile global launchers stay clear of primary card content", async ({ page }) => {
+test("mobile global actions stay in navigation without floating over content", async ({ page }) => {
   await mockSignedInTripListRuntime(page);
   await page.setViewportSize({ width: 390, height: 844 });
 
-  for (const path of ["/journeys", "/journeys/edit", "/dashboard", "/passport"] as const) {
+  for (const path of ["/", "/journeys", "/journeys/edit", "/dashboard", "/passport"] as const) {
     await page.goto(path, { waitUntil: "domcontentloaded" });
 
     if ((page.viewportSize()?.width ?? 0) <= 500) {
+      await expect(page.locator(".global-ai-launcher:visible, .global-command-launcher:visible")).toHaveCount(0);
       const overlaps = await page.evaluate(() => {
-        const floaters = Array.from(document.querySelectorAll<HTMLElement>(".global-ai-launcher, .global-command-launcher"));
-        const targets = Array.from(
-          document.querySelectorAll<HTMLElement>(
-            [
-              ".brand",
-              ".product-nav-brand",
-              ".product-nav-main",
-              ".product-nav-actions",
-              ".journey-card-copy",
-              ".journey-card-topline",
-              ".plan-home-list .trip-card-copy",
-              ".dashboard-discovery-grid strong",
-              ".dashboard-discovery-grid small"
-            ].join(", ")
-          )
+        const fixedControls = Array.from(document.querySelectorAll<HTMLElement>("button, a"))
+          .filter((element) => getComputedStyle(element).position === "fixed")
+          .map((element) => element.getBoundingClientRect());
+        const targets = Array.from(document.querySelectorAll<HTMLElement>("main a, main button, main input"))
+          .map((element) => ({ box: element.getBoundingClientRect(), text: element.textContent?.trim() || element.getAttribute("aria-label") || element.getAttribute("placeholder") || "" }))
+          .filter(({ box }) => box.width > 0 && box.height > 0 && box.bottom > 0 && box.top < window.innerHeight);
+        return fixedControls.flatMap((control) =>
+          targets.flatMap(({ box, text }) => (
+            !(control.right < box.left || control.left > box.right || control.bottom < box.top || control.top > box.bottom)
+              ? [{ text, top: Math.round(box.top), bottom: Math.round(box.bottom) }]
+              : []
+          ))
         );
-
-        return floaters.flatMap((floater) => {
-          const floaterBox = floater.getBoundingClientRect();
-          return targets.flatMap((target) => {
-            const targetBox = target.getBoundingClientRect();
-            const visible = targetBox.width > 0 && targetBox.height > 0 && targetBox.bottom > 0 && targetBox.top < window.innerHeight;
-            const overlaps =
-              visible &&
-              !(floaterBox.right < targetBox.left || floaterBox.left > targetBox.right || floaterBox.bottom < targetBox.top || floaterBox.top > targetBox.bottom);
-            return overlaps
-              ? [{
-                  floater: floater.className,
-                  target: target.textContent?.trim(),
-                  floaterTop: Math.round(floaterBox.top),
-                  targetTop: Math.round(targetBox.top),
-                  targetBottom: Math.round(targetBox.bottom)
-                }]
-              : [];
-          });
-        });
       });
-
-      expect(overlaps, `${path} primary content should stay readable`).toEqual([]);
-      const launcherPositions = await page.locator(".global-ai-launcher, .global-command-launcher").evaluateAll((launchers) =>
-        launchers.map((launcher) => {
-          const box = launcher.getBoundingClientRect();
-          return {
-            top: Math.round(box.top),
-            bottomGap: Math.round(window.innerHeight - box.bottom)
-          };
-        })
-      );
-      expect(launcherPositions, `${path} global launchers should stay in the lower viewport`).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ top: expect.any(Number), bottomGap: expect.any(Number) })
-        ])
-      );
-      for (const position of launcherPositions) {
-        expect(position.top, `${path} launcher should not compete with the top navigation`).toBeGreaterThan(160);
-        expect(position.bottomGap, `${path} launcher should remain reachable above the viewport bottom`).toBeGreaterThanOrEqual(10);
-      }
+      expect(overlaps, `${path} fixed controls should not cover primary mobile content`).toEqual([]);
     }
   }
 
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.getByRole("link", { name: "打开 AI 修改入口" }).click();
+  await expect(page.getByRole("dialog", { name: "AI 修改路书" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
@@ -1499,9 +1464,11 @@ test("global AI launcher does not cover mobile editor forms", async ({ page }) =
 
   if ((page.viewportSize()?.width ?? 0) <= 500) {
     const layout = await page.evaluate(() => {
-      const launchers = Array.from(document.querySelectorAll<HTMLElement>(".global-ai-launcher, .global-command-launcher")).map((item) => item.getBoundingClientRect());
+      const launchers = Array.from(document.querySelectorAll<HTMLElement>(".global-ai-launcher, .global-command-launcher"))
+        .filter((item) => getComputedStyle(item).display !== "none" && getComputedStyle(item).visibility !== "hidden")
+        .map((item) => item.getBoundingClientRect());
       const input = Array.from(document.querySelectorAll<HTMLInputElement>("input")).find((item) => item.value === "新的收藏地点")?.getBoundingClientRect();
-      if (launchers.length === 0 || !input) return null;
+      if (!input) return null;
       const overlaps = launchers.some((launcher) => !(launcher.right < input.left || launcher.left > input.right || launcher.bottom < input.top || launcher.top > input.bottom));
       return {
         launcherCount: launchers.length,
@@ -1510,7 +1477,7 @@ test("global AI launcher does not cover mobile editor forms", async ({ page }) =
     });
 
     expect(layout).not.toBeNull();
-    expect(layout!.launcherCount).toBe(2);
+    expect(layout!.launcherCount).toBe(0);
     expect(layout!.overlaps).toBe(false);
   }
 
@@ -2010,14 +1977,17 @@ test("id based journey URL fallback preserves requested editor module", async ({
   await expect(page).toHaveURL(/\/journeys\/trip_11111111-1111-4111-8111-111111111111\?module=places#editor$/);
   if ((page.viewportSize()?.width ?? 0) <= 500) {
     const clearance = await page.evaluate(() => {
-      const floaters = Array.from(document.querySelectorAll<HTMLElement>(".global-ai-launcher, .global-command-launcher")).map((element) => element.getBoundingClientRect());
+      const floaters = Array.from(document.querySelectorAll<HTMLElement>(".global-ai-launcher, .global-command-launcher"))
+        .filter((element) => getComputedStyle(element).display !== "none" && getComputedStyle(element).visibility !== "hidden")
+        .map((element) => element.getBoundingClientRect());
       const routebook = document.querySelector<HTMLElement>(".routebook-current")?.getBoundingClientRect();
       return {
-        floaterBottom: Math.max(...floaters.map((rect) => rect.bottom)),
+        floaterCount: floaters.length,
+        floaterBottom: floaters.length ? Math.max(...floaters.map((rect) => rect.bottom)) : 0,
         routebookTop: routebook?.top ?? 0
       };
     });
-    expect(clearance.routebookTop, JSON.stringify(clearance)).toBeGreaterThanOrEqual(clearance.floaterBottom + 12);
+    expect(clearance.floaterCount, JSON.stringify(clearance)).toBe(0);
   }
   await expectNoHorizontalOverflow(page);
 });

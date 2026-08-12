@@ -5237,19 +5237,10 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     padding: 0 8px;
   }
   .global-ai-launcher {
-    left: auto;
-    top: auto;
-    right: 18px;
-    bottom: calc(82px + env(safe-area-inset-bottom));
-    width: 48px;
-    height: 48px;
+    display: none;
   }
   .global-command-launcher {
-    top: auto;
-    right: 18px;
-    bottom: calc(24px + env(safe-area-inset-bottom));
-    width: 48px;
-    height: 48px;
+    display: none;
   }
   .hero-copy {
     max-width: 100%;
