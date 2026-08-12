@@ -127,12 +127,13 @@ export default function SharePage() {
     const trip = payload.trip;
     const days = trip.days ?? [];
     const places = trip.places ?? [];
+    const shareablePlaces = places.filter((place) => Boolean(getGooglePlaceHrefForPlace(place)));
     const bookings = trip.bookings ?? [];
     const itemCount = days.reduce((total, day) => total + (day.items?.length ?? 0), 0);
     return [
       { label: "天数", value: days.length },
       { label: "安排", value: itemCount },
-      { label: "地点", value: places.length },
+      { label: "地点", value: shareablePlaces.length },
       { label: "预订", value: bookings.length }
     ];
   }, [payload]);
@@ -164,9 +165,10 @@ export default function SharePage() {
   const trip = payload.trip;
   const days = trip.days ?? [];
   const places = trip.places ?? [];
+  const shareablePlaceCount = places.filter((place) => Boolean(getGooglePlaceHrefForPlace(place))).length;
   const bookings = trip.bookings ?? [];
   const packingItems = trip.packingItems ?? [];
-  const placeSummaryLabel = places.length > 0 ? `${places.length} 个地点` : "待整理";
+  const placeSummaryLabel = shareablePlaceCount > 0 ? `${shareablePlaceCount} 个地点` : "待整理";
   const bookingSummaryLabel = bookings.length > 0 ? `${bookings.length} 项确认` : "待整理";
   const packingSummaryLabel = packingItems.length > 0 ? `${packingItems.filter((item) => item.packed).length}/${packingItems.length}` : "待整理";
 

@@ -2188,6 +2188,7 @@ test("public share routebook does not link draft coordinates to google maps", as
 
   await expect(page.getByRole("heading", { name: "冰岛公开路书" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "蓝湖温泉" })).toBeVisible();
+  await expect(page.locator(".share-stat-grid div").filter({ hasText: "地点" }).locator("strong")).toHaveText("0");
   await expect(page.locator(".share-step-place")).toContainText("蓝湖温泉");
   await expect(page.locator(".share-side-card").filter({ hasText: "地点清单" })).toContainText("蓝湖温泉");
   await expect(page.getByRole("link", { name: "打开 Google 地点 蓝湖温泉" })).toHaveCount(0);
