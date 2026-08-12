@@ -530,6 +530,29 @@ test("destination search exposes a stable input label", async ({ page }) => {
   await expect(page.getByLabel("搜索目的地")).toBeVisible();
 });
 
+test("destination search guides selection into routebook planning", async ({ page }) => {
+  await page.goto("/search", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("region", { name: "目的地搜索流程" })).toBeVisible();
+  await expect(page.locator(".search-flow-step")).toHaveCount(3);
+  await expect(page.locator(".search-flow-step").nth(0)).toContainText("搜索城市");
+  await expect(page.locator(".search-flow-step").nth(1)).toContainText("确认地点");
+  await expect(page.locator(".search-flow-step").nth(2)).toContainText("生成路书");
+
+  const kyotoInspiration = page.locator(".search-inspiration-card").filter({ hasText: "京都" });
+  await expect(kyotoInspiration).toHaveAttribute("href", /destination=%E4%BA%AC%E9%83%BD/);
+  await expect(kyotoInspiration).toHaveAttribute("href", /#editor$/);
+  await expect(page.locator(".search-inspiration-card")).toHaveCount(3);
+  await expectVisibleTapTargetsAtLeast44(page, ".search-heading a, .destination-quick-grid a, .search-inspiration-card");
+  await expectNoHorizontalOverflow(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".search-flow-step").first()).toBeVisible();
+  await expect(page.locator(".search-inspiration-card").first()).toBeVisible();
+  await expectVisibleTapTargetsAtLeast44(page, ".search-heading a, .destination-quick-grid a, .search-inspiration-card");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("editor falls back to a local routebook when session check stalls", async ({ page }) => {
   await page.route("**/auth/session", () => {
     // Simulates an unavailable auth edge so the editor must not remain a skeleton forever.

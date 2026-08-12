@@ -1167,6 +1167,64 @@ label span {
   margin-bottom: clamp(24px, 4vw, 44px);
 }
 
+.search-flow-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+.search-flow-step {
+  min-height: 132px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: start;
+  gap: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(246, 241, 231, 0.9)),
+    var(--surface);
+  box-shadow: 0 14px 34px rgba(45, 45, 45, 0.045);
+}
+
+.search-flow-step svg {
+  color: var(--blue);
+}
+
+.search-flow-index {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff8ee;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.search-flow-step strong {
+  align-self: center;
+  overflow: hidden;
+  font-family: "Noto Serif SC", Georgia, serif;
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.08;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-flow-step small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.55;
+}
+
 .search-page-panel {
   margin-top: 0;
 }
@@ -1177,6 +1235,87 @@ label span {
 
 .search-page-panel .destination-quick-grid {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.search-inspiration-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.search-inspiration-card {
+  position: relative;
+  min-height: 178px;
+  display: grid;
+  align-content: end;
+  gap: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 20px;
+  padding: 18px;
+  background:
+    linear-gradient(180deg, rgba(20, 34, 36, 0.08), rgba(20, 34, 36, 0.78)),
+    var(--accent);
+  color: #fff8ee;
+  box-shadow: 0 18px 42px rgba(45, 45, 45, 0.08);
+}
+
+.search-inspiration-card:nth-child(1) {
+  background:
+    linear-gradient(180deg, rgba(57, 72, 54, 0.08), rgba(57, 72, 54, 0.8)),
+    url("https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=900&q=80") center/cover;
+}
+
+.search-inspiration-card:nth-child(2) {
+  background:
+    linear-gradient(180deg, rgba(28, 68, 85, 0.08), rgba(28, 68, 85, 0.8)),
+    url("https://images.unsplash.com/photo-1513735492246-483525079686?auto=format&fit=crop&w=900&q=80") center/cover;
+}
+
+.search-inspiration-card:nth-child(3) {
+  background:
+    linear-gradient(180deg, rgba(42, 47, 62, 0.06), rgba(42, 47, 62, 0.82)),
+    url("https://images.unsplash.com/photo-1538485399081-7c8ed1f98f89?auto=format&fit=crop&w=900&q=80") center/cover;
+}
+
+.search-inspiration-card span {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: rgba(255, 248, 238, 0.18);
+  backdrop-filter: blur(10px);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.search-inspiration-card strong {
+  font-family: "Noto Serif SC", Georgia, serif;
+  font-size: clamp(32px, 5vw, 46px);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.search-inspiration-card small {
+  font-weight: 900;
+  opacity: 0.9;
+}
+
+.search-inspiration-card em {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 248, 238, 0.2);
+  backdrop-filter: blur(10px);
 }
 
 .passport-grid {
@@ -5033,6 +5172,25 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   }
   .destination-quick-grid {
     grid-template-columns: 1fr;
+  }
+  .search-flow-strip,
+  .search-inspiration-grid {
+    grid-template-columns: 1fr;
+  }
+  .search-flow-step {
+    min-height: 112px;
+  }
+  .search-flow-step strong,
+  .search-inspiration-card strong,
+  .search-inspiration-card small,
+  .search-inspiration-card span {
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+  }
+  .search-inspiration-card {
+    min-height: 154px;
   }
   .dashboard-stat-grid,
   .dashboard-main-grid,
