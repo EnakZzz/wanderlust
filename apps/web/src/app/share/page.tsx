@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, CheckSquare, Clock, MapPin, Navigation, Plane, Share2, Ticket } from "lucide-react";
-import { buildGoogleMapsPlaceUrl, buildMapsUrl, productBrand, sortItineraryItems, type ItineraryItem, type Place, type Trip } from "@wanderlust/domain";
+import { buildGoogleMapsPlaceUrl, productBrand, sortItineraryItems, type ItineraryItem, type Place, type Trip } from "@wanderlust/domain";
 import { MotionDiv, MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
 import { getItineraryTypeVisual, heroVisuals } from "@/lib/travel-visuals";
@@ -48,7 +48,7 @@ function getNavigationHref(item: ItineraryItem, place?: Place): string | undefin
   const latitude = place?.latitude ?? item.latitude;
   const longitude = place?.longitude ?? item.longitude;
   if (typeof latitude !== "number" || typeof longitude !== "number") return undefined;
-  return buildMapsUrl({ latitude, longitude, label: getLocationLabel(item, place), googlePlaceId: place?.googlePlaceId ?? item.googlePlaceId }, "google");
+  return buildGoogleMapsPlaceUrl({ latitude, longitude, label: getLocationLabel(item, place), googlePlaceId: place?.googlePlaceId ?? item.googlePlaceId });
 }
 
 function getDaySummary(items: ItineraryItem[]): string {
@@ -182,7 +182,7 @@ export default function SharePage() {
                             {href ? (
                               <a className="share-nav-link" href={href} target="_blank" rel="noreferrer">
                                 <Navigation size={15} />
-                                打开导航
+                                显示地点
                               </a>
                             ) : null}
                           </div>

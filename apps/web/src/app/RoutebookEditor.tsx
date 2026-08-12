@@ -37,7 +37,6 @@ import {
 import {
   buildTripEditorPath,
   buildGoogleMapsPlaceUrl,
-  buildMapsUrl,
   applyItineraryPatchOperations,
   createPersistedTripId,
   createTripDays,
@@ -105,9 +104,9 @@ import { formatTripStatus } from "./routebook/labels";
 import type { DestinationMeta, DragPayload, EditorModule, ImportedPlaceInput, RoutebookShare, SessionUser, TripDraft, TripSummary } from "./routebook/types";
 
 const modules = [
-  { id: "itinerary", icon: CalendarDays, title: "行程", copy: "每天路线、顺序、备注和导航目标。" },
+  { id: "itinerary", icon: CalendarDays, title: "行程", copy: "每天路线、顺序、备注和地点目标。" },
   { id: "places", icon: MapPin, title: "地点", copy: "带坐标、标签和现场信息的地点库。" },
-  { id: "map", icon: MapIcon, title: "地图", copy: "预览地点分布，并打开导航或搜索。" },
+  { id: "map", icon: MapIcon, title: "地图", copy: "预览地点分布，并打开 Google 地点。" },
   { id: "bookings", icon: Ticket, title: "预订", copy: "航班、酒店、门票、确认号和文件。" },
   { id: "files", icon: Paperclip, title: "文件", copy: "关联到行程、地点和预订的旅行文件。" },
   { id: "packing", icon: CheckSquare, title: "打包", copy: "打包模板、证件材料和出发检查。" },
@@ -849,14 +848,15 @@ function getItemImage(item: ItineraryItem, place?: Place): string {
   return place?.imageUrl || getItineraryTypeVisual(item.type).image;
 }
 
-function getItemNavigationTarget(item: ItineraryItem, place?: Place): { latitude: number; longitude: number; label: string } | undefined {
+function getItemNavigationTarget(item: ItineraryItem, place?: Place): { latitude: number; longitude: number; label: string; googlePlaceId?: string } | undefined {
   const latitude = place?.latitude ?? item.latitude;
   const longitude = place?.longitude ?? item.longitude;
   if (typeof latitude !== "number" || typeof longitude !== "number") return undefined;
   return {
     latitude,
     longitude,
-    label: getItemLocationLabel(item, place)
+    label: getItemLocationLabel(item, place),
+    googlePlaceId: place?.googlePlaceId ?? item.googlePlaceId
   };
 }
 
@@ -2698,9 +2698,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                                   <ChevronDown size={16} />
                                 </button>
                                 {navigationTarget ? (
-                                  <a className="route-link-button strong" href={buildMapsUrl(navigationTarget, "google")} target="_blank" rel="noreferrer">
+                                  <a
+                                    className="route-link-button strong"
+                                    aria-label={`在 Google Maps 显示 ${navigationTarget.label}`}
+                                    href={buildGoogleMapsPlaceUrl(navigationTarget)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
                                     <Navigation size={16} />
-                                    <span>导航</span>
+                                    <span>显示地点</span>
                                   </a>
                                 ) : (
                                   <span className="route-link-button muted">

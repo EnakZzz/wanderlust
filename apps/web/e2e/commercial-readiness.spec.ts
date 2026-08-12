@@ -1810,7 +1810,10 @@ test("public share routebook renders safely with legacy itinerary types", async 
   await expect(page.locator(".share-step-number").first()).toHaveText("01");
   await expect(page.getByRole("button", { name: "打开 AI 修改窗口" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "打开全局命令窗口" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "打开导航" })).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/dir\/\?api=1/);
+  const stepPlaceLink = page.getByRole("link", { name: "显示地点" });
+  await expect(stepPlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
+  await expect(stepPlaceLink).toHaveAttribute("href", /query_place_id=ChIJ8T1GpMGOGGARw6cSJo9lN4g/);
+  await expect(stepPlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
   const placeDisplayLink = page.locator(".share-place-list a").filter({ hasText: "浅草寺" });
   await expect(placeDisplayLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(placeDisplayLink).toHaveAttribute("href", /query_place_id=ChIJ8T1GpMGOGGARw6cSJo9lN4g/);
