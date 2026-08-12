@@ -884,7 +884,16 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expect(page.getByLabel("新的预订 confirmation code")).toBeVisible();
   await expect(page.getByRole("combobox", { name: "新的预订 booking status" })).toBeVisible();
   await expect(page.getByLabel("新的预订 notes")).toBeVisible();
+  await expect(page.getByLabel("上传文件到预订 新的预订")).toBeVisible();
   await expectNoHorizontalOverflow(page);
+});
+
+test("file upload entry points expose stable labels", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "文件" }).click();
+
+  await expect(page.getByLabel("上传旅行文件")).toBeVisible();
 });
 
 test("AI planning and import prompts expose stable labels", async ({ page }) => {

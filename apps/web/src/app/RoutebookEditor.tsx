@@ -2660,6 +2660,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       </div>
                     ) : null}
                     <FileUploadButton
+                      aria-label={`上传文件到预订 ${booking.title}`}
                       onChange={(event) => {
                         const file = event.target.files?.[0];
                         if (file) uploadAttachment(file, booking.id).catch((error) => setSyncError(error instanceof Error ? error.message : "上传失败"));
@@ -2704,6 +2705,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <span>上传护照、签证、酒店确认单、景点门票、交通票券、保险和电子收据。</span>
                   </div>
                   <FileUploadButton
+                    aria-label="上传旅行文件"
                     onChange={(event) => {
                       const file = event.target.files?.[0];
                       if (file) uploadAttachment(file).catch((error) => setSyncError(error instanceof Error ? error.message : "上传失败"));
