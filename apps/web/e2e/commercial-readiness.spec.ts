@@ -1010,6 +1010,9 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expect(page.getByLabel("地点地址")).toBeVisible();
   await expect(page.getByLabel("地点标签")).toBeVisible();
   await expect(page.getByLabel("地点备注")).toBeVisible();
+  const placeDisplayLink = page.getByRole("link", { name: "在 Google Maps 显示 新的收藏地点" });
+  await expect(placeDisplayLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
+  await expect(placeDisplayLink).not.toHaveAttribute("href", /\/maps\/dir\//);
   await page.getByLabel("Google Maps 链接").fill("https://www.google.com/maps/@35.6812,139.7671,17z");
   await page.getByRole("button", { name: "导入链接" }).click();
   await expectAnyInputValue(page, "地图地点 1");

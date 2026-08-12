@@ -2873,9 +2873,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         <span>加入当天</span>
                       </Button>
                       <Button asChild variant="secondary">
-                        <a href={buildMapsUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name }, "google")} target="_blank" rel="noreferrer">
-                          <Navigation size={16} />
-                          <span>导航</span>
+                        <a aria-label={`在 Google Maps 显示 ${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer">
+                          <MapPin size={16} />
+                          <span>显示地点</span>
                         </a>
                       </Button>
                     </div>
