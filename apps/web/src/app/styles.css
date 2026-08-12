@@ -2790,13 +2790,18 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   background: transparent;
 }
 .map-pin:hover::before,
-.map-pin:focus-visible::before {
+.map-pin:focus-visible::before,
+.map-pin.active::before {
   background: #fffdf8;
-  border-color: #7b4134;
+  border-color: #476878;
   box-shadow:
     0 1px 0 rgba(255,255,255,0.8) inset,
     0 0 0 3px rgba(255,248,238,0.96),
+    0 0 0 9px rgba(71,104,120,0.18),
     0 10px 18px rgba(45,35,26,0.3);
+}
+.map-pin.active span {
+  color: #27495a;
 }
 .map-pin.pin-1 { left: 24%; top: 28%; }
 .map-pin.pin-2 { left: 58%; top: 45%; }
@@ -2807,14 +2812,50 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   align-content: start;
   gap: 10px;
 }
-.map-place-list a {
+.map-place-item {
   display: grid;
-  grid-template-columns: 30px 1fr;
-  gap: 6px 10px;
-  padding: 14px;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 8px;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--surface);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+.map-place-item.active {
+  border-color: rgba(71,104,120,0.46);
+  box-shadow: 0 14px 34px rgba(71,104,120,0.14);
+}
+.map-place-item button {
+  min-width: 0;
+  min-height: 56px;
+  border: 0;
+  border-radius: 18px 8px 8px 18px;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 6px 10px;
+  padding: 14px 4px 14px 14px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.map-place-item button:hover,
+.map-place-item button:focus-visible {
+  background: rgba(71,104,120,0.07);
+  outline: none;
+}
+.map-place-item a {
+  min-width: 44px;
+  min-height: 56px;
+  border-radius: 8px 18px 18px 8px;
+  display: grid;
+  place-items: center;
+  color: var(--blue);
+}
+.map-place-item a:hover,
+.map-place-item a:focus-visible {
+  background: rgba(71,104,120,0.08);
+  outline: none;
 }
 .map-place-index {
   width: 26px;
@@ -2830,15 +2871,10 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   font-size: 12px;
   font-weight: 950;
 }
-.map-place-list svg {
-  color: var(--blue);
-  grid-row: span 2;
-  margin-top: 2px;
-}
 .map-place-list strong, .map-place-list span {
   min-width: 0;
 }
-.map-place-list a > span:not(.map-place-index) {
+.map-place-item button > span:not(.map-place-index) {
   color: var(--muted);
   font-weight: 700;
 }

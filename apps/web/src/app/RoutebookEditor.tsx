@@ -965,6 +965,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [mapPreviewFailed, setMapPreviewFailed] = useState(false);
+  const [focusedMapPlaceId, setFocusedMapPlaceId] = useState<string | null>(null);
   const [placeSearch, setPlaceSearch] = useState("");
   const [googleImportText, setGoogleImportText] = useState("");
   const [routebookDrawerOpen, setRoutebookDrawerOpen] = useState(false);
@@ -1155,6 +1156,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   useEffect(() => {
     setMapPreviewFailed(false);
   }, [mapPreviewUrl]);
+
+  useEffect(() => {
+    if (focusedMapPlaceId && !draft.places.some((place) => place.id === focusedMapPlaceId)) {
+      setFocusedMapPlaceId(null);
+    }
+  }, [draft.places, focusedMapPlaceId]);
 
   function getRequestedTripId(): string | null {
     const routeTripId = initialTripId?.trim();
@@ -2769,6 +2776,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 <GoogleTripMap
                   destination={draft.destination}
                   places={draft.places}
+                  focusedPlaceId={focusedMapPlaceId}
                   staticPreviewFailed={mapPreviewFailed}
                   staticPreviewUrl={mapPreviewUrl}
                   onSelectPlaces={() => selectEditorModule("places", { scrollIntoView: true })}
@@ -2776,11 +2784,20 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 />
                 <div className="map-place-list">
                   {draft.places.map((place, placeIndex) => (
-                    <a key={place.id} href={buildMapsUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name }, "google")} target="_blank" rel="noreferrer">
-                      <span className="map-place-index">{placeIndex + 1}</span>
-                      <strong>{place.name}</strong>
-                      <span>{placeCategoryLabels[place.category]} · {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}</span>
-                    </a>
+                    <div key={place.id} className={`map-place-item${focusedMapPlaceId === place.id ? " active" : ""}`}>
+                      <button
+                        type="button"
+                        aria-label={`查看列表地点 ${placeIndex + 1}：${place.name}`}
+                        onClick={() => setFocusedMapPlaceId(place.id)}
+                      >
+                        <span className="map-place-index">{placeIndex + 1}</span>
+                        <strong>{place.name}</strong>
+                        <span>{placeCategoryLabels[place.category]} · {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}</span>
+                      </button>
+                      <a aria-label={`在 Google Maps 打开 ${place.name}`} href={buildMapsUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name }, "google")} target="_blank" rel="noreferrer">
+                        <Navigation size={16} />
+                      </a>
+                    </div>
                   ))}
                 </div>
               </div>

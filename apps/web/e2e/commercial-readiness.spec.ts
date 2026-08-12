@@ -1088,6 +1088,9 @@ test("map pins keep mobile tap targets and return to places", async ({ page }) =
   await expect(preview).toHaveAttribute("src", /\/api\/maps\/static-preview\?/);
   await expect(preview).toHaveJSProperty("complete", true);
   await expectVisibleTapTargetsAtLeast44(page, ".map-pin");
+  await page.getByRole("button", { name: /查看列表地点 1/ }).click();
+  await expect(page.locator(".map-place-item").first()).toHaveClass(/active/);
+  await expect(page.locator(".map-pin").first()).toHaveClass(/active/);
   await page.locator(".map-pin").first().click();
 
   await expect(page.getByPlaceholder("搜索或粘贴地点名称")).toBeVisible();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { APIProvider, Map, Marker, Polyline } from "@vis.gl/react-google-maps";
+import { APIProvider, Map, Marker, Polyline, useMap } from "@vis.gl/react-google-maps";
 import type { Place } from "@wanderlust/domain";
 
 type MapsClientConfig = {
@@ -16,6 +16,7 @@ type GoogleTripMapProps = {
   staticPreviewFailed: boolean;
   onStaticPreviewFailed: () => void;
   onSelectPlaces: () => void;
+  focusedPlaceId?: string | null;
 };
 
 type MapPoint = {
@@ -32,7 +33,8 @@ export function GoogleTripMap({
   staticPreviewUrl,
   staticPreviewFailed,
   onStaticPreviewFailed,
-  onSelectPlaces
+  onSelectPlaces,
+  focusedPlaceId
 }: GoogleTripMapProps) {
   const [config, setConfig] = useState<MapsClientConfig | null>(null);
   const [configFailed, setConfigFailed] = useState(false);
@@ -91,23 +93,7 @@ export function GoogleTripMap({
             zoomControl
             reuseMaps
           >
-            {points.length > 1 ? (
-              <Polyline
-                path={points.map((point) => point.position)}
-                strokeColor="#476878"
-                strokeOpacity={0.82}
-                strokeWeight={4}
-              />
-            ) : null}
-            {points.map((point, pointIndex) => (
-              <Marker
-                key={point.id}
-                icon={createPinIcon(pointIndex + 1)}
-                position={point.position}
-                title={`${pointIndex + 1}. ${point.name}`}
-                onClick={onSelectPlaces}
-              />
-            ))}
+            <InteractiveMapContent focusedPlaceId={focusedPlaceId} onSelectPlaces={onSelectPlaces} points={points} />
           </Map>
         </APIProvider>
       ) : (
@@ -118,6 +104,7 @@ export function GoogleTripMap({
           staticPreviewUrl={staticPreviewUrl}
           onSelectPlaces={onSelectPlaces}
           onStaticPreviewFailed={onStaticPreviewFailed}
+          focusedPlaceId={focusedPlaceId}
         />
       )}
       {!canRenderInteractive && !configFailed && config === null ? <span className="map-loading">正在加载可缩放地图</span> : null}
@@ -132,7 +119,8 @@ function StaticMapFallback({
   staticPreviewFailed,
   staticPreviewUrl,
   onSelectPlaces,
-  onStaticPreviewFailed
+  onStaticPreviewFailed,
+  focusedPlaceId
 }: {
   destination: string;
   points: MapPoint[];
@@ -140,6 +128,7 @@ function StaticMapFallback({
   staticPreviewUrl?: string;
   onSelectPlaces: () => void;
   onStaticPreviewFailed: () => void;
+  focusedPlaceId?: string | null;
 }) {
   return (
     <>
@@ -157,7 +146,7 @@ function StaticMapFallback({
           <button
             key={point.id}
             aria-label={`地图地点 ${pointIndex + 1}：${point.name}`}
-            className="map-pin"
+            className={`map-pin${focusedPlaceId === point.id ? " active" : ""}`}
             style={position}
             type="button"
             onClick={onSelectPlaces}
@@ -167,6 +156,49 @@ function StaticMapFallback({
           </button>
         );
       })}
+    </>
+  );
+}
+
+function InteractiveMapContent({
+  focusedPlaceId,
+  onSelectPlaces,
+  points
+}: {
+  focusedPlaceId?: string | null;
+  onSelectPlaces: () => void;
+  points: MapPoint[];
+}) {
+  const map = useMap();
+  const focusedPoint = useMemo(() => points.find((point) => point.id === focusedPlaceId), [focusedPlaceId, points]);
+
+  useEffect(() => {
+    if (!map || !focusedPoint) return;
+    map.panTo(focusedPoint.position);
+    const currentZoom = map.getZoom() ?? 0;
+    if (currentZoom < 14) map.setZoom(14);
+  }, [focusedPoint, map]);
+
+  return (
+    <>
+      {points.length > 1 ? (
+        <Polyline
+          path={points.map((point) => point.position)}
+          strokeColor="#476878"
+          strokeOpacity={0.82}
+          strokeWeight={4}
+        />
+      ) : null}
+      {points.map((point, pointIndex) => (
+        <Marker
+          key={point.id}
+          icon={createPinIcon(pointIndex + 1, focusedPlaceId === point.id)}
+          position={point.position}
+          title={`${pointIndex + 1}. ${point.name}`}
+          onClick={onSelectPlaces}
+          zIndex={focusedPlaceId === point.id ? 20 : pointIndex + 1}
+        />
+      ))}
     </>
   );
 }
@@ -198,14 +230,18 @@ function getMapBounds(points: MapPoint[]): google.maps.LatLngBoundsLiteral | und
   );
 }
 
-function createPinIcon(index: number): string {
+function createPinIcon(index: number, active = false): string {
+  const stroke = active ? "#476878" : "#9f5f4a";
+  const fill = active ? "#f7fbff" : "#fff8ee";
+  const text = active ? "#27495a" : "#7b4134";
+  const halo = active ? "#476878" : "#2d231a";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">
     <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
-      <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#2d231a" flood-opacity="0.26"/>
+      <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="${halo}" flood-opacity="${active ? "0.34" : "0.26"}"/>
     </filter>
-    <path filter="url(#shadow)" d="M22 4C12.8 4 6 10.8 6 19.2c0 10.8 14.2 20.2 15.1 20.8.5.3 1.3.3 1.8 0 .9-.6 15.1-10 15.1-20.8C38 10.8 31.2 4 22 4Z" fill="#fff8ee" stroke="#9f5f4a" stroke-width="3"/>
-    <circle cx="22" cy="19" r="10" fill="#fff8ee"/>
-    <text x="22" y="23" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="800" fill="#7b4134">${index}</text>
+    <path filter="url(#shadow)" d="M22 4C12.8 4 6 10.8 6 19.2c0 10.8 14.2 20.2 15.1 20.8.5.3 1.3.3 1.8 0 .9-.6 15.1-10 15.1-20.8C38 10.8 31.2 4 22 4Z" fill="${fill}" stroke="${stroke}" stroke-width="${active ? "4" : "3"}"/>
+    <circle cx="22" cy="19" r="10" fill="${fill}"/>
+    <text x="22" y="23" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="800" fill="${text}">${index}</text>
   </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
