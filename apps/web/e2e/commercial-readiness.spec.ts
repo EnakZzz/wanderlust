@@ -1533,6 +1533,7 @@ test("budget editor renders compact receipt cards", async ({ page }) => {
 test("packing checklist controls keep usable tap targets", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
+  const readiness = page.getByRole("region", { name: "出发准备" });
   await page.getByRole("radio", { name: "打包" }).click();
   await page.locator(".packing-template-bar button").first().click();
 
@@ -1543,8 +1544,14 @@ test("packing checklist controls keep usable tap targets", async ({ page }) => {
   await expect(page.getByLabel("打包数量")).toBeVisible();
   await expectVisibleTapTargetsAtLeast44(page, ".packing-row [role='checkbox'], .packing-row .row-ai-button");
 
+  await page.getByLabel("打包物品名称").fill("");
   await checkbox.click();
   await expect(checkbox).toHaveAttribute("aria-checked", "true");
+  await expect(readiness).toContainText("0/5");
+  await expect(page.getByRole("button", { name: "打包待补充" })).toBeVisible();
+  await page.getByLabel("打包物品名称").fill("护照原件");
+  await expect(readiness).toContainText("1/5");
+  await expect(page.getByRole("button", { name: "打包已就绪" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

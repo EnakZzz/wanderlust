@@ -257,6 +257,39 @@ describe("getOfflineReadiness", () => {
     });
   });
 
+  it("does not mark unnamed packed items as ready", () => {
+    const readiness = getOfflineReadiness({
+      days: [],
+      places: [],
+      bookings: [],
+      attachments: [],
+      packingItems: [{ id: "pack_1", tripId: "trip_1", title: "   ", category: "documents", quantity: 1, packed: true }],
+      weather: []
+    });
+
+    expect(readiness.readyCount).toBe(0);
+    expect(readiness.items.find((item) => item.key === "packing")).toMatchObject({
+      ready: false,
+      count: 0
+    });
+  });
+
+  it("marks named packed items as ready", () => {
+    const readiness = getOfflineReadiness({
+      days: [],
+      places: [],
+      bookings: [],
+      attachments: [],
+      packingItems: [{ id: "pack_1", tripId: "trip_1", title: "Passport", category: "documents", quantity: 1, packed: true }],
+      weather: []
+    });
+
+    expect(readiness.items.find((item) => item.key === "packing")).toMatchObject({
+      ready: true,
+      count: 1
+    });
+  });
+
   it("does not block readiness on weather when no forecast has been generated", () => {
     const readiness = getOfflineReadiness({
       days: [],
