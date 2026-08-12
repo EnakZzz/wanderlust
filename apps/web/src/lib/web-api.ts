@@ -31,12 +31,10 @@ const sessionProbeTimeoutMs = 4_000;
 
 async function readJson<T>(response: Response, fallbackMessage: string): Promise<T> {
   let payload: (T & { error?: string; message?: string }) | null = null;
-  if (response.headers.get("content-type")?.includes("application/json")) {
-    try {
-      payload = await response.json() as T & { error?: string; message?: string };
-    } catch {
-      payload = null;
-    }
+  try {
+    payload = await response.json() as T & { error?: string; message?: string };
+  } catch {
+    payload = null;
   }
 
   if (!response.ok) throw new Error(payload?.message || payload?.error || fallbackMessage);
@@ -132,10 +130,14 @@ export async function uploadAttachmentBlob(relativeKey: string, file: File): Pro
 
 export async function searchDestinations(query: string, signal?: AbortSignal): Promise<{ candidates: DestinationMeta[]; providerError?: string }> {
   const response = await fetch(`/api/geo/search?q=${encodeURIComponent(query)}`, { signal });
-  if (!response.headers.get("content-type")?.includes("application/json")) {
-    throw new Error("API Worker 启动后才能使用目的地搜索。");
-  }
-  return readJson<{ candidates: DestinationMeta[]; providerError?: string }>(response, "无法搜索目的地");
+  const payload = await readJson<{ candidates: DestinationMeta[]; providerError?: string }>(response, "无法搜索目的地");
+  const normalized = query.trim().toLowerCase();
+  return {
+    ...payload,
+    candidates: payload.candidates.filter((candidate) =>
+      candidate.provider !== "fallback" || `${candidate.name} ${candidate.fullName}`.toLowerCase().includes(normalized)
+    )
+  };
 }
 
 export async function requestAiDraftPayload<TResponse>(mode: "plan" | "import", body: unknown): Promise<TResponse> {
