@@ -183,12 +183,16 @@ export default function SharePage() {
   const trip = payload.trip;
   const days = trip.days ?? [];
   const places = trip.places ?? [];
-  const shareablePlaceCount = places.filter((place) => Boolean(getGooglePlaceHrefForPlace(place))).length;
+  const shareablePlaces = places
+    .map((place) => ({ place, href: getGooglePlaceHrefForPlace(place) }))
+    .filter((entry): entry is { place: Place; href: string } => Boolean(entry.href));
+  const visibleShareablePlaces = shareablePlaces.slice(0, 8);
+  const hiddenShareablePlaceCount = Math.max(0, shareablePlaces.length - visibleShareablePlaces.length);
   const bookings = trip.bookings ?? [];
   const usableBookings = bookings.filter(hasUsableBookingDetails);
   const packingItems = trip.packingItems ?? [];
   const usablePackingItems = packingItems.filter(hasUsablePackingItem);
-  const placeSummaryLabel = shareablePlaceCount > 0 ? `${shareablePlaceCount} 个地点` : "待整理";
+  const placeSummaryLabel = shareablePlaces.length > 0 ? `${shareablePlaces.length} 个地点` : "待整理";
   const bookingSummaryLabel = usableBookings.length > 0 ? `${usableBookings.length} 项预订` : "待整理";
   const packingSummaryLabel = usablePackingItems.length > 0 ? `${usablePackingItems.filter((item) => item.packed).length}/${usablePackingItems.length} 已打包` : "待整理";
 
@@ -288,27 +292,20 @@ export default function SharePage() {
               <p className="eyebrow">地点清单</p>
               <h2>{placeSummaryLabel}</h2>
               <div className="share-place-list">
-                {places.slice(0, 8).map((place) => {
-                  const placeHref = getGooglePlaceHrefForPlace(place);
-                  return placeHref ? (
-                    <a
-                      key={place.id}
-                      aria-label={`打开 Google 地点 ${place.name}`}
-                      href={placeHref}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <MapPin size={15} />
-                      <span>{place.name}</span>
-                    </a>
-                  ) : (
-                    <span key={place.id}>
-                      <MapPin size={15} />
-                      {place.name}
-                    </span>
-                  );
-                })}
-                {places.length === 0 ? <span>暂未整理地点。</span> : null}
+                {visibleShareablePlaces.map(({ place, href }) => (
+                  <a
+                    key={place.id}
+                    aria-label={`打开 Google 地点 ${place.name}`}
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <MapPin size={15} />
+                    <span>{place.name}</span>
+                  </a>
+                ))}
+                {hiddenShareablePlaceCount > 0 ? <span>另有 {hiddenShareablePlaceCount} 个地点未显示。</span> : null}
+                {shareablePlaces.length === 0 ? <span>暂未整理地点。</span> : null}
               </div>
             </section>
 

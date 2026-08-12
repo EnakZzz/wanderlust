@@ -469,6 +469,56 @@ async function mockPublicShareWithPendingBookingRuntime(page: Page) {
   );
 }
 
+async function mockPublicShareWithManyPlacesRuntime(page: Page) {
+  const tripId = "trip_public_many_places";
+  const places = Array.from({ length: 10 }, (_, index) => ({
+    id: `place_many_${index + 1}`,
+    tripId,
+    name: `清迈地点 ${index + 1}`,
+    category: "culture",
+    latitude: 18.78 + index * 0.01,
+    longitude: 98.98 + index * 0.01,
+    tags: [],
+    isFavorite: false
+  }));
+
+  await page.route("**/api/share/public_many_places", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        share: {
+          id: "share_many_places",
+          tripId,
+          token: "public_many_places",
+          visibility: "public",
+          allowCopy: true,
+          revokedAt: null,
+          expiresAt: null
+        },
+        trip: {
+          id: tripId,
+          ownerId: "google:test-user",
+          title: "清迈公开路书",
+          destination: "Chiang Mai, Thailand",
+          startDate: "2026-12-01",
+          endDate: "2026-12-04",
+          timezone: "Asia/Bangkok",
+          status: "published",
+          places,
+          bookings: [],
+          attachments: [],
+          packingItems: [],
+          weather: [],
+          budgetMembers: [],
+          budgetItems: [],
+          days: []
+        }
+      })
+    })
+  );
+}
+
 async function mockPublicShareWithDraftCoordinatesRuntime(page: Page) {
   const tripId = "trip_public_draft_coordinates";
   await page.route("**/api/share/public_draft_coordinates", (route) =>
@@ -2259,6 +2309,19 @@ test("public share routebook does not label pending bookings as confirmed", asyn
   await expectNoHorizontalOverflow(page);
 });
 
+test("public share routebook explains truncated place lists", async ({ page }) => {
+  await mockPublicShareWithManyPlacesRuntime(page);
+  await page.goto("/share?token=public_many_places", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "清迈公开路书" })).toBeVisible();
+  const placeSideCard = page.locator(".share-side-card").filter({ hasText: "地点清单" });
+  await expect(placeSideCard.getByRole("heading", { name: "10 个地点" })).toBeVisible();
+  await expect(placeSideCard.getByText("清迈地点 8")).toBeVisible();
+  await expect(placeSideCard.getByText("清迈地点 9")).toHaveCount(0);
+  await expect(placeSideCard.getByText("另有 2 个地点未显示。")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("public share routebook does not link draft coordinates to google maps", async ({ page }) => {
   await mockPublicShareWithDraftCoordinatesRuntime(page);
   await page.goto("/share?token=public_draft_coordinates", { waitUntil: "domcontentloaded" });
@@ -2267,7 +2330,8 @@ test("public share routebook does not link draft coordinates to google maps", as
   await expect(page.getByRole("heading", { name: "蓝湖温泉" })).toBeVisible();
   await expect(page.locator(".share-stat-grid div").filter({ hasText: "地点" }).locator("strong")).toHaveText("0");
   await expect(page.locator(".share-step-place")).toContainText("蓝湖温泉");
-  await expect(page.locator(".share-side-card").filter({ hasText: "地点清单" })).toContainText("蓝湖温泉");
+  await expect(page.locator(".share-side-card").filter({ hasText: "地点清单" })).toContainText("暂未整理地点。");
+  await expect(page.locator(".share-side-card").filter({ hasText: "地点清单" })).not.toContainText("蓝湖温泉");
   await expect(page.getByRole("link", { name: "打开 Google 地点 蓝湖温泉" })).toHaveCount(0);
   await expect(page.locator(".share-nav-link")).toHaveCount(0);
   await expect(page.locator(".share-place-list a")).toHaveCount(0);
