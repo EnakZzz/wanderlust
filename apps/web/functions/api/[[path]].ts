@@ -607,7 +607,8 @@ async function getStaticMapPreview(request: Request, env: AuthEnv): Promise<Resp
     cf: { cacheTtl: 60 * 60 * 24 * 14, cacheEverything: true }
   });
   if (!response.ok || !response.body) {
-    return json({ error: "google_static_map_failed" }, 502);
+    const providerError = await readProviderError(response, env.GOOGLE_MAPS_API_KEY);
+    return json({ error: "google_static_map_failed", providerStatus: response.status, providerError }, 502);
   }
 
   return new Response(response.body, {
@@ -635,6 +636,15 @@ function formatMapCoordinate(coordinate: { latitude: number; longitude: number }
 function clampInteger(value: number, min: number, max: number, fallback: number): number {
   if (!Number.isFinite(value)) return fallback;
   return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+async function readProviderError(response: Response, secret: string): Promise<string | undefined> {
+  try {
+    const text = await response.clone().text();
+    return clampText(text.replaceAll(secret, "[redacted]"), 320);
+  } catch {
+    return undefined;
+  }
 }
 
 async function listTrips(request: Request, env: AuthEnv): Promise<Response> {
