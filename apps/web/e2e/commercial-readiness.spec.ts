@@ -1224,6 +1224,8 @@ test("file attachment editor renders compact document cards", async ({ page }) =
 
   await expect(page.locator(".file-card-preview")).toBeVisible();
   await expect(page.locator(".file-card-preview em")).toHaveText("PDF");
+  await expect(page.locator(".file-card-actions")).toContainText("egypt-visa.pdf");
+  await expect(page.locator(".file-card-actions")).not.toContainText(/\d+-egypt-visa\.pdf/);
   await expect(page.getByLabel("文件标题")).toBeVisible();
   await expect(page.getByRole("button", { name: "AI 优化文件 egypt-visa.pdf" })).toBeVisible();
 

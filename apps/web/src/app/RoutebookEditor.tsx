@@ -604,7 +604,7 @@ function formatAttachmentPreview(attachment?: Attachment): string {
 }
 
 function formatAttachmentStorageName(attachment: Attachment): string {
-  const source = attachment.storagePath || attachment.localUri || attachment.title || attachment.id;
+  const source = attachment.title || attachment.localUri || attachment.storagePath || attachment.id;
   return source.split(/[\\/]/).filter(Boolean).pop() ?? source;
 }
 
