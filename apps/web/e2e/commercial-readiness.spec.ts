@@ -412,7 +412,15 @@ async function mockPublicShareWithEmptyDepartureRuntime(page: Page) {
               date: "2026-10-01",
               title: "抵达里斯本",
               sortOrder: 0,
-              items: []
+              items: [{
+                id: "item_blank_draft",
+                dayId: "day_lisbon_1",
+                tripId,
+                type: "note",
+                title: "   ",
+                attachmentIds: [],
+                sortOrder: 0
+              }]
             }
           ]
         }
@@ -2413,6 +2421,10 @@ test("public share routebook uses customer-facing empty checklist copy", async (
   await page.goto("/share?token=public_empty_departure", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("heading", { name: "里斯本公开路书" })).toBeVisible();
+  await expect(page.locator(".share-stat-grid div").filter({ hasText: "安排" }).locator("strong")).toHaveText("0");
+  await expect(page.locator(".share-day-heading").first()).toContainText("0 项安排");
+  await expect(page.getByText("这一天还没有安排。")).toBeVisible();
+  await expect(page.getByText("这一步还没有补充说明。")).toHaveCount(0);
   await expect(page.locator(".share-side-card").filter({ hasText: "地点清单" }).getByRole("heading", { name: "待整理" })).toBeVisible();
   await expect(page.getByText("0 个地点")).toHaveCount(0);
   await expect(page.getByText("暂未整理地点。")).toBeVisible();

@@ -111,6 +111,21 @@ function hasUsableBookingDetails(booking: Booking): boolean {
   );
 }
 
+function hasUsableItineraryItem(item: ItineraryItem): boolean {
+  return Boolean(
+    item.title?.trim()
+      || item.locationName?.trim()
+      || item.reason?.trim()
+      || item.notes?.trim()
+      || item.startTime?.trim()
+      || item.endTime?.trim()
+      || item.placeId?.trim()
+      || item.bookingId?.trim()
+      || hasUsableCoordinates(item)
+      || (item.attachmentIds?.length ?? 0) > 0
+  );
+}
+
 function getDaySummary(items: ItineraryItem[]): string {
   const sorted = sortItineraryItems(items);
   const times = sorted.flatMap((item) => [item.startTime, item.endTime]).filter((time): time is string => Boolean(time));
@@ -147,7 +162,7 @@ export default function SharePage() {
     const places = trip.places ?? [];
     const shareablePlaces = places.filter((place) => Boolean(getGooglePlaceHrefForPlace(place)));
     const usableBookings = (trip.bookings ?? []).filter(hasUsableBookingDetails);
-    const itemCount = days.reduce((total, day) => total + (day.items?.length ?? 0), 0);
+    const itemCount = days.reduce((total, day) => total + (day.items ?? []).filter(hasUsableItineraryItem).length, 0);
     return [
       { label: "天数", value: days.length },
       { label: "安排", value: itemCount },
@@ -240,7 +255,7 @@ export default function SharePage() {
               </section>
             ) : null}
             {days.map((day, dayIndex) => {
-              const dayItems = sortItineraryItems(day.items ?? []);
+              const dayItems = sortItineraryItems((day.items ?? []).filter(hasUsableItineraryItem));
               return (
               <article key={day.id} className="share-day">
                 <div className="share-day-marker"><span>{String(dayIndex + 1).padStart(2, "0")}</span></div>
@@ -288,7 +303,7 @@ export default function SharePage() {
                         </article>
                       );
                     })}
-                    {(day.items?.length ?? 0) === 0 ? <div className="share-empty-step">这一天还没有安排。</div> : null}
+                    {dayItems.length === 0 ? <div className="share-empty-step">这一天还没有安排。</div> : null}
                   </div>
                 </div>
               </article>
