@@ -2782,9 +2782,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 </div>
                 {draft.packingItems.map((item) => (
                   <label key={item.id} className="check-row packing-row">
-                    <Checkbox checked={item.packed} onCheckedChange={(checked) => updatePacking(item.id, { packed: checked === true })} />
+                    <Checkbox aria-label={`${item.title} packed`} checked={item.packed} onCheckedChange={(checked) => updatePacking(item.id, { packed: checked === true })} />
                     <Select value={item.category ?? "other"} onValueChange={(value) => updatePacking(item.id, { category: value as PackingItem["category"] })}>
-                      <SelectTrigger>
+                      <SelectTrigger aria-label={`${item.title} packing category`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
