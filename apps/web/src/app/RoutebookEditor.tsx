@@ -3001,6 +3001,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       </button>
                       <a className="map-place-google" aria-label={`打开 Google 地点 ${placeIndex + 1}：${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer" title="打开 Google 地点">
                         <ExternalLink size={16} />
+                        <span>Google 地点</span>
                       </a>
                     </div>
                   ))}

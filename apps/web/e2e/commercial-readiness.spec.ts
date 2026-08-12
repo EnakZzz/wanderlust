@@ -1330,6 +1330,7 @@ test("map pins keep mobile tap targets and open google places", async ({ page })
   await expect(page.getByRole("radio", { name: "地图" })).toBeChecked();
   await expect(page.locator(".map-place-item").first()).toHaveClass(/active/);
   const mapPlaceLink = page.locator(".map-place-list").getByRole("link", { name: /打开 Google 地点 1：新的收藏地点/ });
+  await expect(mapPlaceLink).toContainText("Google 地点");
   await expect(mapPlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(mapPlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
   await expect(page.getByRole("radio", { name: "地图" })).toBeChecked();

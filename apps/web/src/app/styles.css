@@ -3183,7 +3183,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .map-place-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
+  grid-template-columns: minmax(0, 1fr) minmax(112px, auto);
   gap: 8px;
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -3219,12 +3219,18 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   min-height: 56px;
   border: 0;
   border-radius: 8px 18px 18px 8px;
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
   background: rgba(66, 133, 244, 0.08);
   color: var(--blue);
   cursor: pointer;
   text-decoration: none;
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
 }
 .map-place-google:hover,
 .map-place-google:focus-visible {
@@ -5551,6 +5557,17 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     flex-direction: column;
   }
   .place-row, .map-editor, .booking-row-editor, .booking-import-panel, .file-row-editor, .budget-members, .budget-row-editor, .check-row, .packing-row, .search-row, .ai-workbench { grid-template-columns: 1fr; }
+  .map-place-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .map-place-focus {
+    border-radius: 18px 18px 8px 8px;
+    padding-right: 14px;
+  }
+  .map-place-google {
+    min-height: 48px;
+    border-radius: 8px 8px 18px 18px;
+  }
   .ai-command-strip {
     grid-template-columns: 1fr;
     gap: 14px;
