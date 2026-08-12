@@ -963,15 +963,15 @@ test("budget member toggles keep mobile tap targets", async ({ page }) => {
   await page.getByRole("radio", { name: "预算" }).click();
   await page.getByRole("button", { name: "添加账单" }).click();
 
-  await expect(page.getByLabel("我 budget member name")).toBeVisible();
-  await expect(page.getByLabel("新的共同账单 budget title")).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "新的共同账单 budget category" })).toBeVisible();
-  await expect(page.getByLabel("新的共同账单 amount")).toBeVisible();
-  await expect(page.getByLabel("新的共同账单 currency")).toBeVisible();
-  await expect(page.getByLabel("新的共同账单 notes")).toBeVisible();
+  await expect(page.getByLabel("预算成员姓名")).toBeVisible();
+  await expect(page.getByLabel("账单标题")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "账单分类" })).toBeVisible();
+  await expect(page.getByLabel("账单金额")).toBeVisible();
+  await expect(page.getByLabel("账单币种")).toBeVisible();
+  await expect(page.getByLabel("账单备注")).toBeVisible();
 
-  await expect(page.getByRole("button", { name: "新的共同账单 payer 我" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("button", { name: "新的共同账单 split with 我" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "付款人 我" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "分摊人 我" })).toHaveAttribute("aria-pressed", "true");
 
   const memberPill = page.locator(".member-toggle-group").first().locator(".member-pill").first();
   await memberPill.scrollIntoViewIfNeeded();

@@ -2877,7 +2877,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   {draft.budgetMembers.map((member) => (
                     <label key={member.id}>
                       <span>同行人</span>
-                      <Input aria-label={`${member.name} budget member name`} value={member.name} onChange={(event) => updateBudgetMember(member.id, { name: event.target.value })} />
+                      <Input aria-label="预算成员姓名" value={member.name} onChange={(event) => updateBudgetMember(member.id, { name: event.target.value })} />
                     </label>
                   ))}
                   <IconButton className="new-trip-button" type="button" onClick={addBudgetMember} label="添加同行人">
@@ -2888,12 +2888,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   <article key={item.id} className="module-row budget-row-editor">
                     <label>
                       <span>账单</span>
-                      <Input aria-label={`${item.title} budget title`} value={item.title} onChange={(event) => updateBudgetItem(item.id, { title: event.target.value })} />
+                      <Input aria-label="账单标题" value={item.title} onChange={(event) => updateBudgetItem(item.id, { title: event.target.value })} />
                     </label>
                     <label>
                       <span>分类</span>
                       <Select value={item.category ?? "other"} onValueChange={(value) => updateBudgetItem(item.id, { category: value as BudgetItem["category"] })}>
-                        <SelectTrigger aria-label={`${item.title} budget category`}>
+                        <SelectTrigger aria-label="账单分类">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -2903,18 +2903,18 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </label>
                     <label>
                       <span>金额</span>
-                      <Input aria-label={`${item.title} amount`} type="number" min={0} step="0.01" value={item.amount} onChange={(event) => updateBudgetItem(item.id, { amount: Number(event.target.value) || 0 })} />
+                      <Input aria-label="账单金额" type="number" min={0} step="0.01" value={item.amount} onChange={(event) => updateBudgetItem(item.id, { amount: Number(event.target.value) || 0 })} />
                     </label>
                     <label>
                       <span>币种</span>
-                      <Input aria-label={`${item.title} currency`} value={item.currency ?? "USD"} onChange={(event) => updateBudgetItem(item.id, { currency: event.target.value.toUpperCase() || "USD" })} />
+                      <Input aria-label="账单币种" value={item.currency ?? "USD"} onChange={(event) => updateBudgetItem(item.id, { currency: event.target.value.toUpperCase() || "USD" })} />
                     </label>
                     <div className="member-toggle-group">
                       <span>付款人</span>
                       {draft.budgetMembers.map((member) => (
                         <button
                           key={member.id}
-                          aria-label={`${item.title} payer ${member.name}`}
+                          aria-label={`付款人 ${member.name}`}
                           aria-pressed={item.paidByMemberIds?.includes(member.id) ? "true" : "false"}
                           className={item.paidByMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"}
                           type="button"
@@ -2929,7 +2929,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       {draft.budgetMembers.map((member) => (
                         <button
                           key={member.id}
-                          aria-label={`${item.title} split with ${member.name}`}
+                          aria-label={`分摊人 ${member.name}`}
                           aria-pressed={item.splitWithMemberIds?.includes(member.id) ? "true" : "false"}
                           className={item.splitWithMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"}
                           type="button"
@@ -2939,7 +2939,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         </button>
                       ))}
                     </div>
-                    <Textarea aria-label={`${item.title} notes`} value={item.notes ?? ""} placeholder="备注" onChange={(event) => updateBudgetItem(item.id, { notes: event.target.value })} />
+                    <Textarea aria-label="账单备注" value={item.notes ?? ""} placeholder="备注" onChange={(event) => updateBudgetItem(item.id, { notes: event.target.value })} />
                     <IconButton
                       className="row-ai-button"
                       type="button"
