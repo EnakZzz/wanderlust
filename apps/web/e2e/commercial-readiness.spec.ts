@@ -869,6 +869,7 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await page.getByRole("button", { name: "添加地点" }).click();
   await expectAnyInputValue(page, "新的收藏地点");
   await expect(page.getByLabel("新的收藏地点 place name")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "新的收藏地点 place category" })).toBeVisible();
   await expect(page.getByLabel("新的收藏地点 latitude")).toBeVisible();
   await expect(page.getByLabel("新的收藏地点 longitude")).toBeVisible();
   await expect(page.getByLabel("新的收藏地点 address")).toBeVisible();
@@ -932,6 +933,7 @@ test("budget member toggles keep mobile tap targets", async ({ page }) => {
 
   await expect(page.getByLabel("我 budget member name")).toBeVisible();
   await expect(page.getByLabel("新的共同账单 budget title")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "新的共同账单 budget category" })).toBeVisible();
   await expect(page.getByLabel("新的共同账单 amount")).toBeVisible();
   await expect(page.getByLabel("新的共同账单 currency")).toBeVisible();
   await expect(page.getByLabel("新的共同账单 notes")).toBeVisible();

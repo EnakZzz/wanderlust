@@ -2517,7 +2517,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <label>
                       <span>分类</span>
                       <Select value={place.category} onValueChange={(value) => updatePlace(place.id, { category: value as Place["category"] })}>
-                        <SelectTrigger>
+                        <SelectTrigger aria-label={`${place.name} place category`}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -2830,7 +2830,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <label>
                       <span>分类</span>
                       <Select value={item.category ?? "other"} onValueChange={(value) => updateBudgetItem(item.id, { category: value as BudgetItem["category"] })}>
-                        <SelectTrigger>
+                        <SelectTrigger aria-label={`${item.title} budget category`}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
