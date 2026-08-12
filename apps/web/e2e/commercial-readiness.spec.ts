@@ -828,6 +828,8 @@ test("expanded itinerary editor inputs keep usable tap targets", async ({ page }
   await page.getByRole("button", { name: "添加行程项" }).click();
   await page.getByRole("button", { name: "编辑 新的行程项" }).click();
 
+  await expect(page.getByLabel("新的行程项 title")).toBeVisible();
+  await expect(page.getByLabel("新的行程项 location")).toBeVisible();
   await expectVisibleTapTargetsAtLeast44(page, ".route-step-editor input");
   await expectNoHorizontalOverflow(page);
 });

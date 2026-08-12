@@ -2424,11 +2424,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                                   </label>
                                   <label>
                                     <Type size={16} />
-                                    <Input value={item.title} onChange={(event) => updateItem(item.id, { title: event.target.value })} />
+                                    <Input aria-label={`${item.title} title`} value={item.title} onChange={(event) => updateItem(item.id, { title: event.target.value })} />
                                   </label>
                                   <label>
                                     <MapPin size={16} />
                                     <Input
+                                      aria-label={`${item.title} location`}
                                       value={linkedPlace?.name ?? item.locationName ?? ""}
                                       placeholder="地点名称"
                                       onChange={(event) => updateItem(item.id, { locationName: event.target.value, placeId: undefined })}
