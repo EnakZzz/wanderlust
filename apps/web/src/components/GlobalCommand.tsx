@@ -9,11 +9,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 const openGlobalAiDialogEvent = "wanderlust:open-global-ai-dialog";
 
 const commandItems = [
-  { label: "打开控制台", hint: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "查看全部路书", hint: "Journeys", href: "/journeys", icon: Route },
-  { label: "打开旅行足迹", hint: "Passport", href: "/passport", icon: MapPinned },
-  { label: "搜索目的地", hint: "Search", href: "/search", icon: Search },
-  { label: "AI 修改当前路书", hint: "Prompt", href: "/?ai=1#editor", icon: Sparkles, action: "open-ai" }
+  { label: "打开控制台", hint: "工作台", href: "/dashboard", icon: LayoutDashboard },
+  { label: "查看全部路书", hint: "路书库", href: "/journeys", icon: Route },
+  { label: "打开旅行足迹", hint: "足迹", href: "/passport", icon: MapPinned },
+  { label: "搜索目的地", hint: "目的地", href: "/search", icon: Search },
+  { label: "AI 修改当前路书", hint: "AI 指令", href: "/?ai=1#editor", icon: Sparkles, action: "open-ai" }
 ];
 
 export function GlobalCommand() {

@@ -503,6 +503,13 @@ test("global command has a visible launcher and can hand prompts to AI", async (
   await expect(page.getByRole("dialog", { name: "快速操作" })).toBeVisible();
   await expect(page.locator(".global-ai-launcher")).toHaveCSS("visibility", "hidden");
   await expect(page.locator(".global-command-launcher")).toHaveCSS("visibility", "hidden");
+  const commandDialog = page.getByRole("dialog", { name: "快速操作" });
+  await expect(commandDialog.getByText("工作台", { exact: true })).toBeVisible();
+  await expect(commandDialog.getByText("路书库", { exact: true })).toBeVisible();
+  await expect(commandDialog.getByText("足迹", { exact: true })).toBeVisible();
+  await expect(commandDialog.getByText("目的地", { exact: true })).toBeVisible();
+  await expect(commandDialog.getByText("AI 指令", { exact: true })).toBeVisible();
+  await expect(commandDialog.getByText(/Dashboard|Journeys|Passport|Search|Prompt/)).toHaveCount(0);
 
   await page.getByRole("combobox", { name: "全局命令输入" }).fill("把第一天节奏放慢");
   await page.getByText("AI 修改当前路书").click();
