@@ -532,6 +532,33 @@ test("destination search exposes a stable input label", async ({ page }) => {
   await expect(page.getByLabel("搜索目的地")).toBeVisible();
 });
 
+test("mobile destination search keeps input and action in one control", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const path of ["/dashboard", "/search"] as const) {
+    await page.goto(path, { waitUntil: "domcontentloaded" });
+    const layout = await page.locator(".destination-panel-search").first().evaluate((panel) => {
+      const panelBox = panel.getBoundingClientRect();
+      const inputBox = panel.querySelector("input")!.getBoundingClientRect();
+      const actionBox = panel.querySelector(".destination-panel-action")!.getBoundingClientRect();
+      return {
+        panelHeight: Math.round(panelBox.height),
+        inputTop: Math.round(inputBox.top),
+        actionTop: Math.round(actionBox.top),
+        actionLeft: Math.round(actionBox.left),
+        inputRight: Math.round(inputBox.right),
+        actionHeight: Math.round(actionBox.height),
+        actionWidth: Math.round(actionBox.width)
+      };
+    });
+    expect(layout.panelHeight, `${path} search control should stay compact`).toBeLessThanOrEqual(82);
+    expect(Math.abs(layout.inputTop - layout.actionTop), `${path} input and action should align`).toBeLessThanOrEqual(10);
+    expect(layout.actionLeft, `${path} action should sit after the input`).toBeGreaterThanOrEqual(layout.inputRight - 4);
+    expect(layout.actionHeight, `${path} action tap target`).toBeGreaterThanOrEqual(44);
+    expect(layout.actionWidth, `${path} action tap target`).toBeGreaterThanOrEqual(44);
+  }
+  await expectNoHorizontalOverflow(page);
+});
+
 test("destination search guides selection into routebook planning", async ({ page }) => {
   await page.goto("/search", { waitUntil: "domcontentloaded" });
 

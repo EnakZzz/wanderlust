@@ -5325,10 +5325,16 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     justify-content: flex-start;
   }
   .destination-panel-search {
-    grid-template-columns: 22px minmax(0, 1fr);
+    grid-template-columns: 20px minmax(0, 1fr) 44px;
+    gap: 8px;
+    min-height: 0;
+    padding: 8px;
+  }
+  .search-page-panel .destination-panel-search {
+    min-height: 0;
   }
   .destination-panel-action {
-    grid-column: 1 / -1;
+    grid-column: auto;
     justify-content: center;
   }
   .destination-quick-grid {
