@@ -1398,6 +1398,12 @@ test("map pins keep mobile tap targets and open google places", async ({ page })
   await expect(mapPlaceFocus).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(mapPlaceFocus).not.toHaveAttribute("href", /\/maps\/dir\//);
   await expect(mapPlaceFocus).toHaveAttribute("aria-label", /打开 Google 地点 1：新的收藏地点/);
+  const googlePlacePagePromise = page.waitForEvent("popup");
+  await mapPlaceFocus.click();
+  const googlePlacePage = await googlePlacePagePromise;
+  await expect(googlePlacePage).toHaveURL(/https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
+  await googlePlacePage.close();
+  await expect(page.locator(".map-place-item").first()).not.toHaveClass(/active/);
   await expect(page.getByRole("radio", { name: "地图" })).toBeChecked();
   const mapPlaceLink = page.locator(".map-place-list").getByRole("link", { name: /打开 Google 地点 1：新的收藏地点/ });
   await expect(mapPlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
@@ -1505,11 +1511,13 @@ test("budget editor renders compact receipt cards", async ({ page }) => {
   await page.getByRole("button", { name: "添加账单" }).click();
   await page.getByLabel("账单标题").fill("金字塔门票");
   await page.getByLabel("账单金额").fill("120");
+  await page.getByLabel("预算成员姓名").nth(1).fill("");
 
   await expect(page.locator(".budget-receipt-summary")).toBeVisible();
   await expect(page.locator(".budget-receipt-summary strong")).toHaveText("$120");
   await expect(page.getByRole("button", { name: "付款人 我" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("button", { name: "分摊人 Alex" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "分摊人 同行人 2" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: /^分摊人\s*$/ })).toHaveCount(0);
   await expect(page.getByLabel("账单备注")).toBeVisible();
 
   const card = await page.locator(".budget-row-editor").first().evaluate((element) => {

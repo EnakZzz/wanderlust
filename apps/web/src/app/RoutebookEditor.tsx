@@ -844,10 +844,20 @@ function formatPreciseMoney(amount: number, currency: string): string {
 }
 
 function summarizeBudgetMembers(memberIds: string[] | undefined, members: BudgetMember[]): string {
-  const names = (memberIds ?? []).map((id) => members.find((member) => member.id === id)?.name).filter(Boolean);
+  const names = (memberIds ?? []).map((id) => {
+    const member = members.find((entry) => entry.id === id);
+    return member ? getBudgetMemberDisplayName(member, members) : undefined;
+  }).filter(Boolean);
   if (!names.length) return "待选择";
   if (names.length <= 2) return names.join(" / ");
   return `${names.slice(0, 2).join(" / ")} +${names.length - 2}`;
+}
+
+function getBudgetMemberDisplayName(member: BudgetMember, members: BudgetMember[]): string {
+  const name = member.name?.trim();
+  if (name) return name;
+  const memberIndex = members.findIndex((entry) => entry.id === member.id);
+  return `同行人 ${memberIndex >= 0 ? memberIndex + 1 : ""}`.trim();
 }
 
 function getItemBudgetEstimate(item: ItineraryItem, day: TripDay, budgetItems: BudgetItem[]): string {
@@ -3012,7 +3022,6 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         href={googlePlaceDisplayUrl(place)}
                         target="_blank"
                         rel="noreferrer"
-                        onClick={() => setFocusedMapPlaceId(place.id)}
                       >
                         <span className="map-place-index">{placeIndex + 1}</span>
                         <strong>{place.name}</strong>
@@ -3336,33 +3345,39 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       <div className="budget-split-grid">
                         <div className="member-toggle-group">
                           <span>付款人</span>
-                          {draft.budgetMembers.map((member) => (
-                            <button
-                              key={member.id}
-                              aria-label={`付款人 ${member.name}`}
-                              aria-pressed={item.paidByMemberIds?.includes(member.id) ? "true" : "false"}
-                              className={item.paidByMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"}
-                              type="button"
-                              onClick={() => toggleBudgetMember(item, "paidByMemberIds", member.id)}
-                            >
-                              {member.name}
-                            </button>
-                          ))}
+                          {draft.budgetMembers.map((member) => {
+                            const memberName = getBudgetMemberDisplayName(member, draft.budgetMembers);
+                            return (
+                              <button
+                                key={member.id}
+                                aria-label={`付款人 ${memberName}`}
+                                aria-pressed={item.paidByMemberIds?.includes(member.id) ? "true" : "false"}
+                                className={item.paidByMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"}
+                                type="button"
+                                onClick={() => toggleBudgetMember(item, "paidByMemberIds", member.id)}
+                              >
+                                {memberName}
+                              </button>
+                            );
+                          })}
                         </div>
                         <div className="member-toggle-group">
                           <span>分摊人</span>
-                          {draft.budgetMembers.map((member) => (
-                            <button
-                              key={member.id}
-                              aria-label={`分摊人 ${member.name}`}
-                              aria-pressed={item.splitWithMemberIds?.includes(member.id) ? "true" : "false"}
-                              className={item.splitWithMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"}
-                              type="button"
-                              onClick={() => toggleBudgetMember(item, "splitWithMemberIds", member.id)}
-                            >
-                              {member.name}
-                            </button>
-                          ))}
+                          {draft.budgetMembers.map((member) => {
+                            const memberName = getBudgetMemberDisplayName(member, draft.budgetMembers);
+                            return (
+                              <button
+                                key={member.id}
+                                aria-label={`分摊人 ${memberName}`}
+                                aria-pressed={item.splitWithMemberIds?.includes(member.id) ? "true" : "false"}
+                                className={item.splitWithMemberIds?.includes(member.id) ? "member-pill active" : "member-pill"}
+                                type="button"
+                                onClick={() => toggleBudgetMember(item, "splitWithMemberIds", member.id)}
+                              >
+                                {memberName}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                       <div className="budget-note-row">
@@ -3391,9 +3406,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   <p className="eyebrow">结算</p>
                   {settlements.map((settlement, index) => (
                     <div key={`${settlement.from}-${settlement.to}-${index}`}>
-                      <strong>{draft.budgetMembers.find((member) => member.id === settlement.from)?.name}</strong>
+                      <strong>{getBudgetMemberDisplayName(draft.budgetMembers.find((member) => member.id === settlement.from) ?? { id: settlement.from, tripId: draft.id, name: "" }, draft.budgetMembers)}</strong>
                       <span> 付款给 </span>
-                      <strong>{draft.budgetMembers.find((member) => member.id === settlement.to)?.name}</strong>
+                      <strong>{getBudgetMemberDisplayName(draft.budgetMembers.find((member) => member.id === settlement.to) ?? { id: settlement.to, tripId: draft.id, name: "" }, draft.budgetMembers)}</strong>
                       <em>{settlement.amount.toFixed(2)} {settlement.currency}</em>
                     </div>
                   ))}
