@@ -12,6 +12,7 @@ import {
   CheckSquare,
   ChevronDown,
   Clock,
+  CloudSun,
   CreditCard,
   ExternalLink,
   FileText,
@@ -2307,7 +2308,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   key={item.key}
                   className={item.ready ? "routebook-readiness-chip ready" : "routebook-readiness-chip"}
                   type="button"
-                  onClick={() => selectEditorModule(item.key === "weather" ? "itinerary" : item.key, { scrollIntoView: true })}
+                  onClick={() => selectEditorModule(item.key === "weather" ? "places" : item.key, { scrollIntoView: true })}
                   aria-label={`${item.label}${item.ready ? "已就绪" : "待补充"}`}
                 >
                   <span>{item.label}</span>
@@ -2850,6 +2851,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   </IconButton>
                 </div>
                 <div className="import-panel">
+                  <div className="weather-route-hint">
+                    <CloudSun size={18} />
+                    <span>先补一个带坐标的地点，天气会基于目的地和路线生成。</span>
+                  </div>
                   <label>
                     <span>Google Maps 链接</span>
                     <Textarea

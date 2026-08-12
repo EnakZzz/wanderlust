@@ -1049,7 +1049,12 @@ test("routebook readiness strip shows missing departure work and routes to modul
   await expect(page.getByRole("button", { name: "行程待补充" })).toBeVisible();
   await expect(page.getByRole("button", { name: "地点待补充" })).toBeVisible();
   await expect(page.getByRole("button", { name: "预订待补充" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "天气待补充" })).toBeVisible();
   await expectVisibleTapTargetsAtLeast44(page, ".routebook-readiness-chip");
+
+  await page.getByRole("button", { name: "天气待补充" }).click();
+  await expect(page.getByRole("radio", { name: "地点" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByText("先补一个带坐标的地点，天气会基于目的地和路线生成。")).toBeVisible();
 
   await page.getByRole("button", { name: "行程待补充" }).click();
   await expect(page.getByRole("radio", { name: "行程" })).toHaveAttribute("aria-checked", "true");
