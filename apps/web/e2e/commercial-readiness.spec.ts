@@ -914,9 +914,9 @@ test("file attachment fields expose stable labels", async ({ page }) => {
     buffer: Buffer.from("%PDF-1.4\n")
   });
 
-  await expect(page.getByLabel("boarding-pass.pdf file title")).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "boarding-pass.pdf file category" })).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "boarding-pass.pdf linked target" })).toBeVisible();
+  await expect(page.getByLabel("文件标题")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "文件分类" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "文件关联对象" })).toBeVisible();
 });
 
 test("AI planning and import prompts expose stable labels", async ({ page }) => {

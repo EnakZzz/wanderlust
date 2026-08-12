@@ -2781,12 +2781,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <Paperclip size={18} />
                     <label>
                       <span>标题</span>
-                      <Input aria-label={`${attachment.title ?? attachment.id} file title`} value={attachment.title ?? ""} onChange={(event) => updateAttachment(attachment.id, { title: event.target.value })} />
+                      <Input aria-label="文件标题" value={attachment.title ?? ""} onChange={(event) => updateAttachment(attachment.id, { title: event.target.value })} />
                     </label>
                     <label>
                       <span>分类</span>
                       <Select value={attachment.category ?? "other"} onValueChange={(value) => updateAttachment(attachment.id, { category: value as Attachment["category"] })}>
-                        <SelectTrigger aria-label={`${attachment.title ?? attachment.id} file category`}>
+                        <SelectTrigger aria-label="文件分类">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -2803,7 +2803,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                           updateAttachment(attachment.id, { linkedType: linkedType as Attachment["linkedType"], linkedId: linkedId || undefined });
                         }}
                       >
-                        <SelectTrigger aria-label={`${attachment.title ?? attachment.id} linked target`}>
+                        <SelectTrigger aria-label="文件关联对象">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
