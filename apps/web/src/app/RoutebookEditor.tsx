@@ -2512,7 +2512,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   >
                     <label>
                       <span>地点</span>
-                      <Input value={place.name} onChange={(event) => updatePlace(place.id, { name: event.target.value })} />
+                      <Input aria-label={`${place.name} place name`} value={place.name} onChange={(event) => updatePlace(place.id, { name: event.target.value })} />
                     </label>
                     <label>
                       <span>分类</span>
@@ -2527,19 +2527,19 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </label>
                     <label>
                       <span>纬度</span>
-                      <Input type="number" step="0.0001" value={place.latitude} onChange={(event) => updatePlace(place.id, { latitude: Number(event.target.value) })} />
+                      <Input aria-label={`${place.name} latitude`} type="number" step="0.0001" value={place.latitude} onChange={(event) => updatePlace(place.id, { latitude: Number(event.target.value) })} />
                     </label>
                     <label>
                       <span>经度</span>
-                      <Input type="number" step="0.0001" value={place.longitude} onChange={(event) => updatePlace(place.id, { longitude: Number(event.target.value) })} />
+                      <Input aria-label={`${place.name} longitude`} type="number" step="0.0001" value={place.longitude} onChange={(event) => updatePlace(place.id, { longitude: Number(event.target.value) })} />
                     </label>
                     <label>
                       <span>地址</span>
-                      <Input value={place.address ?? ""} onChange={(event) => updatePlace(place.id, { address: event.target.value })} />
+                      <Input aria-label={`${place.name} address`} value={place.address ?? ""} onChange={(event) => updatePlace(place.id, { address: event.target.value })} />
                     </label>
                     <label>
                       <span>标签</span>
-                      <Input value={(place.tags ?? []).join(", ")} onChange={(event) => updatePlace(place.id, { tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
+                      <Input aria-label={`${place.name} tags`} value={(place.tags ?? []).join(", ")} onChange={(event) => updatePlace(place.id, { tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
                     </label>
                     <Textarea aria-label={`${place.name} notes`} value={place.notes ?? ""} onChange={(event) => updatePlace(place.id, { notes: event.target.value })} />
                     <div className="row-actions">
