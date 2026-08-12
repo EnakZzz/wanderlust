@@ -792,6 +792,29 @@ test("mobile routebook library keeps trip cards readable", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("routebook drawer keeps the new trip action below the trip list", async ({ page }) => {
+  await mockSignedInTripListRuntime(page);
+  await page.goto("/journeys/trip_tokyo", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator(".trip-library-actions").getByRole("button", { name: "新建行程" })).toHaveCount(0);
+  await page.locator(".routebook-current").click();
+
+  await expect(page.getByRole("dialog", { name: "你的行程" })).toBeVisible();
+  await expect(page.locator(".routebook-drawer-footer").getByRole("button", { name: "新建行程" })).toBeVisible();
+  const layout = await page.evaluate(() => {
+    const list = document.querySelector<HTMLElement>(".routebook-drawer-list")?.getBoundingClientRect();
+    const footer = document.querySelector<HTMLElement>(".routebook-drawer-footer")?.getBoundingClientRect();
+    return {
+      listBottom: Math.round(list?.bottom ?? 0),
+      footerTop: Math.round(footer?.top ?? 0),
+      footerWidth: Math.round(footer?.width ?? 0)
+    };
+  });
+  expect(layout.footerTop, JSON.stringify(layout)).toBeGreaterThanOrEqual(layout.listBottom - 2);
+  expect(layout.footerWidth, JSON.stringify(layout)).toBeGreaterThan(280);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("mobile global launchers stay clear of primary card content", async ({ page }) => {
   await mockSignedInTripListRuntime(page);
 
@@ -1209,6 +1232,7 @@ test("switching routebooks with unsaved edits uses an in-app confirmation", asyn
   await expect(page.getByRole("dialog", { name: "切换路书" })).toHaveCount(0);
   await expect(page.locator(".routebook-current")).toContainText("东京亲子路书");
 
+  await page.getByRole("button", { name: "添加行程项" }).click();
   await page.locator(".routebook-current").click();
   await page.getByRole("button", { name: "打开 埃及红海路书" }).click();
   await expect(page.getByRole("dialog", { name: "切换路书" })).toBeVisible();
@@ -1295,14 +1319,19 @@ test("anonymous users can create a named local routebook and keep it after refre
   await page.getByRole("button", { name: "保存修改" }).click();
 
   await expect(page.getByRole("button", { name: /东京亲子路书/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "保存" })).toHaveCount(0);
   await page.getByRole("button", { name: "添加行程项" }).click();
-  await page.getByRole("button", { name: "保存" }).click();
 
-  const storedTitle = await page.evaluate((storageKey) => {
-    const stored = window.localStorage.getItem(storageKey);
-    return stored ? JSON.parse(stored).title : null;
-  }, localDraftStorageKey);
-  expect(storedTitle).toBe("东京亲子路书");
+  await expect
+    .poll(async () =>
+      page.evaluate((storageKey) => {
+        const stored = window.localStorage.getItem(storageKey);
+        if (!stored) return null;
+        const parsed = JSON.parse(stored);
+        return parsed.days?.some((day: { items?: Array<{ title?: string }> }) => day.items?.some((item) => item.title === "新的行程项")) ? parsed.title : null;
+      }, localDraftStorageKey)
+    )
+    .toBe("东京亲子路书");
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.getByRole("button", { name: /东京亲子路书/ })).toBeVisible();
@@ -1330,8 +1359,11 @@ test("signed-in users can save and create a share link for a routebook", async (
   await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("button", { name: "打开 东京商业路书" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "保存" })).toHaveCount(0);
   await page.getByRole("button", { name: "添加行程项" }).click();
-  await page.getByRole("button", { name: "保存" }).click();
+  await expect
+    .poll(async () => page.evaluate(async () => (window as unknown as { getCommercialApiCalls: () => Promise<{ saves: number; shares: number }> }).getCommercialApiCalls()))
+    .toMatchObject({ saves: 1, shares: 0 });
   await page.getByRole("button", { name: "分享" }).click();
 
   await expect(page.getByRole("dialog", { name: "分享路书" })).toBeVisible();
@@ -1347,19 +1379,18 @@ test("signed-in users can save and create a share link for a routebook", async (
     .toMatchObject({ saves: 1, shares: 1 });
 });
 
-test("signed-in routebook save stays single-flight on slow networks", async ({ page }) => {
+test("signed-in routebook autosave stays single-flight on slow networks", async ({ page }) => {
   await mockSignedInRuntime(page, { saveDelayMs: 350 });
   await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111", { waitUntil: "domcontentloaded" });
 
+  await expect(page.getByRole("button", { name: "保存" })).toHaveCount(0);
   await page.getByRole("button", { name: "添加行程项" }).click();
-  await page.getByRole("button", { name: "保存" }).click();
 
-  await expect(page.getByRole("button", { name: "保存中" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "分享" })).toBeDisabled();
   await expect
     .poll(async () => page.evaluate(async () => (window as unknown as { getCommercialApiCalls: () => Promise<{ saves: number; shares: number }> }).getCommercialApiCalls()))
     .toMatchObject({ saves: 1, shares: 0 });
-  await expect(page.getByRole("button", { name: "保存" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "分享" })).toBeEnabled();
   await expectNoHorizontalOverflow(page);
 });
 

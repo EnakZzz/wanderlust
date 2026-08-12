@@ -958,6 +958,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [shareInfo, setShareInfo] = useState<RoutebookShare | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const isPersistingRef = useRef(false);
+  const draftRef = useRef(draft);
+  const saveVersionRef = useRef(0);
+  const persistedVersionRef = useRef(0);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [placeSearch, setPlaceSearch] = useState("");
@@ -1043,7 +1046,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       setUser(null);
       setTrips([]);
       setDraft(parsed);
+      draftRef.current = parsed;
       setSelectedDayId(parsed.days[0]?.id ?? createEmptyTripDraft().days[0]!.id);
+      saveVersionRef.current = 0;
+      persistedVersionRef.current = 0;
       setIsAuthChecked(true);
       return;
     }
@@ -1059,6 +1065,8 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     setUser(sessionQuery.data);
     setTrips(tripsQuery.data ?? []);
     setIsSaved(true);
+    saveVersionRef.current = 0;
+    persistedVersionRef.current = 0;
     setIsAuthChecked(true);
   }, [sessionQuery.data, sessionQuery.isLoading, tripsQuery.data, tripsQuery.error, tripsQuery.isLoading]);
 
@@ -1308,6 +1316,19 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     window.setTimeout(() => document.getElementById("editor")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }, [initialModuleConsumed, isAuthChecked]);
 
+  useEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
+
+  useEffect(() => {
+    if (!isAuthChecked || routebookNeedsMeta || isSaved || isSyncing || isSharing || deletingTripId) return;
+    const versionToSave = saveVersionRef.current;
+    const timer = window.setTimeout(() => {
+      void persistDraft(draftRef.current, trips.some((trip) => trip.id === draftRef.current.id), versionToSave);
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [deletingTripId, draft, isAuthChecked, isSaved, isSharing, isSyncing, routebookNeedsMeta, trips]);
+
   if (!isAuthChecked) {
     return (
       <section id="editor" className="workspace workspace-editor workspace-loading" aria-busy="true">
@@ -1331,6 +1352,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   }
 
   function markDirty() {
+    saveVersionRef.current += 1;
     setIsSaved(false);
   }
 
@@ -1541,8 +1563,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     try {
       const hydrated = hydrateDraft(await readTrip(tripId));
       setDraft(hydrated);
+      draftRef.current = hydrated;
       setSelectedDayId(hydrated.days[0]?.id ?? createEmptyTripDraft().days[0]!.id);
       setIsSaved(true);
+      saveVersionRef.current = 0;
+      persistedVersionRef.current = 0;
       setShareInfo(null);
       setShareStatus(null);
       setMetaDialogMode(null);
@@ -1601,8 +1626,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       if (draft.id === trip.id) {
         const blank = createBlankTripDraft();
         setDraft(blank);
+        draftRef.current = blank;
         setSelectedDayId(blank.days[0]?.id ?? createEmptyTripDraft().days[0]!.id);
         setIsSaved(true);
+        saveVersionRef.current = 0;
+        persistedVersionRef.current = 0;
         setShareInfo(null);
         setShareStatus(null);
         setMetaDialogMode(null);
@@ -1620,11 +1648,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     openCreateTripDialog();
   }
 
-  async function persistDraft(target = draft, existing = trips.some((trip) => trip.id === target.id)): Promise<TripDraft | null> {
+  async function persistDraft(target = draft, existing = trips.some((trip) => trip.id === target.id), version = saveVersionRef.current): Promise<TripDraft | null> {
     setSyncError(null);
     if (!user) {
       window.localStorage.setItem(storageKey, JSON.stringify(target));
       setIsSaved(true);
+      persistedVersionRef.current = version;
       return target;
     }
 
@@ -1633,9 +1662,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     setIsSyncing(true);
     try {
       const hydrated = hydrateDraft(await saveTrip(target, existing));
-      setDraft(hydrated);
-      setSelectedDayId(hydrated.days[0]?.id ?? createEmptyTripDraft().days[0]!.id);
-      setIsSaved(true);
+      const hasNewerLocalChanges = saveVersionRef.current !== version;
+      if (!hasNewerLocalChanges) {
+        setDraft(hydrated);
+        draftRef.current = hydrated;
+        setSelectedDayId((currentDayId) => (hydrated.days.some((day) => day.id === currentDayId) ? currentDayId : hydrated.days[0]?.id ?? createEmptyTripDraft().days[0]!.id));
+        setIsSaved(true);
+        persistedVersionRef.current = version;
+      }
       setMetaDialogMode(null);
       await refreshTrips();
       if (!existing) {
@@ -1648,6 +1682,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     } finally {
       isPersistingRef.current = false;
       setIsSyncing(false);
+      if (saveVersionRef.current !== persistedVersionRef.current) {
+        setIsSaved(false);
+      }
     }
   }
 
@@ -2088,11 +2125,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               <IconButton type="button" onClick={openEditTripMetaDialog} disabled={routebookNeedsMeta} label="编辑路书信息">
                 <PencilLine size={18} />
               </IconButton>
-              <Button className="trip-save-button" type="button" onClick={() => persistDraft()} disabled={routebookNeedsMeta || isSyncing} title="保存路书">
-                <Save size={18} />
-                <span>{isSyncing ? "保存中" : "保存"}</span>
-              </Button>
-              <Button variant="secondary" type="button" onClick={createOrCopyShare} disabled={routebookNeedsMeta || isSyncing || isSharing} title={shareButtonTitle}>
+              <Button variant="secondary" type="button" onClick={createOrCopyShare} disabled={routebookNeedsMeta || !isSaved || isSyncing || isSharing} title={shareButtonTitle}>
                 <Share2 size={17} />
                 <span>{isSharing ? "生成中" : shareUrl ? "复制分享" : "分享"}</span>
               </Button>
@@ -2101,9 +2134,6 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   <X size={18} />
                 </IconButton>
               ) : null}
-              <IconButton className="new-trip-button" type="button" onClick={createSyncedTrip} label="新建行程">
-                <Plus size={20} />
-              </IconButton>
             </div>
           </div>
         ) : null}
@@ -2256,6 +2286,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 {trips.map(renderTripCard)}
                 {trips.length === 0 ? <div className="empty-trip-card">{isSyncing ? "正在同步路书..." : "还没有路书。 先创建一个路书开始。"}</div> : null}
               </ScrollArea>
+              <div className="routebook-drawer-footer">
+                <Button className="routebook-drawer-new-trip" type="button" onClick={createSyncedTrip}>
+                  <Plus size={18} />
+                  <span>新建行程</span>
+                </Button>
+              </div>
             </DialogContent>
           </Dialog>
         ) : null}

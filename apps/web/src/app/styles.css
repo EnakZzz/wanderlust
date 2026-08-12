@@ -1635,7 +1635,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   --tw-translate-y: 0 !important;
   translate: 0 0 !important;
   transform: none !important;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 14px;
   padding: 18px;
   border-color: rgba(229, 226, 217, 0.82);
@@ -1671,6 +1671,15 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   align-content: start;
   gap: 12px;
 }
+.routebook-drawer-footer {
+  display: grid;
+  padding-top: 2px;
+}
+.routebook-drawer-new-trip {
+  width: 100%;
+  min-height: 46px;
+  justify-content: center;
+}
 .new-trip-button {
   align-self: end;
   width: 44px;
@@ -1692,12 +1701,6 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .trip-library-actions .icon-button {
   height: 44px;
   color: var(--ink);
-}
-.trip-save-button {
-  width: auto;
-  min-width: 92px;
-  height: 44px;
-  padding: 0 14px;
 }
 .routebook-meta-card {
   flex: 1;
@@ -4271,7 +4274,6 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   }
   .trip-library, .trip-card-grid, .plan-home-list { grid-template-columns: 1fr; }
   .trip-library-actions { justify-content: flex-start; }
-  .trip-library-actions .trip-save-button { width: auto; }
   .routebook-current strong { white-space: normal; }
   .routebook-current small { white-space: normal; }
   .routebook-meta-card strong { white-space: normal; }
