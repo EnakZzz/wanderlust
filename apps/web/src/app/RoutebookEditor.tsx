@@ -2878,75 +2878,87 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 </div>
                 {draft.bookings.map((booking) => (
                   <article key={booking.id} className="module-row booking-row-editor">
-                    <label>
-                      <span>类型</span>
-                      <Select value={booking.type} onValueChange={(value) => updateBooking(booking.id, { type: value as Booking["type"] })}>
-                        <SelectTrigger aria-label="预订类型">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {bookingTypes.map((type) => <SelectItem key={type} value={type}>{bookingTypeLabels[type]}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </label>
-                    <label>
-                      <span>标题</span>
-                      <Input aria-label="预订标题" value={booking.title} onChange={(event) => updateBooking(booking.id, { title: event.target.value })} />
-                    </label>
-                    <label>
-                      <span>编号</span>
-                      <Input aria-label="预订确认号" value={booking.confirmationCode ?? ""} onChange={(event) => updateBooking(booking.id, { confirmationCode: event.target.value })} />
-                    </label>
-                    <label>
-                      <span>状态</span>
-                      <Select value={booking.status} onValueChange={(value) => updateBooking(booking.id, { status: value as Booking["status"] })}>
-                        <SelectTrigger aria-label="预订状态">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {["todo", "confirmed", "checked_in", "cancelled"].map((status) => (
-                            <SelectItem key={status} value={status}>{bookingStatusLabels[status as NonNullable<Booking["status"]>]}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </label>
-                    <Textarea aria-label="预订备注" value={booking.notes ?? ""} onChange={(event) => updateBooking(booking.id, { notes: event.target.value })} />
-                    {booking.segments?.length ? (
-                      <div className="segment-list">
-                        {booking.segments.map((segment) => (
-                          <span key={segment.id}>
-                            {segment.mode} {segment.carrier}{segment.serviceNumber}
-                          </span>
-                        ))}
+                    <div className="booking-ticket-rail" aria-hidden="true">
+                      <Ticket size={22} />
+                      <strong>{bookingTypeLabels[booking.type]}</strong>
+                      <span>{bookingStatusLabels[booking.status ?? "todo"]}</span>
+                      {booking.confirmationCode ? <em>{booking.confirmationCode}</em> : <em>待补编号</em>}
+                    </div>
+                    <div className="booking-ticket-body">
+                      <div className="booking-ticket-fields">
+                        <label>
+                          <span>类型</span>
+                          <Select value={booking.type} onValueChange={(value) => updateBooking(booking.id, { type: value as Booking["type"] })}>
+                            <SelectTrigger aria-label="预订类型">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {bookingTypes.map((type) => <SelectItem key={type} value={type}>{bookingTypeLabels[type]}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </label>
+                        <label>
+                          <span>标题</span>
+                          <Input aria-label="预订标题" value={booking.title} onChange={(event) => updateBooking(booking.id, { title: event.target.value })} />
+                        </label>
+                        <label>
+                          <span>编号</span>
+                          <Input aria-label="预订确认号" value={booking.confirmationCode ?? ""} onChange={(event) => updateBooking(booking.id, { confirmationCode: event.target.value })} />
+                        </label>
+                        <label>
+                          <span>状态</span>
+                          <Select value={booking.status} onValueChange={(value) => updateBooking(booking.id, { status: value as Booking["status"] })}>
+                            <SelectTrigger aria-label="预订状态">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {["todo", "confirmed", "checked_in", "cancelled"].map((status) => (
+                                <SelectItem key={status} value={status}>{bookingStatusLabels[status as NonNullable<Booking["status"]>]}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </label>
                       </div>
-                    ) : null}
-                    <FileUploadButton
-                      aria-label={`上传文件到预订 ${booking.title}`}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) uploadAttachment(file, booking.id).catch((error) => setSyncError(error instanceof Error ? error.message : "上传失败"));
-                      }}
-                    >
-                      <FileUp size={17} />
-                      <span>上传文件</span>
-                    </FileUploadButton>
-                    <IconButton
-                      className="row-ai-button"
-                      type="button"
-                      label={`AI 优化预订 ${booking.title}`}
-                      tooltip={user ? "用 AI 修改这个预订，先生成预览" : "打开预览，登录后可生成修改"}
-                      onClick={() => openEntityAiAssistant(
-                        { moduleId: "bookings", entityType: "booking", entityId: booking.id, label: `预订 · ${booking.title}` },
-                        `帮我优化预订 ${booking.title}，可以补充确认号、状态、时间、供应商、地址或备注`
-                      )}
-                    >
-                      <Sparkles size={16} />
-                    </IconButton>
-                    <div className="attachment-list">
-                      {(booking.attachmentIds ?? []).map((id) => {
-                        const attachment = draft.attachments.find((item) => item.id === id);
-                        return attachment ? <span key={id}><Paperclip size={14} />{attachment.title}</span> : null;
-                      })}
+                      <Textarea aria-label="预订备注" value={booking.notes ?? ""} onChange={(event) => updateBooking(booking.id, { notes: event.target.value })} />
+                      {booking.segments?.length ? (
+                        <div className="segment-list">
+                          {booking.segments.map((segment) => (
+                            <span key={segment.id}>
+                              {segment.mode} {segment.carrier}{segment.serviceNumber}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="booking-ticket-actions">
+                        <FileUploadButton
+                          aria-label={`上传文件到预订 ${booking.title}`}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) uploadAttachment(file, booking.id).catch((error) => setSyncError(error instanceof Error ? error.message : "上传失败"));
+                          }}
+                        >
+                          <FileUp size={17} />
+                          <span>上传文件</span>
+                        </FileUploadButton>
+                        <IconButton
+                          className="row-ai-button"
+                          type="button"
+                          label={`AI 优化预订 ${booking.title}`}
+                          tooltip={user ? "用 AI 修改这个预订，先生成预览" : "打开预览，登录后可生成修改"}
+                          onClick={() => openEntityAiAssistant(
+                            { moduleId: "bookings", entityType: "booking", entityId: booking.id, label: `预订 · ${booking.title}` },
+                            `帮我优化预订 ${booking.title}，可以补充确认号、状态、时间、供应商、地址或备注`
+                          )}
+                        >
+                          <Sparkles size={16} />
+                        </IconButton>
+                      </div>
+                      <div className="attachment-list">
+                        {(booking.attachmentIds ?? []).map((id) => {
+                          const attachment = draft.attachments.find((item) => item.id === id);
+                          return attachment ? <span key={id}><Paperclip size={14} />{attachment.title}</span> : null;
+                        })}
+                      </div>
                     </div>
                   </article>
                 ))}

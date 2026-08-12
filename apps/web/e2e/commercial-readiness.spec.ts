@@ -1036,6 +1036,35 @@ test("file upload entry points expose stable labels", async ({ page }) => {
   await expect(page.getByLabel("上传旅行文件")).toBeVisible();
 });
 
+test("booking editor renders compact ticket cards", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "预订" }).click();
+  await page.getByRole("button", { name: "添加预订" }).click();
+
+  await expect(page.locator(".booking-ticket-rail")).toBeVisible();
+  await expect(page.locator(".booking-ticket-rail").getByText("门票")).toBeVisible();
+  await expect(page.getByLabel("预订标题")).toBeVisible();
+  await expect(page.getByLabel("上传文件到预订 新的预订")).toBeVisible();
+
+  const card = await page.locator(".booking-row-editor").first().evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const rail = element.querySelector<HTMLElement>(".booking-ticket-rail")?.getBoundingClientRect();
+    return {
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      railWidth: Math.round(rail?.width ?? 0),
+      viewport: document.documentElement.clientWidth
+    };
+  });
+
+  expect(card.railWidth, JSON.stringify(card)).toBeGreaterThanOrEqual(120);
+  if (card.viewport >= 900) {
+    expect(card.height, JSON.stringify(card)).toBeLessThanOrEqual(260);
+  }
+  await expectNoHorizontalOverflow(page);
+});
+
 test("file attachment fields expose stable labels", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

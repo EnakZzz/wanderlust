@@ -2948,15 +2948,99 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   font-weight: 700;
 }
 .booking-row-editor {
-  grid-template-columns: minmax(120px, 0.6fr) minmax(180px, 1fr) minmax(140px, 0.7fr) minmax(130px, 0.62fr);
+  grid-template-columns: minmax(150px, 0.28fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+  background: #fffdf8;
+}
+
+.booking-ticket-rail {
+  position: relative;
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+  min-height: 224px;
+  padding: 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 248, 238, 0.18), transparent 32%),
+    linear-gradient(155deg, #2f3431, #1f2422 58%, #476878);
+  color: #fff8ee;
+}
+
+.booking-ticket-rail::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  bottom: -10px;
+  width: 22px;
+  background:
+    radial-gradient(circle at 50% 14px, #fffdf8 0 8px, transparent 9px) 0 0 / 22px 34px repeat-y;
+}
+
+.booking-ticket-rail svg {
+  position: relative;
+  z-index: 1;
+}
+
+.booking-ticket-rail strong {
+  position: relative;
+  z-index: 1;
+  align-self: end;
+  font-family: "Noto Serif SC", Georgia, serif;
+  font-size: 30px;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.booking-ticket-rail span,
+.booking-ticket-rail em {
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid rgba(255, 248, 238, 0.22);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(255, 248, 238, 0.12);
+  color: rgba(255, 248, 238, 0.9);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.booking-ticket-body {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.booking-ticket-fields {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.58fr) minmax(200px, 1.1fr) minmax(150px, 0.72fr) minmax(130px, 0.62fr);
+  gap: 12px;
   align-items: end;
 }
-.booking-row-editor textarea,
-.booking-row-editor .file-upload-button,
-.booking-row-editor .attachment-list {
-  grid-column: 1 / -1;
+
+.booking-ticket-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
 }
-.booking-row-editor .row-ai-button,
+
+.booking-ticket-actions .row-ai-button {
+  margin-left: auto;
+}
+
+.booking-row-editor .attachment-list {
+  min-height: 0;
+}
+
 .budget-row-editor .row-ai-button {
   grid-column: 1 / -1;
   justify-self: end;
@@ -4615,6 +4699,39 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     flex-direction: column;
   }
   .place-row, .map-editor, .booking-row-editor, .booking-import-panel, .file-row-editor, .budget-members, .budget-row-editor, .check-row, .packing-row, .search-row, .ai-workbench { grid-template-columns: 1fr; }
+  .booking-ticket-rail {
+    min-height: 88px;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-content: center;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 14px;
+  }
+  .booking-ticket-rail::after {
+    inset: auto -10px -10px -10px;
+    width: auto;
+    height: 22px;
+    background:
+      radial-gradient(circle at 14px 50%, #fffdf8 0 8px, transparent 9px) 0 0 / 34px 22px repeat-x;
+  }
+  .booking-ticket-rail strong {
+    font-size: 24px;
+  }
+  .booking-ticket-rail span {
+    grid-column: 2;
+  }
+  .booking-ticket-rail em {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: center;
+    max-width: 98px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .booking-ticket-fields {
+    grid-template-columns: 1fr;
+  }
   .ai-preview-heading { align-items: stretch; flex-direction: column; }
   .search-row .new-trip-button { justify-self: start; }
   .file-row-editor svg { margin-bottom: 0; }
