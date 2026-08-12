@@ -3196,6 +3196,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   color: inherit;
   text-align: left;
   cursor: pointer;
+  text-decoration: none;
 }
 .map-place-focus:hover,
 .map-place-focus:focus-visible {

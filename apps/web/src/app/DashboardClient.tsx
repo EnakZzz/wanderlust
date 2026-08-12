@@ -6,17 +6,11 @@ import { buildTripEditorPath } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
 import { MotionDiv, MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
+import { formatTripDateRange } from "@/lib/date-format";
 import { discoveryCards } from "@/lib/travel-visuals";
 import { useDashboardData } from "@/lib/web-api";
 import { DestinationSearchPanel, editorHref } from "./DestinationSearchPanel";
 import { formatTripStatus } from "./routebook/labels";
-import type { TripSummary } from "./routebook/types";
-
-function formatTripDates(trip: TripSummary): string {
-  if (!trip.startDate || !trip.endDate) return "日期未设置";
-  if (trip.startDate === trip.endDate) return trip.startDate;
-  return `${trip.startDate} - ${trip.endDate}`;
-}
 
 function tripEditorHref(tripId: string): string {
   return buildTripEditorPath(tripId);
@@ -94,7 +88,7 @@ export function DashboardClient() {
                 <span>{formatTripStatus(trip.status)}</span>
                 <strong>{trip.title}</strong>
                 <em>{trip.destination}</em>
-                <small>{formatTripDates(trip)} · {trip.dayCount} 天 · {trip.placeCount} 个地点</small>
+                <small>{formatTripDateRange(trip.startDate, trip.endDate)} · {trip.dayCount} 天 · {trip.placeCount} 个地点</small>
               </a>
             ))}
             {state.loaded && recentTrips.length === 0 ? (

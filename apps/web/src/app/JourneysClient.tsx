@@ -6,15 +6,11 @@ import { buildTripEditorPath } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
 import { MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
+import { formatTripDateRange } from "@/lib/date-format";
 import { getDestinationTheme } from "@/lib/travel-visuals";
 import { useDashboardData } from "@/lib/web-api";
 import { formatTripStatus } from "./routebook/labels";
 import type { TripSummary } from "./routebook/types";
-
-function formatTripDates(trip: TripSummary): string {
-  if (!trip.startDate || !trip.endDate) return "日期未设置";
-  return trip.startDate === trip.endDate ? trip.startDate : `${trip.startDate} - ${trip.endDate}`;
-}
 
 function tripEditorHref(tripId: string): string {
   return buildTripEditorPath(tripId);
@@ -64,7 +60,7 @@ export function JourneysClient() {
               />
               <div className="journey-card-topline">
                 <span>{formatTripStatus(trip.status)}</span>
-                <small><CalendarDays size={14} />{formatTripDates(trip)}</small>
+                <small><CalendarDays size={14} />{formatTripDateRange(trip.startDate, trip.endDate)}</small>
               </div>
               <div className="journey-card-copy">
                 <strong>{trip.title}</strong>

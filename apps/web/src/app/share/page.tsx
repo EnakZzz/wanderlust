@@ -6,6 +6,7 @@ import { CalendarDays, CheckSquare, Clock, ExternalLink, MapPin, Plane, Share2, 
 import { buildGoogleMapsPlaceUrl, productBrand, sortItineraryItems, type ItineraryItem, type Place, type Trip } from "@wanderlust/domain";
 import { MotionDiv, MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
+import { formatTripDateRange } from "@/lib/date-format";
 import { getItineraryTypeVisual, heroVisuals } from "@/lib/travel-visuals";
 import { readPublicShare } from "@/lib/web-api";
 
@@ -21,28 +22,6 @@ const typeLabels: Record<ItineraryItem["type"], string> = {
 
 function getTypeLabel(type: ItineraryItem["type"] | string): string {
   return typeLabels[type as ItineraryItem["type"]] ?? "活动";
-}
-
-function parseDateParts(value: string): { year: number; month: number; day: number } | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return null;
-  return {
-    year: Number(match[1]),
-    month: Number(match[2]),
-    day: Number(match[3])
-  };
-}
-
-function formatDateParts(parts: { year: number; month: number; day: number }, includeYear: boolean): string {
-  return includeYear ? `${parts.year}年${parts.month}月${parts.day}日` : `${parts.month}月${parts.day}日`;
-}
-
-function formatDateRange(trip: Trip): string {
-  const start = parseDateParts(trip.startDate);
-  const end = parseDateParts(trip.endDate);
-  if (!start || !end) return `${trip.startDate} - ${trip.endDate}`;
-  if (trip.startDate === trip.endDate) return formatDateParts(start, true);
-  return `${formatDateParts(start, true)} - ${formatDateParts(end, start.year !== end.year)}`;
 }
 
 function formatItemTime(item: ItineraryItem): string {
@@ -159,7 +138,7 @@ export default function SharePage() {
         <div className="share-hero-copy">
           <p className="eyebrow">只读分享路书</p>
           <h1>{trip.title}</h1>
-          <p>{trip.destination} · {formatDateRange(trip)}</p>
+          <p>{trip.destination} · {formatTripDateRange(trip.startDate, trip.endDate)}</p>
           <div className="share-hero-actions">
             <a href="/" className="share-home-link"><Plane size={17} /> {productBrand.name}</a>
             <span><CalendarDays size={16} /> {formatTimezoneLabel(trip.timezone)}</span>

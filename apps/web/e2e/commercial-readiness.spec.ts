@@ -1287,9 +1287,9 @@ test("map pins keep mobile tap targets and return to places", async ({ page }) =
   await expect(preview).toHaveAttribute("src", /\/api\/maps\/static-preview\?/);
   await expect(preview).toHaveJSProperty("complete", true);
   await expectVisibleTapTargetsAtLeast44(page, ".map-pin");
-  await page.getByRole("button", { name: /查看列表地点 1/ }).click();
-  await expect(page.locator(".map-place-item").first()).toHaveClass(/active/);
-  await expect(page.locator(".map-pin").first()).toHaveClass(/active/);
+  const mapPlaceLink = page.getByRole("link", { name: /打开 Google 地点 1：新的收藏地点/ });
+  await expect(mapPlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
+  await expect(mapPlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
   await page.locator(".map-pin").first().click();
 
   await expect(page.getByPlaceholder("搜索或粘贴地点名称")).toBeVisible();
@@ -1348,7 +1348,7 @@ test("map place list follows itinerary visit order", async ({ page }) => {
 
   await expect(page.locator(".map-place-item strong").nth(0)).toHaveText("First stop");
   await expect(page.locator(".map-place-item strong").nth(1)).toHaveText("Second stop");
-  const googlePlaceLink = page.getByRole("link", { name: "打开 Google 地点 First stop" });
+  const googlePlaceLink = page.getByRole("link", { name: "打开 Google 地点 1：First stop" });
   await expect(googlePlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(googlePlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
 });
@@ -1532,6 +1532,17 @@ test("signed-in routebook lists show customer-facing status labels", async ({ pa
   await expect(page.getByText("已发布").first()).toBeVisible();
   await expect(page.getByText("draft", { exact: true })).toHaveCount(0);
   await expect(page.getByText("published", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("2026年9月1日 - 9月5日")).toBeVisible();
+  await expect(page.getByText("2026年10月1日 - 10月9日")).toBeVisible();
+  await expect(page.getByText("2026-09-01 - 2026-09-05")).toHaveCount(0);
+  await expect(page.getByText("2026-10-01 - 2026-10-09")).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("2026年9月1日 - 9月5日")).toBeVisible();
+  await expect(page.getByText("2026年10月1日 - 10月9日")).toBeVisible();
+  await expect(page.getByText("2026-09-01 - 2026-09-05")).toHaveCount(0);
+  await expect(page.getByText("2026-10-01 - 2026-10-09")).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 
