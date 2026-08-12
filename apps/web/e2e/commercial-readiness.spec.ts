@@ -1080,11 +1080,22 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expect(page.getByLabel("地点地址")).toBeVisible();
   await expect(page.getByLabel("地点标签")).toBeVisible();
   await expect(page.getByLabel("地点备注")).toBeVisible();
+  await expect(page.locator(".place-card-meta")).toContainText("坐标待补");
+  await expect(page.locator(".place-card-meta").getByText("0.0000")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "打开 Google 地点 新的收藏地点" })).toHaveCount(0);
+  await page.getByLabel("地点纬度").fill("35.6812");
+  await page.getByLabel("地点经度").fill("139.7671");
   const placeDisplayLink = page.getByRole("link", { name: "打开 Google 地点 新的收藏地点" });
   await expect(placeDisplayLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
+  await expect(placeDisplayLink).not.toHaveAttribute("href", /0%2C0/);
   await expect(placeDisplayLink).not.toHaveAttribute("href", /\/maps\/dir\//);
-  await page.getByLabel("Google Maps 链接").fill("https://www.google.com/maps/@35.6812,139.7671,17z");
-  await page.getByRole("button", { name: "导入链接" }).click();
+  await page.locator("textarea[aria-label='Google Maps 链接']").fill("https://www.google.com/maps/@35.6812,139.7671,17z");
+  const importLinksButton = page.getByRole("button", { name: "导入链接" });
+  await expect(importLinksButton).toBeEnabled();
+  await importLinksButton.click();
+  await expect(page.locator(".place-row")).toHaveCount(1);
+  await page.locator("textarea[aria-label='Google Maps 链接']").fill("https://www.google.com/maps/@35.7148,139.7967,17z");
+  await importLinksButton.click();
   await expectAnyInputValue(page, "地图地点 1");
   await expect
     .poll(async () => page.locator("input").evaluateAll((inputs) => inputs.some((input) => (input as HTMLInputElement).value === "Google Maps place 1")))
@@ -1302,6 +1313,8 @@ test("map pins keep mobile tap targets and open google places", async ({ page })
 
   await page.getByRole("radio", { name: "地点" }).click();
   await page.getByRole("button", { name: "添加地点" }).click();
+  await page.getByLabel("地点纬度").fill("35.6812");
+  await page.getByLabel("地点经度").fill("139.7671");
   await page.getByRole("radio", { name: "地图" }).click();
 
   const preview = page.locator(".map-preview-image");
@@ -1312,6 +1325,10 @@ test("map pins keep mobile tap targets and open google places", async ({ page })
   const mapPinLink = page.locator(".interactive-map").getByRole("link", { name: /打开 Google 地点 1：新的收藏地点/ });
   await expect(mapPinLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(mapPinLink).not.toHaveAttribute("href", /\/maps\/dir\//);
+  const mapPlaceFocus = page.locator(".map-place-list").getByRole("button", { name: /在地图中显示 1：新的收藏地点/ });
+  await mapPlaceFocus.click();
+  await expect(page.getByRole("radio", { name: "地图" })).toBeChecked();
+  await expect(page.locator(".map-place-item").first()).toHaveClass(/active/);
   const mapPlaceLink = page.locator(".map-place-list").getByRole("link", { name: /打开 Google 地点 1：新的收藏地点/ });
   await expect(mapPlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(mapPlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
@@ -1371,6 +1388,10 @@ test("map place list follows itinerary visit order", async ({ page }) => {
 
   await expect(page.locator(".map-place-item strong").nth(0)).toHaveText("First stop");
   await expect(page.locator(".map-place-item strong").nth(1)).toHaveText("Second stop");
+  const focusButton = page.locator(".map-place-list").getByRole("button", { name: "在地图中显示 1：First stop" });
+  await focusButton.click();
+  await expect(page.getByRole("radio", { name: "地图" })).toBeChecked();
+  await expect(page.locator(".map-place-item").first()).toHaveClass(/active/);
   const googlePlaceLink = page.locator(".map-place-list").getByRole("link", { name: "打开 Google 地点 1：First stop" });
   await expect(googlePlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(googlePlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);

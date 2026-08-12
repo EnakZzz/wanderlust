@@ -3032,6 +3032,9 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   font-size: 12px;
   text-align: center;
 }
+.place-card-meta .place-card-coordinate-empty {
+  grid-column: 1 / -1;
+}
 .place-card-editor {
   display: grid;
   align-content: start;

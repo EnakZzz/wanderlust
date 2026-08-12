@@ -44,7 +44,7 @@ export function GoogleTripMap({
   const points = useMemo(
     () =>
       places
-        .filter((place) => Number.isFinite(place.latitude) && Number.isFinite(place.longitude))
+        .filter((place) => Number.isFinite(place.latitude) && Number.isFinite(place.longitude) && !(place.latitude === 0 && place.longitude === 0))
         .slice(0, 18)
         .map((place): MapPoint => ({
           id: place.id,
@@ -201,7 +201,6 @@ function InteractiveMapContent({
           position={point.position}
           title={`${pointIndex + 1}. ${point.name}`}
           onClick={() => {
-            onSelectPlace(point.id);
             window.open(point.googleMapsUrl, "_blank", "noopener,noreferrer");
           }}
           zIndex={focusedPlaceId === point.id ? 20 : pointIndex + 1}

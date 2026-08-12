@@ -644,7 +644,7 @@ function readLocalDraft(): TripDraft {
 
 function buildStaticMapPreviewUrl(places: Place[]): string | undefined {
   const markers = places
-    .filter((place) => Number.isFinite(place.latitude) && Number.isFinite(place.longitude))
+    .filter(hasUsablePlaceCoordinates)
     .slice(0, 18);
   if (!markers.length) return undefined;
   const params = new URLSearchParams({ width: "900", height: "560" });
@@ -682,6 +682,14 @@ function googlePlaceDisplayUrl(place: Place): string {
     label: place.name,
     googlePlaceId: place.googlePlaceId
   });
+}
+
+function hasUsablePlaceCoordinates(place: Pick<Place, "latitude" | "longitude">): boolean {
+  return Number.isFinite(place.latitude) && Number.isFinite(place.longitude) && !(place.latitude === 0 && place.longitude === 0);
+}
+
+function canOpenGooglePlace(place: Place): boolean {
+  return hasUsablePlaceCoordinates(place);
 }
 
 function formatDisplayDayDate(date?: string): string {
@@ -1231,7 +1239,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   }, [draft.packingItems]);
   const shareUrl = shareInfo ? buildShareUrl(shareInfo.token) : null;
   const shareButtonTitle = !user ? "登录后可分享只读路书" : shareUrl ? "复制只读分享链接" : "分享只读路书";
-  const mapPlaces = useMemo(() => sortPlacesByVisitOrder(draft.places, draft.days), [draft.days, draft.places]);
+  const mapPlaces = useMemo(() => sortPlacesByVisitOrder(draft.places, draft.days).filter(hasUsablePlaceCoordinates), [draft.days, draft.places]);
   const mapPreviewUrl = useMemo(() => buildStaticMapPreviewUrl(mapPlaces), [mapPlaces]);
   const destinationTheme = useMemo(() => getDestinationTheme(draft.destination), [draft.destination]);
   const aiPatchPreviewTrip = useMemo(() => {
@@ -2830,6 +2838,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   <label>
                     <span>Google Maps 链接</span>
                     <Textarea
+                      aria-label="Google Maps 链接"
                       value={googleImportText}
                       placeholder="每行粘贴一个 Google Maps 地点链接"
                       onChange={(event) => setGoogleImportText(event.target.value)}
@@ -2872,8 +2881,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         <small>{place.address?.trim() || "地址待补"}</small>
                       </div>
                       <div className="place-card-meta">
-                        <span>{Number.isFinite(place.latitude) ? place.latitude.toFixed(4) : "--"}</span>
-                        <span>{Number.isFinite(place.longitude) ? place.longitude.toFixed(4) : "--"}</span>
+                        {hasUsablePlaceCoordinates(place) ? (
+                          <>
+                            <span>{place.latitude.toFixed(4)}</span>
+                            <span>{place.longitude.toFixed(4)}</span>
+                          </>
+                        ) : (
+                          <span className="place-card-coordinate-empty">坐标待补</span>
+                        )}
                       </div>
                     </aside>
                     <div className="place-card-editor">
@@ -2930,12 +2945,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                           <Plus size={16} />
                           <span>加入当天</span>
                         </Button>
-                        <Button asChild variant="secondary">
-                          <a aria-label={`打开 Google 地点 ${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer">
-                            <ExternalLink size={16} />
-                            <span>显示地点</span>
-                          </a>
-                        </Button>
+                        {canOpenGooglePlace(place) ? (
+                          <Button asChild variant="secondary">
+                            <a aria-label={`打开 Google 地点 ${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer">
+                              <ExternalLink size={16} />
+                              <span>显示地点</span>
+                            </a>
+                          </Button>
+                        ) : null}
                       </div>
                     </div>
                   </article>
@@ -2957,18 +2974,17 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 <div className="map-place-list">
                   {mapPlaces.map((place, placeIndex) => (
                     <div key={place.id} className={`map-place-item${focusedMapPlaceId === place.id ? " active" : ""}`}>
-                      <a
+                      <button
                         className="map-place-focus"
-                        aria-label={`打开 Google 地点 ${placeIndex + 1}：${place.name}`}
-                        href={googlePlaceDisplayUrl(place)}
-                        target="_blank"
-                        rel="noreferrer"
+                        aria-label={`在地图中显示 ${placeIndex + 1}：${place.name}`}
+                        type="button"
+                        onClick={() => setFocusedMapPlaceId(place.id)}
                       >
                         <span className="map-place-index">{placeIndex + 1}</span>
                         <strong>{place.name}</strong>
                         <span>{placeCategoryLabels[place.category]} · {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}</span>
-                      </a>
-                      <a className="map-place-google" aria-label={`打开 Google 地点 ${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer" title="打开 Google 地点">
+                      </button>
+                      <a className="map-place-google" aria-label={`打开 Google 地点 ${placeIndex + 1}：${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer" title="打开 Google 地点">
                         <ExternalLink size={16} />
                       </a>
                     </div>
