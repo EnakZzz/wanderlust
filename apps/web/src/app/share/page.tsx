@@ -190,6 +190,8 @@ export default function SharePage() {
   const hiddenShareablePlaceCount = Math.max(0, shareablePlaces.length - visibleShareablePlaces.length);
   const bookings = trip.bookings ?? [];
   const usableBookings = bookings.filter(hasUsableBookingDetails);
+  const visibleBookings = usableBookings.slice(0, 6);
+  const hiddenBookingCount = Math.max(0, usableBookings.length - visibleBookings.length);
   const packingItems = trip.packingItems ?? [];
   const usablePackingItems = packingItems.filter(hasUsablePackingItem);
   const placeSummaryLabel = shareablePlaces.length > 0 ? `${shareablePlaces.length} 个地点` : "待整理";
@@ -313,13 +315,14 @@ export default function SharePage() {
               <p className="eyebrow">预订</p>
               <h2>{bookingSummaryLabel}</h2>
               <div className="share-booking-list">
-                {usableBookings.slice(0, 6).map((booking) => (
+                {visibleBookings.map((booking) => (
                   <div key={booking.id}>
                     <Ticket size={15} />
                     <span>{booking.title}</span>
                     <small>{formatBookingTimeOrStatus(booking)}</small>
                   </div>
                 ))}
+                {hiddenBookingCount > 0 ? <span>另有 {hiddenBookingCount} 项预订未显示。</span> : null}
                 {usableBookings.length === 0 ? <span>暂未整理预订。</span> : null}
               </div>
             </section>

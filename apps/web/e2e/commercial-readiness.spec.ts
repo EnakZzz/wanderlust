@@ -519,6 +519,56 @@ async function mockPublicShareWithManyPlacesRuntime(page: Page) {
   );
 }
 
+async function mockPublicShareWithManyBookingsRuntime(page: Page) {
+  const tripId = "trip_public_many_bookings";
+  const bookings = Array.from({ length: 8 }, (_, index) => ({
+    id: `booking_many_${index + 1}`,
+    tripId,
+    type: "ticket",
+    title: `预订项目 ${index + 1}`,
+    status: "confirmed",
+    confirmationCode: `CNF-${index + 1}`,
+    attachmentIds: [],
+    segments: []
+  }));
+
+  await page.route("**/api/share/public_many_bookings", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        share: {
+          id: "share_many_bookings",
+          tripId,
+          token: "public_many_bookings",
+          visibility: "public",
+          allowCopy: true,
+          revokedAt: null,
+          expiresAt: null
+        },
+        trip: {
+          id: tripId,
+          ownerId: "google:test-user",
+          title: "首尔公开路书",
+          destination: "Seoul, Korea",
+          startDate: "2026-12-10",
+          endDate: "2026-12-14",
+          timezone: "Asia/Seoul",
+          status: "published",
+          places: [],
+          bookings,
+          attachments: [],
+          packingItems: [],
+          weather: [],
+          budgetMembers: [],
+          budgetItems: [],
+          days: []
+        }
+      })
+    })
+  );
+}
+
 async function mockPublicShareWithDraftCoordinatesRuntime(page: Page) {
   const tripId = "trip_public_draft_coordinates";
   await page.route("**/api/share/public_draft_coordinates", (route) =>
@@ -2319,6 +2369,19 @@ test("public share routebook explains truncated place lists", async ({ page }) =
   await expect(placeSideCard.getByText("清迈地点 8")).toBeVisible();
   await expect(placeSideCard.getByText("清迈地点 9")).toHaveCount(0);
   await expect(placeSideCard.getByText("另有 2 个地点未显示。")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("public share routebook explains truncated booking lists", async ({ page }) => {
+  await mockPublicShareWithManyBookingsRuntime(page);
+  await page.goto("/share?token=public_many_bookings", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "首尔公开路书" })).toBeVisible();
+  const bookingSideCard = page.locator(".share-side-card").filter({ hasText: "预订" });
+  await expect(bookingSideCard.getByRole("heading", { name: "8 项预订" })).toBeVisible();
+  await expect(bookingSideCard.getByText("预订项目 6")).toBeVisible();
+  await expect(bookingSideCard.getByText("预订项目 7")).toHaveCount(0);
+  await expect(bookingSideCard.getByText("另有 2 项预订未显示。")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
