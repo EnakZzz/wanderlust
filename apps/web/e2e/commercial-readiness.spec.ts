@@ -1032,6 +1032,38 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expectNoHorizontalOverflow(page);
 });
 
+test("place editor renders compact location cards", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "地点" }).click();
+  await page.getByRole("button", { name: "添加地点" }).click();
+  const row = page.locator(".place-row").last();
+  await row.getByLabel("地点名称").fill("浅草寺");
+  await row.getByLabel("地点纬度").fill("35.7148");
+  await row.getByLabel("地点经度").fill("139.7967");
+  await row.getByLabel("地点地址").fill("东京台东区浅草");
+  await row.getByLabel("地点标签").fill("寺庙, 散步");
+  await row.getByLabel("地点备注").fill("安排在上午，人流更少。");
+
+  await expect(row.locator(".place-card-preview")).toBeVisible();
+  await expect(row.locator(".place-card-pin")).toContainText("1");
+  await expect(row.locator(".place-card-summary strong")).toHaveText("浅草寺");
+  const googlePlaceLink = row.getByRole("link", { name: "在 Google Maps 显示 浅草寺" });
+  await expect(googlePlaceLink).toHaveAttribute("href", /maps\/search\/\?api=1/);
+  await expect(googlePlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
+  await expectVisibleTapTargetsAtLeast44(page, ".place-row button, .place-row a");
+  await expectNoHorizontalOverflow(page);
+
+  const desktopHeight = await row.evaluate((element) => element.getBoundingClientRect().height);
+  expect(desktopHeight).toBeLessThan(360);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(row.locator(".place-card-preview")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  const mobileHeight = await row.evaluate((element) => element.getBoundingClientRect().height);
+  expect(mobileHeight).toBeLessThan(720);
+});
+
 test("file upload entry points expose stable labels", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

@@ -2814,70 +2814,91 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </FileUploadButton>
                   </div>
                 </div>
-                {draft.places.map((place) => (
+                {draft.places.map((place, placeIndex) => (
                   <article
                     key={place.id}
-                    className={`module-row place-row${focusedPlaceRowId === place.id ? " focused" : ""}`}
+                    className={`module-row place-row place-card${focusedPlaceRowId === place.id ? " focused" : ""}`}
                     data-place-row-id={place.id}
                     draggable
                     onDragStart={(event) => handleDragStart(event, { kind: "place", placeId: place.id })}
                     tabIndex={-1}
                   >
-                    <label>
-                      <span>地点</span>
-                      <Input aria-label="地点名称" value={place.name} onChange={(event) => updatePlace(place.id, { name: event.target.value })} />
-                    </label>
-                    <label>
-                      <span>分类</span>
-                      <Select value={place.category} onValueChange={(value) => updatePlace(place.id, { category: value as Place["category"] })}>
-                        <SelectTrigger aria-label="地点分类">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {placeCategories.map((category) => <SelectItem key={category} value={category}>{placeCategoryLabels[category]}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </label>
-                    <label>
-                      <span>纬度</span>
-                      <Input aria-label="地点纬度" type="number" step="0.0001" value={place.latitude} onChange={(event) => updatePlace(place.id, { latitude: Number(event.target.value) })} />
-                    </label>
-                    <label>
-                      <span>经度</span>
-                      <Input aria-label="地点经度" type="number" step="0.0001" value={place.longitude} onChange={(event) => updatePlace(place.id, { longitude: Number(event.target.value) })} />
-                    </label>
-                    <label>
-                      <span>地址</span>
-                      <Input aria-label="地点地址" value={place.address ?? ""} onChange={(event) => updatePlace(place.id, { address: event.target.value })} />
-                    </label>
-                    <label>
-                      <span>标签</span>
-                      <Input aria-label="地点标签" value={(place.tags ?? []).join(", ")} onChange={(event) => updatePlace(place.id, { tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
-                    </label>
-                    <Textarea aria-label="地点备注" value={place.notes ?? ""} onChange={(event) => updatePlace(place.id, { notes: event.target.value })} />
-                    <div className="row-actions">
-                      <IconButton
-                        className="row-ai-button"
-                        type="button"
-                        label={`AI 优化地点 ${place.name}`}
-                        tooltip={user ? "用 AI 修改这个地点，先生成预览" : "打开预览，登录后可生成修改"}
-                        onClick={() => openEntityAiAssistant(
-                          { moduleId: "places", entityType: "place", entityId: place.id, label: `地点 · ${place.name}` },
-                          `帮我优化地点 ${place.name}，可以补充更清晰的地址、标签、备注或收藏状态`
-                        )}
-                      >
-                        <Sparkles size={16} />
-                      </IconButton>
-                      <Button variant="secondary" type="button" onClick={() => addItem(place)}>
-                        <Plus size={16} />
-                        <span>加入当天</span>
-                      </Button>
-                      <Button asChild variant="secondary">
-                        <a aria-label={`在 Google Maps 显示 ${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer">
-                          <MapPin size={16} />
-                          <span>显示地点</span>
-                        </a>
-                      </Button>
+                    <aside className="place-card-preview">
+                      <div className="place-card-pin" aria-hidden="true">
+                        <MapPin size={28} />
+                        <span>{placeIndex + 1}</span>
+                      </div>
+                      <div className="place-card-summary">
+                        <span>{placeCategoryLabels[place.category]}</span>
+                        <strong>{place.name || "未命名地点"}</strong>
+                        <small>{place.address?.trim() || "地址待补"}</small>
+                      </div>
+                      <div className="place-card-meta">
+                        <span>{Number.isFinite(place.latitude) ? place.latitude.toFixed(4) : "--"}</span>
+                        <span>{Number.isFinite(place.longitude) ? place.longitude.toFixed(4) : "--"}</span>
+                      </div>
+                    </aside>
+                    <div className="place-card-editor">
+                      <div className="place-card-fields primary">
+                        <label>
+                          <span>地点</span>
+                          <Input aria-label="地点名称" value={place.name} onChange={(event) => updatePlace(place.id, { name: event.target.value })} />
+                        </label>
+                        <label>
+                          <span>分类</span>
+                          <Select value={place.category} onValueChange={(value) => updatePlace(place.id, { category: value as Place["category"] })}>
+                            <SelectTrigger aria-label="地点分类">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {placeCategories.map((category) => <SelectItem key={category} value={category}>{placeCategoryLabels[category]}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </label>
+                      </div>
+                      <div className="place-card-fields compact">
+                        <label>
+                          <span>纬度</span>
+                          <Input aria-label="地点纬度" type="number" step="0.0001" value={place.latitude} onChange={(event) => updatePlace(place.id, { latitude: Number(event.target.value) })} />
+                        </label>
+                        <label>
+                          <span>经度</span>
+                          <Input aria-label="地点经度" type="number" step="0.0001" value={place.longitude} onChange={(event) => updatePlace(place.id, { longitude: Number(event.target.value) })} />
+                        </label>
+                        <label>
+                          <span>地址</span>
+                          <Input aria-label="地点地址" value={place.address ?? ""} onChange={(event) => updatePlace(place.id, { address: event.target.value })} />
+                        </label>
+                        <label>
+                          <span>标签</span>
+                          <Input aria-label="地点标签" value={(place.tags ?? []).join(", ")} onChange={(event) => updatePlace(place.id, { tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
+                        </label>
+                      </div>
+                      <Textarea aria-label="地点备注" value={place.notes ?? ""} onChange={(event) => updatePlace(place.id, { notes: event.target.value })} />
+                      <div className="row-actions">
+                        <IconButton
+                          className="row-ai-button"
+                          type="button"
+                          label={`AI 优化地点 ${place.name}`}
+                          tooltip={user ? "用 AI 修改这个地点，先生成预览" : "打开预览，登录后可生成修改"}
+                          onClick={() => openEntityAiAssistant(
+                            { moduleId: "places", entityType: "place", entityId: place.id, label: `地点 · ${place.name}` },
+                            `帮我优化地点 ${place.name}，可以补充更清晰的地址、标签、备注或收藏状态`
+                          )}
+                        >
+                          <Sparkles size={16} />
+                        </IconButton>
+                        <Button variant="secondary" type="button" onClick={() => addItem(place)}>
+                          <Plus size={16} />
+                          <span>加入当天</span>
+                        </Button>
+                        <Button asChild variant="secondary">
+                          <a aria-label={`在 Google Maps 显示 ${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer">
+                            <MapPin size={16} />
+                            <span>显示地点</span>
+                          </a>
+                        </Button>
+                      </div>
                     </div>
                   </article>
                 ))}

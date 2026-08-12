@@ -2746,16 +2746,115 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .timeline-item[draggable="true"]:active {
   cursor: grabbing;
 }
-.place-row {
-  grid-template-columns: minmax(180px, 1.2fr) minmax(140px, 0.8fr) repeat(2, minmax(120px, 0.58fr));
+.place-card {
+  grid-template-columns: minmax(180px, 0.36fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
 }
-.place-row textarea, .place-row .row-actions {
-  grid-column: 1 / -1;
+.place-card-preview {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  min-height: 238px;
+  padding: 18px;
+  color: #fffaf0;
+  background:
+    linear-gradient(135deg, rgba(43, 73, 84, 0.92), rgba(132, 91, 66, 0.88)),
+    radial-gradient(circle at 20% 18%, rgba(255,255,255,0.28), transparent 34%);
 }
-.place-row .row-ai-button {
+.place-card-pin {
+  width: 52px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  position: relative;
+  color: #fffdf8;
+}
+.place-card-pin svg {
+  width: 52px;
+  height: 52px;
+  filter: drop-shadow(0 12px 18px rgba(27, 35, 39, 0.26));
+  stroke-width: 1.7;
+}
+.place-card-pin span {
+  position: absolute;
+  top: 15px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #2f4954;
+}
+.place-card-summary {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: end;
+  gap: 7px;
+}
+.place-card-summary span {
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid rgba(255, 250, 240, 0.34);
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: rgba(255, 250, 240, 0.88);
+  font-size: 12px;
+}
+.place-card-summary strong {
+  font-family: "Noto Serif SC", Georgia, serif;
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+.place-card-summary small {
+  color: rgba(255, 250, 240, 0.75);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.place-card-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.place-card-meta span {
+  min-width: 0;
+  border-radius: 12px;
+  padding: 8px 9px;
+  background: rgba(255, 250, 240, 0.15);
+  color: rgba(255, 250, 240, 0.88);
+  font-size: 12px;
+  text-align: center;
+}
+.place-card-editor {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,253,248,0.95));
+}
+.place-card-fields {
+  display: grid;
+  gap: 12px;
+}
+.place-card-fields.primary {
+  grid-template-columns: minmax(180px, 1fr) minmax(132px, 0.42fr);
+}
+.place-card-fields.compact {
+  grid-template-columns: repeat(2, minmax(106px, 0.42fr)) minmax(180px, 1fr) minmax(150px, 0.72fr);
+}
+.place-card textarea {
+  min-height: 74px;
+}
+.place-card .row-ai-button {
   align-self: center;
 }
-.place-row.focused {
+.place-card.focused {
   border-color: rgba(71,104,120,0.46);
   box-shadow: 0 14px 34px rgba(71,104,120,0.14);
   outline: none;
@@ -4972,6 +5071,35 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     flex-direction: column;
   }
   .place-row, .map-editor, .booking-row-editor, .booking-import-panel, .file-row-editor, .budget-members, .budget-row-editor, .check-row, .packing-row, .search-row, .ai-workbench { grid-template-columns: 1fr; }
+  .place-card-preview {
+    min-height: 122px;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 8px 14px;
+    padding: 16px;
+  }
+  .place-card-summary {
+    justify-content: center;
+  }
+  .place-card-summary strong {
+    font-size: 22px;
+  }
+  .place-card-meta {
+    grid-column: 1 / -1;
+  }
+  .place-card-fields.primary {
+    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.54fr);
+  }
+  .place-card-fields.compact {
+    grid-template-columns: 1fr 1fr;
+  }
+  .place-card-fields.compact label:nth-child(n + 3) {
+    grid-column: 1 / -1;
+  }
+  .place-card textarea {
+    min-height: 66px;
+  }
   .booking-ticket-rail {
     min-height: 88px;
     grid-template-columns: 34px minmax(0, 1fr) auto;
