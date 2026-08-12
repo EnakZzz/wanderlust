@@ -2140,6 +2140,9 @@ test("public share routebook renders safely with legacy itinerary types", async 
   await expect(placeDisplayLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(placeDisplayLink).toHaveAttribute("href", /query_place_id=ChIJ8T1GpMGOGGARw6cSJo9lN4g/);
   await expect(placeDisplayLink).not.toHaveAttribute("href", /\/maps\/dir\//);
+  const bookingSideCard = page.locator(".share-side-card").filter({ hasText: "Hotel Niwa Tokyo" });
+  await expect(bookingSideCard).toContainText("已确认");
+  await expect(page.getByText("confirmed", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "打开 Google 地点 浅草寺" })).toHaveCount(2);
   await expectVisibleTapTargetsAtLeast44(page, ".share-hero-actions a, .share-hero-actions span");
   const routePosition = await page.locator(".share-route").boundingBox();

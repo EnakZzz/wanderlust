@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, CheckSquare, Clock, Compass, ExternalLink, MapPin, Plane, Plus, Search, Share2, Ticket } from "lucide-react";
-import { buildGoogleMapsPlaceUrl, productBrand, sortItineraryItems, type ItineraryItem, type Place, type Trip } from "@wanderlust/domain";
+import { buildGoogleMapsPlaceUrl, productBrand, sortItineraryItems, type Booking, type ItineraryItem, type Place } from "@wanderlust/domain";
 import { MotionDiv, MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
 import { formatTripDateRange } from "@/lib/date-format";
@@ -19,6 +19,13 @@ const typeLabels: Record<ItineraryItem["type"], string> = {
   note: "备注",
   booking: "预订"
 };
+
+const bookingStatusLabels = {
+  todo: "待确认",
+  confirmed: "已确认",
+  checked_in: "已值机",
+  cancelled: "已取消"
+} as const;
 
 function getTypeLabel(type: ItineraryItem["type"] | string): string {
   return typeLabels[type as ItineraryItem["type"]] ?? "活动";
@@ -47,6 +54,12 @@ function formatTimezoneLabel(timezone: string): string {
   const trimmed = timezone.trim();
   if (!trimmed || trimmed === "Etc/UTC" || trimmed === "UTC") return "当地时间";
   return `当地时间：${knownCities[trimmed] ?? trimmed.split("/").pop()?.replace(/_/g, " ") ?? "当地"}`;
+}
+
+function formatBookingTimeOrStatus(booking: Booking): string {
+  if (booking.startsAt && booking.endsAt) return `${booking.startsAt} - ${booking.endsAt}`;
+  if (booking.startsAt || booking.endsAt) return booking.startsAt ?? booking.endsAt ?? "";
+  return bookingStatusLabels[booking.status ?? "todo"] ?? "待确认";
 }
 
 function getPlaceForItem(item: ItineraryItem, places: Place[]): Place | undefined {
@@ -278,7 +291,7 @@ export default function SharePage() {
                   <div key={booking.id}>
                     <Ticket size={15} />
                     <span>{booking.title}</span>
-                    <small>{booking.startsAt ?? booking.status}</small>
+                    <small>{formatBookingTimeOrStatus(booking)}</small>
                   </div>
                 ))}
                 {bookings.length === 0 ? <span>暂未整理预订。</span> : null}
