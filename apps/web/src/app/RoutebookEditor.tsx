@@ -2621,7 +2621,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <label>
                       <span>类型</span>
                       <Select value={booking.type} onValueChange={(value) => updateBooking(booking.id, { type: value as Booking["type"] })}>
-                        <SelectTrigger aria-label={`${booking.title} booking type`}>
+                        <SelectTrigger aria-label="预订类型">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -2631,16 +2631,16 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </label>
                     <label>
                       <span>标题</span>
-                      <Input aria-label={`${booking.title} booking title`} value={booking.title} onChange={(event) => updateBooking(booking.id, { title: event.target.value })} />
+                      <Input aria-label="预订标题" value={booking.title} onChange={(event) => updateBooking(booking.id, { title: event.target.value })} />
                     </label>
                     <label>
                       <span>编号</span>
-                      <Input aria-label={`${booking.title} confirmation code`} value={booking.confirmationCode ?? ""} onChange={(event) => updateBooking(booking.id, { confirmationCode: event.target.value })} />
+                      <Input aria-label="预订确认号" value={booking.confirmationCode ?? ""} onChange={(event) => updateBooking(booking.id, { confirmationCode: event.target.value })} />
                     </label>
                     <label>
                       <span>状态</span>
                       <Select value={booking.status} onValueChange={(value) => updateBooking(booking.id, { status: value as Booking["status"] })}>
-                        <SelectTrigger aria-label={`${booking.title} booking status`}>
+                        <SelectTrigger aria-label="预订状态">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -2650,7 +2650,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         </SelectContent>
                       </Select>
                     </label>
-                    <Textarea aria-label={`${booking.title} notes`} value={booking.notes ?? ""} onChange={(event) => updateBooking(booking.id, { notes: event.target.value })} />
+                    <Textarea aria-label="预订备注" value={booking.notes ?? ""} onChange={(event) => updateBooking(booking.id, { notes: event.target.value })} />
                     {booking.segments?.length ? (
                       <div className="segment-list">
                         {booking.segments.map((segment) => (
