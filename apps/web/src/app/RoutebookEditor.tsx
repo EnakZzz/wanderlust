@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Clock,
   CreditCard,
+  ExternalLink,
   FileText,
   FileUp,
   ImageUp,
@@ -40,6 +41,7 @@ import {
   applyItineraryPatchOperations,
   createPersistedTripId,
   createTripDays,
+  getOfflineReadiness,
   parseTripIdFromEditorPath,
   removeItineraryItem,
   sortItineraryItems,
@@ -1212,6 +1214,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   );
   const routebookNeedsMeta = false;
   const settlements = useMemo(() => calculateBudgetSettlements(draft.budgetMembers, draft.budgetItems), [draft.budgetMembers, draft.budgetItems]);
+  const offlineReadiness = useMemo(() => getOfflineReadiness(draft), [draft]);
   const packingProgress = useMemo(() => {
     const total = draft.packingItems.length;
     const packed = draft.packingItems.filter((item) => item.packed).length;
@@ -2264,6 +2267,30 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
         ) : null}
 
         {!showPlanHome ? (
+          <section className="routebook-readiness-strip" aria-label="出发准备">
+            <div className="routebook-readiness-summary">
+              <span className="eyebrow">出发准备</span>
+              <strong>{offlineReadiness.readyCount}/{offlineReadiness.totalCount}</strong>
+              <small>{offlineReadiness.readyCount === offlineReadiness.totalCount ? "全部就绪，可以安心出发。" : "继续补齐缺失资料，旅行中会更稳。"}</small>
+            </div>
+            <div className="routebook-readiness-items">
+              {offlineReadiness.items.map((item) => (
+                <button
+                  key={item.key}
+                  className={item.ready ? "routebook-readiness-chip ready" : "routebook-readiness-chip"}
+                  type="button"
+                  onClick={() => selectEditorModule(item.key === "weather" ? "itinerary" : item.key, { scrollIntoView: true })}
+                  aria-label={`${item.label}${item.ready ? "已就绪" : "待补充"}`}
+                >
+                  <span>{item.label}</span>
+                  <em>{item.ready ? item.count : "待补"}</em>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {!showPlanHome ? (
           <aside className="rail editor-module-rail" aria-label="行程模块">
             <TooltipProvider delayDuration={120}>
               <ToggleGroup
@@ -2700,12 +2727,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                                 {navigationTarget ? (
                                   <a
                                     className="route-link-button strong"
-                                    aria-label={`在 Google Maps 显示 ${navigationTarget.label}`}
+                                    aria-label={`打开 Google 地点 ${navigationTarget.label}`}
                                     href={buildGoogleMapsPlaceUrl(navigationTarget)}
                                     target="_blank"
                                     rel="noreferrer"
                                   >
-                                    <Navigation size={16} />
+                                    <ExternalLink size={16} />
                                     <span>显示地点</span>
                                   </a>
                                 ) : (
@@ -2899,8 +2926,8 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                           <span>加入当天</span>
                         </Button>
                         <Button asChild variant="secondary">
-                          <a aria-label={`在 Google Maps 显示 ${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer">
-                            <MapPin size={16} />
+                          <a aria-label={`打开 Google 地点 ${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer">
+                            <ExternalLink size={16} />
                             <span>显示地点</span>
                           </a>
                         </Button>
@@ -2935,8 +2962,8 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         <strong>{place.name}</strong>
                         <span>{placeCategoryLabels[place.category]} · {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}</span>
                       </button>
-                      <a className="map-place-jump" aria-label={`在 Google Maps 显示 ${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer">
-                        <Navigation size={16} />
+                      <a className="map-place-google" aria-label={`打开 Google 地点 ${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer" title="打开 Google 地点">
+                        <ExternalLink size={16} />
                       </a>
                     </div>
                   ))}

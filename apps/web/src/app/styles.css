@@ -3202,21 +3202,21 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   background: rgba(71,104,120,0.07);
   outline: none;
 }
-.map-place-jump {
+.map-place-google {
   min-width: 44px;
   min-height: 56px;
   border: 0;
   border-radius: 8px 18px 18px 8px;
   display: grid;
   place-items: center;
-  background: transparent;
+  background: rgba(66, 133, 244, 0.08);
   color: var(--blue);
   cursor: pointer;
   text-decoration: none;
 }
-.map-place-jump:hover,
-.map-place-jump:focus-visible {
-  background: rgba(71,104,120,0.08);
+.map-place-google:hover,
+.map-place-google:focus-visible {
+  background: rgba(66, 133, 244, 0.14);
   outline: none;
 }
 .map-place-index {
@@ -4928,6 +4928,81 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .workspace:not(.workspace-loading) .trip-library-actions {
   align-self: center;
 }
+.routebook-readiness-strip {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.72fr) minmax(0, 1.28fr);
+  gap: 12px;
+  align-items: stretch;
+  margin: 0 0 14px;
+}
+.routebook-readiness-summary,
+.routebook-readiness-items {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(245, 242, 237, 0.78)),
+    var(--surface);
+}
+.routebook-readiness-summary {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 14px 16px;
+}
+.routebook-readiness-summary .eyebrow {
+  margin: 0;
+}
+.routebook-readiness-summary strong {
+  font-family: "Noto Serif SC", Georgia, serif;
+  font-size: clamp(32px, 4vw, 48px);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 0.95;
+}
+.routebook-readiness-summary small {
+  color: var(--muted);
+  font-weight: 850;
+  line-height: 1.35;
+}
+.routebook-readiness-items {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+}
+.routebook-readiness-chip {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 0 10px;
+  background: var(--paper-deep);
+  color: var(--muted);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+.routebook-readiness-chip.ready {
+  border-color: rgba(111, 123, 102, 0.16);
+  background: #eef2ed;
+  color: var(--moss);
+}
+.routebook-readiness-chip em {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: rgba(255, 255, 255, 0.78);
+  font-size: 11px;
+  font-style: normal;
+}
+.routebook-readiness-chip:hover,
+.routebook-readiness-chip:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
 .workspace:not(.workspace-loading) .module-heading {
   margin: 0 0 14px;
   padding: 0 0 12px;
@@ -5292,6 +5367,18 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     width: 100%;
     min-width: 0;
     min-height: 52px;
+  }
+  .routebook-readiness-strip {
+    grid-template-columns: 1fr;
+  }
+  .routebook-readiness-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .routebook-readiness-chip span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .trip-library, .trip-card-grid, .plan-home-list { grid-template-columns: 1fr; }
   .trip-library-actions { justify-content: flex-start; }

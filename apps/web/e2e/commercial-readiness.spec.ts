@@ -1018,6 +1018,31 @@ test("journey date control keeps usable tap target", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("routebook readiness strip shows missing departure work and routes to modules", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  const readiness = page.getByRole("region", { name: "出发准备" });
+  await expect(readiness).toBeVisible();
+  await expect(readiness).toContainText("1/6");
+  await expect(page.getByRole("button", { name: "行程已就绪" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "地点待补充" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "预订待补充" })).toBeVisible();
+  await expectVisibleTapTargetsAtLeast44(page, ".routebook-readiness-chip");
+
+  await page.getByRole("button", { name: "地点待补充" }).click();
+  await expect(page.getByRole("radio", { name: "地点" })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("button", { name: "添加地点" }).click();
+  await expect(readiness).toContainText("2/6");
+  await expect(page.getByRole("button", { name: "地点已就绪" })).toBeVisible();
+
+  await page.getByRole("button", { name: "预订待补充" }).click();
+  await expect(page.getByRole("radio", { name: "预订" })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("button", { name: "添加预订" }).click();
+  await expect(readiness).toContainText("3/6");
+  await expect(page.getByRole("button", { name: "预订已就绪" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("core routebook modules allow adding places and bookings", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
@@ -1033,7 +1058,7 @@ test("core routebook modules allow adding places and bookings", async ({ page })
   await expect(page.getByLabel("地点地址")).toBeVisible();
   await expect(page.getByLabel("地点标签")).toBeVisible();
   await expect(page.getByLabel("地点备注")).toBeVisible();
-  const placeDisplayLink = page.getByRole("link", { name: "在 Google Maps 显示 新的收藏地点" });
+  const placeDisplayLink = page.getByRole("link", { name: "打开 Google 地点 新的收藏地点" });
   await expect(placeDisplayLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(placeDisplayLink).not.toHaveAttribute("href", /\/maps\/dir\//);
   await page.getByLabel("Google Maps 链接").fill("https://www.google.com/maps/@35.6812,139.7671,17z");
@@ -1071,7 +1096,7 @@ test("place editor renders compact location cards", async ({ page }) => {
   await expect(row.locator(".place-card-preview")).toBeVisible();
   await expect(row.locator(".place-card-pin")).toContainText("1");
   await expect(row.locator(".place-card-summary strong")).toHaveText("浅草寺");
-  const googlePlaceLink = row.getByRole("link", { name: "在 Google Maps 显示 浅草寺" });
+  const googlePlaceLink = row.getByRole("link", { name: "打开 Google 地点 浅草寺" });
   await expect(googlePlaceLink).toHaveAttribute("href", /maps\/search\/\?api=1/);
   await expect(googlePlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
   await expectVisibleTapTargetsAtLeast44(page, ".place-row button, .place-row a");
@@ -1323,7 +1348,7 @@ test("map place list follows itinerary visit order", async ({ page }) => {
 
   await expect(page.locator(".map-place-item strong").nth(0)).toHaveText("First stop");
   await expect(page.locator(".map-place-item strong").nth(1)).toHaveText("Second stop");
-  const googlePlaceLink = page.getByRole("link", { name: "在 Google Maps 显示 First stop" });
+  const googlePlaceLink = page.getByRole("link", { name: "打开 Google 地点 First stop" });
   await expect(googlePlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(googlePlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
 });
