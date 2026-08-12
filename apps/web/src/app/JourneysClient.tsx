@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { CalendarDays, MapPin, Plus, Route, Ticket } from "lucide-react";
+import { CalendarDays, Compass, MapPin, Plus, Route, Sparkles, Ticket } from "lucide-react";
 import { buildTripEditorPath } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
 import { MotionSection } from "@/components/MotionShell";
@@ -81,12 +81,21 @@ export function JourneysClient() {
 
         {state.loaded && state.trips.length === 0 ? (
           <div className="journey-empty">
-            <Route size={24} />
-            <strong>还没有路书。</strong>
-            <span>先创建框架，或让 AI 生成第一版。</span>
-            <Button asChild variant="secondary" size="sm">
-              <a href="/#editor"><Plus size={17} /><span>开始规划</span></a>
-            </Button>
+            <div className="journey-empty-mark" aria-hidden="true">
+              <Compass size={28} />
+            </div>
+            <div className="journey-empty-copy">
+              <strong>还没有路书。</strong>
+              <span>先创建一个可编辑框架，再把航班、酒店和地点逐步收进来。</span>
+            </div>
+            <div className="journey-empty-actions">
+              <Button asChild size="sm">
+                <a href="/#editor"><Plus size={17} /><span>开始规划</span></a>
+              </Button>
+              <Button asChild variant="secondary" size="sm">
+                <a href="/search"><Sparkles size={17} /><span>找灵感</span></a>
+              </Button>
+            </div>
           </div>
         ) : null}
 

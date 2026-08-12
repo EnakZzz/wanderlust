@@ -1298,6 +1298,38 @@ test("signed-in journey cards keep destination imagery full bleed", async ({ pag
   await expectNoHorizontalOverflow(page);
 });
 
+test("empty journey library presents compact commercial actions", async ({ page }) => {
+  await page.goto("/journeys", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator(".journey-empty")).toBeVisible();
+  await expect(page.locator(".journey-empty-mark")).toBeVisible();
+  await expect(page.locator(".journey-empty-actions").getByRole("link", { name: "开始规划" })).toBeVisible();
+  await expect(page.locator(".journey-empty-actions").getByRole("link", { name: "找灵感" })).toBeVisible();
+
+  const layout = await page.locator(".journey-empty").evaluate((element) => {
+    const card = element.getBoundingClientRect();
+    const actions = Array.from(element.querySelectorAll<HTMLElement>(".journey-empty-actions a")).map((action) => {
+      const rect = action.getBoundingClientRect();
+      return {
+        width: Math.round(rect.width),
+        height: Math.round(rect.height)
+      };
+    });
+    return {
+      cardWidth: Math.round(card.width),
+      actions
+    };
+  });
+
+  expect(layout.actions.length).toBe(2);
+  for (const action of layout.actions) {
+    expect(action.width, JSON.stringify(layout)).toBeGreaterThanOrEqual(44);
+    expect(action.height, JSON.stringify(layout)).toBeGreaterThanOrEqual(44);
+    expect(action.width, JSON.stringify(layout)).toBeLessThanOrEqual(Math.max(180, layout.cardWidth * 0.48));
+  }
+  await expectNoHorizontalOverflow(page);
+});
+
 test("switching routebooks with unsaved edits uses an in-app confirmation", async ({ page }) => {
   await mockSignedInTripListRuntime(page);
   const nativeDialogs: string[] = [];

@@ -822,7 +822,7 @@ label span {
 }
 
 .dashboard-empty-card svg,
-.journey-empty svg {
+.journey-empty-mark svg {
   color: var(--blue);
 }
 
@@ -906,6 +906,64 @@ label span {
   align-content: end;
   gap: 10px;
   padding: 20px;
+}
+
+.journey-empty {
+  position: relative;
+  overflow: hidden;
+  align-content: center;
+  justify-items: center;
+  gap: 16px;
+  padding: clamp(24px, 4vw, 42px);
+  text-align: center;
+  background:
+    linear-gradient(135deg, rgba(247, 241, 230, 0.96), rgba(255, 255, 255, 0.96) 48%, rgba(233, 241, 236, 0.92)),
+    var(--surface);
+}
+
+.journey-empty::before {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border: 1px dashed rgba(87, 109, 121, 0.22);
+  border-radius: 18px;
+  pointer-events: none;
+}
+
+.journey-empty-mark {
+  position: relative;
+  z-index: 1;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(87, 109, 121, 0.18);
+  border-radius: 20px;
+  background: #fffaf1;
+  color: var(--blue);
+  box-shadow: 0 16px 34px rgba(45, 45, 45, 0.08);
+}
+
+.journey-empty-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 6px;
+  max-width: 460px;
+}
+
+.journey-empty-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.journey-empty-actions a {
+  width: auto;
+  min-width: 118px;
 }
 
 .journey-card div:not(.journey-card-image):not(.journey-card-image-overlay) {
