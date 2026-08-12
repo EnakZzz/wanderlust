@@ -23,8 +23,26 @@ function getTypeLabel(type: ItineraryItem["type"] | string): string {
   return typeLabels[type as ItineraryItem["type"]] ?? "活动";
 }
 
+function parseDateParts(value: string): { year: number; month: number; day: number } | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  return {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3])
+  };
+}
+
+function formatDateParts(parts: { year: number; month: number; day: number }, includeYear: boolean): string {
+  return includeYear ? `${parts.year}年${parts.month}月${parts.day}日` : `${parts.month}月${parts.day}日`;
+}
+
 function formatDateRange(trip: Trip): string {
-  return `${trip.startDate} - ${trip.endDate}`;
+  const start = parseDateParts(trip.startDate);
+  const end = parseDateParts(trip.endDate);
+  if (!start || !end) return `${trip.startDate} - ${trip.endDate}`;
+  if (trip.startDate === trip.endDate) return formatDateParts(start, true);
+  return `${formatDateParts(start, true)} - ${formatDateParts(end, start.year !== end.year)}`;
 }
 
 function formatItemTime(item: ItineraryItem): string {
