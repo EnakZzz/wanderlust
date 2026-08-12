@@ -1695,6 +1695,17 @@ test("empty journey library presents compact commercial actions", async ({ page 
   await expectNoHorizontalOverflow(page);
 });
 
+test("empty passport explains the first footprint above the mobile fold", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/passport", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator(".passport-empty")).toBeInViewport();
+  await expect(page.locator(".passport-empty")).toContainText("还没有记录国家/地区。");
+  await expect(page.locator(".passport-empty").getByRole("link", { name: "添加目的地" })).toBeVisible();
+  await expectVisibleTapTargetsAtLeast44(page, ".passport-empty a");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("switching routebooks with unsaved edits uses an in-app confirmation", async ({ page }) => {
   await mockSignedInTripListRuntime(page);
   const nativeDialogs: string[] = [];

@@ -86,6 +86,17 @@ export function PassportClient() {
   const nextMilestone = exploredPercent < 5 ? 5 : Math.ceil((exploredPercent + 0.1) / 5) * 5;
   const milestoneRemaining = Math.max(0, Math.ceil((nextMilestone / 100) * worldCountryCount) - countries.length);
   const recentFootprint = footprint.slice(0, 6);
+  const emptyFootprint =
+    state.loaded && recentFootprint.length === 0 ? (
+      <div className="passport-empty">
+        <MapPinned size={22} />
+        <strong>还没有记录国家/地区。</strong>
+        <span>创建一本目的地类似“京都，日本”的路书后，旅行足迹会自动开始归类。</span>
+        <Button asChild variant="secondary" size="sm">
+          <a href="/search"><Plus size={17} /><span>添加目的地</span></a>
+        </Button>
+      </div>
+    ) : null;
 
   return (
     <MotionSection className="passport-shell">
@@ -116,6 +127,8 @@ export function PassportClient() {
           <strong>{state.loaded ? `${exploredPercent.toFixed(1)}%` : "--"}</strong>
           <small>{state.trips.length} 本路书记录了 {countries.length} 个国家/地区</small>
         </section>
+
+        {emptyFootprint ? <section className="passport-empty-inline">{emptyFootprint}</section> : null}
 
         <section className="passport-stat-card">
           <Flag size={20} />
@@ -168,13 +181,6 @@ export function PassportClient() {
                 </div>
               </a>
             ))}
-            {state.loaded && recentFootprint.length === 0 ? (
-              <div className="passport-empty">
-                <MapPinned size={22} />
-                <strong>还没有记录国家/地区。</strong>
-                <span>创建一本目的地类似“京都，日本”的路书后，旅行足迹会自动开始归类。</span>
-              </div>
-            ) : null}
           </div>
         </section>
 

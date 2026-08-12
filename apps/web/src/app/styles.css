@@ -1334,6 +1334,14 @@ label span {
   padding: 20px;
 }
 
+.passport-empty-inline {
+  grid-column: 1 / -1;
+}
+
+.passport-empty-inline .passport-empty {
+  min-height: 150px;
+}
+
 .passport-score-card {
   background:
     radial-gradient(circle at 78% 20%, rgba(111, 123, 102, 0.22), transparent 30%),
