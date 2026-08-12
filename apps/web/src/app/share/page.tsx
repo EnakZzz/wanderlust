@@ -141,6 +141,7 @@ export default function SharePage() {
   const places = trip.places ?? [];
   const bookings = trip.bookings ?? [];
   const packingItems = trip.packingItems ?? [];
+  const packingSummaryLabel = packingItems.length > 0 ? `${packingItems.filter((item) => item.packed).length}/${packingItems.length}` : "待整理";
 
   return (
     <main className="share-page">
@@ -264,7 +265,7 @@ export default function SharePage() {
 
             <section className="share-side-card">
               <p className="eyebrow">出发清单</p>
-              <h2>{packingItems.filter((item) => item.packed).length}/{packingItems.length}</h2>
+              <h2>{packingSummaryLabel}</h2>
               <div className="share-packing-list">
                 {packingItems.slice(0, 8).map((item) => (
                   <div key={item.id}>

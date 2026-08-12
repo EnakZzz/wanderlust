@@ -365,6 +365,54 @@ async function mockPublicShareRuntime(page: Page) {
   );
 }
 
+async function mockPublicShareWithEmptyDepartureRuntime(page: Page) {
+  const tripId = "trip_public_empty_departure";
+  await page.route("**/api/share/public_empty_departure", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        share: {
+          id: "share_empty_departure",
+          tripId,
+          token: "public_empty_departure",
+          visibility: "public",
+          allowCopy: true,
+          revokedAt: null,
+          expiresAt: null
+        },
+        trip: {
+          id: tripId,
+          ownerId: "google:test-user",
+          title: "里斯本公开路书",
+          destination: "Lisbon, Portugal",
+          startDate: "2026-10-01",
+          endDate: "2026-10-03",
+          timezone: "Europe/Lisbon",
+          status: "published",
+          places: [],
+          bookings: [],
+          attachments: [],
+          packingItems: [],
+          weather: [],
+          budgetMembers: [],
+          budgetItems: [],
+          days: [
+            {
+              id: "day_lisbon_1",
+              tripId,
+              date: "2026-10-01",
+              title: "抵达里斯本",
+              sortOrder: 0,
+              items: []
+            }
+          ]
+        }
+      })
+    })
+  );
+}
+
 async function expectNoHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => {
     const root = document.documentElement;
@@ -2020,6 +2068,18 @@ test("public share routebook renders safely with legacy itinerary types", async 
   await expectVisibleTapTargetsAtLeast44(page, ".share-nav-link");
   await page.locator(".share-sidebar").scrollIntoViewIfNeeded();
   await expectVisibleTapTargetsAtLeast44(page, ".share-place-list a, .share-booking-list div, .share-packing-list div");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("public share routebook uses customer-facing empty checklist copy", async ({ page }) => {
+  await mockPublicShareWithEmptyDepartureRuntime(page);
+  await page.goto("/share?token=public_empty_departure", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "里斯本公开路书" })).toBeVisible();
+  await expect(page.getByText("出发清单")).toBeVisible();
+  await expect(page.locator(".share-side-card").filter({ hasText: "出发清单" }).getByRole("heading", { name: "待整理" })).toBeVisible();
+  await expect(page.getByText("0/0")).toHaveCount(0);
+  await expect(page.getByText("暂未整理打包清单。")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
