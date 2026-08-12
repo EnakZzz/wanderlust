@@ -1060,6 +1060,10 @@ test("routebook readiness strip shows missing departure work and routes to modul
   await page.getByRole("button", { name: "地点待补充" }).click();
   await expect(page.getByRole("radio", { name: "地点" })).toHaveAttribute("aria-checked", "true");
   await page.getByRole("button", { name: "添加地点" }).click();
+  await expect(readiness).toContainText("1/6");
+  await expect(page.getByRole("button", { name: "地点待补充" })).toBeVisible();
+  await page.getByLabel("地点纬度").fill("35.6812");
+  await page.getByLabel("地点经度").fill("139.7671");
   await expect(readiness).toContainText("2/6");
   await expect(page.getByRole("button", { name: "地点已就绪" })).toBeVisible();
 

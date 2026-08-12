@@ -174,6 +174,23 @@ describe("getOfflineReadiness", () => {
       count: 0
     });
   });
+
+  it("does not mark placeholder places without usable coordinates as ready", () => {
+    const readiness = getOfflineReadiness({
+      days: [],
+      places: [{ id: "place_1", tripId: "trip_1", name: "New place", category: "other", latitude: 0, longitude: 0 }],
+      bookings: [],
+      attachments: [],
+      packingItems: [],
+      weather: []
+    });
+
+    expect(readiness.readyCount).toBe(0);
+    expect(readiness.items.find((item) => item.key === "places")).toMatchObject({
+      ready: false,
+      count: 0
+    });
+  });
 });
 
 describe("createTripDays", () => {

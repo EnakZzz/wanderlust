@@ -781,10 +781,11 @@ export function parseTripIdFromEditorPath(pathname: string): string | null {
 
 export function getOfflineReadiness(trip: Pick<Trip, "days" | "places" | "bookings" | "attachments" | "packingItems" | "weather">): OfflineReadiness {
   const itineraryCount = trip.days.reduce((total, day) => total + (day.items?.length ?? 0), 0);
+  const placeCount = trip.places?.filter(hasUsablePlaceCoordinates).length ?? 0;
   const packedCount = trip.packingItems?.filter((item) => item.packed).length ?? 0;
   const items: OfflineReadinessItem[] = [
     { key: "itinerary", label: "行程", ready: itineraryCount > 0, count: itineraryCount },
-    { key: "places", label: "地点", ready: (trip.places?.length ?? 0) > 0, count: trip.places?.length ?? 0 },
+    { key: "places", label: "地点", ready: placeCount > 0, count: placeCount },
     { key: "bookings", label: "预订", ready: (trip.bookings?.length ?? 0) > 0, count: trip.bookings?.length ?? 0 },
     { key: "files", label: "文件", ready: (trip.attachments?.length ?? 0) > 0, count: trip.attachments?.length ?? 0 },
     { key: "packing", label: "打包", ready: (trip.packingItems?.length ?? 0) > 0 && packedCount === trip.packingItems?.length, count: packedCount },
@@ -796,6 +797,10 @@ export function getOfflineReadiness(trip: Pick<Trip, "days" | "places" | "bookin
     totalCount: items.length,
     items
   };
+}
+
+function hasUsablePlaceCoordinates(place: Pick<Place, "latitude" | "longitude">): boolean {
+  return Number.isFinite(place.latitude) && Number.isFinite(place.longitude) && !(place.latitude === 0 && place.longitude === 0);
 }
 
 export function buildMapsUrl(target: NavigationTarget, provider: MapProvider): string {
