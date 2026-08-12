@@ -70,6 +70,7 @@ export function GlobalAiDialog() {
             </div>
           </DialogHeader>
           <Textarea
+            aria-label="全局 AI 修改需求"
             className="global-ai-dialog-input"
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}

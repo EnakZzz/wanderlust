@@ -463,11 +463,11 @@ test("global AI prompt routes into the routebook preview assistant", async ({ pa
 
   await page.getByRole("button", { name: "打开 AI 修改窗口" }).click();
   await expect(page.getByRole("dialog", { name: "AI 修改路书" })).toBeVisible();
-  await page.getByPlaceholder("例如：把第三天节奏放松一点，晚餐换成更有当地特色的选择。").fill("把第二天节奏放松一点");
+  await page.getByLabel("全局 AI 修改需求").fill("把第二天节奏放松一点");
   await page.getByRole("button", { name: "进入预览" }).click();
 
   await expect(page.locator(".ai-assistant-panel")).toBeVisible();
-  await expect(page.locator(".ai-assistant-panel textarea")).toHaveValue("把第二天节奏放松一点");
+  await expect(page.getByLabel("AI 修改需求")).toHaveValue("把第二天节奏放松一点");
   await expect(page.getByRole("button", { name: /生成修改预览/ })).toBeDisabled();
   await expect(page.getByText("登录后可使用 AI 修改行程。")).toBeVisible();
 });
@@ -480,7 +480,7 @@ test("anonymous contextual AI entry opens the preview assistant with login guida
   await moduleAiButton.click();
 
   await expect(page.locator(".ai-assistant-panel")).toBeVisible();
-  await expect(page.locator(".ai-assistant-panel textarea")).toHaveValue(/帮我优化/);
+  await expect(page.getByLabel("AI 修改需求")).toHaveValue(/帮我优化/);
   await expect(page.getByText("登录后可使用 AI 修改行程。")).toBeVisible();
   await expect(page.getByRole("button", { name: /生成修改预览/ })).toBeDisabled();
   await expectNoHorizontalOverflow(page);
@@ -500,7 +500,7 @@ test("global command has a visible launcher and can hand prompts to AI", async (
   await page.getByText("AI 修改当前路书").click();
 
   await expect(page.getByRole("dialog", { name: "AI 修改路书" })).toBeVisible();
-  await expect(page.getByPlaceholder("例如：把第三天节奏放松一点，晚餐换成更有当地特色的选择。")).toHaveValue("把第一天节奏放慢");
+  await expect(page.getByLabel("全局 AI 修改需求")).toHaveValue("把第一天节奏放慢");
   await expectNoHorizontalOverflow(page);
 });
 

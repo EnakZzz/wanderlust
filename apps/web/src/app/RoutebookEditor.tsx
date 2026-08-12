@@ -3038,6 +3038,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
             </div>
             <div className="ai-assistant-prompt">
               <Textarea
+                aria-label="AI 修改需求"
                 placeholder="例如：把今天上午排松一点，午餐换成附近更有当地特色的餐厅。"
                 {...aiPatchForm.register("prompt")}
               />
