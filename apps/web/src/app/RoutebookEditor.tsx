@@ -2303,7 +2303,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       <div className="journey-day-tools">
                         <label className="journey-date-control">
                           <CalendarDays size={16} />
-                          <Input type="date" value={selectedDay.date} onChange={(event) => updateSelectedDay({ date: event.target.value })} />
+                          <Input aria-label="编辑当前日期" type="date" value={selectedDay.date} onChange={(event) => updateSelectedDay({ date: event.target.value })} />
                         </label>
                         <Button className="compact" size="sm" type="button" onClick={() => addItem()}>
                           <Plus size={18} />

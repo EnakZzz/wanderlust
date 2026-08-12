@@ -836,6 +836,7 @@ test("journey date control keeps usable tap target", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
   await page.locator(".journey-date-control").scrollIntoViewIfNeeded();
+  await expect(page.getByLabel("编辑当前日期")).toBeVisible();
   await expectVisibleTapTargetsAtLeast44(page, ".journey-date-control input");
   await expectNoHorizontalOverflow(page);
 });
