@@ -609,16 +609,26 @@ function readLocalDraft(): TripDraft {
   }
 }
 
-function calculateMapPosition(place: Place, places: Place[]): { left: string; top: string } {
+function calculateMapPosition(place: Place, places: Place[], index = 0): { left: string; top: string; "--pin-index": number } {
   const lats = places.map((item) => item.latitude);
   const lngs = places.map((item) => item.longitude);
   const minLat = Math.min(...lats);
   const maxLat = Math.max(...lats);
   const minLng = Math.min(...lngs);
   const maxLng = Math.max(...lngs);
-  const left = maxLng === minLng ? 50 : 14 + ((place.longitude - minLng) / (maxLng - minLng)) * 72;
-  const top = maxLat === minLat ? 50 : 14 + ((maxLat - place.latitude) / (maxLat - minLat)) * 72;
-  return { left: `${left}%`, top: `${top}%` };
+  const projectedLeft = maxLng === minLng ? 50 : 14 + ((place.longitude - minLng) / (maxLng - minLng)) * 72;
+  const projectedTop = maxLat === minLat ? 50 : 14 + ((maxLat - place.latitude) / (maxLat - minLat)) * 72;
+  const nearbyBefore = places.slice(0, index).filter((candidate) => {
+    const candidateLeft = maxLng === minLng ? 50 : 14 + ((candidate.longitude - minLng) / (maxLng - minLng)) * 72;
+    const candidateTop = maxLat === minLat ? 50 : 14 + ((maxLat - candidate.latitude) / (maxLat - minLat)) * 72;
+    return Math.hypot(projectedLeft - candidateLeft, projectedTop - candidateTop) < 7.2;
+  }).length;
+  const ring = Math.floor(nearbyBefore / 6) + 1;
+  const angle = nearbyBefore * 1.18;
+  const spread = nearbyBefore ? Math.min(15.5, 9.5 + ring * 2.8) : 0;
+  const left = Math.min(92, Math.max(8, projectedLeft + Math.cos(angle) * spread));
+  const top = Math.min(92, Math.max(8, projectedTop + Math.sin(angle) * spread));
+  return { left: `${left}%`, top: `${top}%`, "--pin-index": index + 1 };
 }
 
 function buildStaticMapPreviewUrl(places: Place[]): string | undefined {
@@ -2786,11 +2796,20 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       onError={() => setMapPreviewFailed(true)}
                     />
                   ) : null}
-                  {draft.places.map((place) => {
-                    const position = calculateMapPosition(place, draft.places);
+                  {draft.places.map((place, placeIndex) => {
+                    const position = calculateMapPosition(place, draft.places, placeIndex);
                     return (
-                      <button key={place.id} className="map-pin" style={position} type="button" onClick={() => selectEditorModule("places", { scrollIntoView: true })} title={place.name}>
+                      <button
+                        key={place.id}
+                        aria-label={`地图地点 ${placeIndex + 1}：${place.name}`}
+                        className="map-pin"
+                        style={position}
+                        type="button"
+                        onClick={() => selectEditorModule("places", { scrollIntoView: true })}
+                        title={place.name}
+                      >
                         <MapPin size={16} />
+                        <span>{placeIndex + 1}</span>
                       </button>
                     );
                   })}

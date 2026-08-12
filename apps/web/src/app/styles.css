@@ -2726,26 +2726,48 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     radial-gradient(circle at 20% 18%, rgba(255,248,238,0.22), transparent 34%);
 }
 .map-pin {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border: 0;
+  border-radius: 16px 16px 16px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  z-index: 2;
+  color: #fff8ee;
+  background: linear-gradient(145deg, #8a3f36, #b96d42);
+  box-shadow:
+    0 0 0 3px rgba(255,248,238,0.92),
+    0 0 0 10px rgba(138,63,54,0.18),
+    0 16px 34px rgba(45,35,26,0.34);
+  cursor: pointer;
+  transform: translate(-50%, -78%) rotate(-45deg);
+}
+.map-pin svg {
+  width: 15px;
+  height: 15px;
+  transform: rotate(45deg) translate(-6px, -2px);
+}
+.map-pin span {
+  min-width: 18px;
+  height: 18px;
   border-radius: 999px;
   display: grid;
   place-items: center;
   position: absolute;
-  z-index: 2;
-  color: #fff8ee;
-  background: var(--accent);
-  box-shadow:
-    0 0 0 3px rgba(255,248,238,0.92),
-    0 0 0 10px rgba(148,111,71,0.18),
-    0 14px 32px rgba(45,35,26,0.28);
-  cursor: pointer;
-  transform: translate(-50%, -50%);
+  right: 5px;
+  top: 5px;
+  background: rgba(255,248,238,0.96);
+  color: #6f332c;
+  font-size: 11px;
+  font-weight: 1000;
+  line-height: 1;
+  transform: rotate(45deg);
 }
 .map-pin:hover,
 .map-pin:focus-visible {
-  background: #8a3f36;
+  background: linear-gradient(145deg, #6f332c, #c57446);
   box-shadow:
     0 0 0 3px rgba(255,248,238,0.98),
     0 0 0 12px rgba(138,63,54,0.2),

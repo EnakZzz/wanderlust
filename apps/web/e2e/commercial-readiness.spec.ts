@@ -1086,6 +1086,36 @@ test("map pins keep mobile tap targets and return to places", async ({ page }) =
   await expectNoHorizontalOverflow(page);
 });
 
+test("nearby map pins stay visually distinct", async ({ page }) => {
+  await mockGoogleStaticMapPreview(page);
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "地点" }).click();
+  for (const place of [
+    { name: "Cairo hotel", latitude: "30.05", longitude: "31.23" },
+    { name: "Cairo museum", latitude: "30.0502", longitude: "31.2302" },
+    { name: "Sharm El Sheikh", latitude: "27.91", longitude: "34.33" }
+  ]) {
+    await page.getByRole("button", { name: "添加地点" }).click();
+    const row = page.locator(".place-row").last();
+    await row.getByLabel("地点名称").fill(place.name);
+    await row.getByLabel("地点纬度").fill(place.latitude);
+    await row.getByLabel("地点经度").fill(place.longitude);
+  }
+  await page.getByRole("radio", { name: "地图" }).click();
+
+  await expect(page.getByRole("button", { name: "地图地点 1：Cairo hotel" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "地图地点 2：Cairo museum" })).toBeVisible();
+  const pinBoxes = await page.locator(".map-pin").evaluateAll((pins) =>
+    pins.map((pin) => {
+      const rect = pin.getBoundingClientRect();
+      return { left: rect.left, top: rect.top };
+    })
+  );
+  expect(Math.hypot(pinBoxes[0]!.left - pinBoxes[1]!.left, pinBoxes[0]!.top - pinBoxes[1]!.top)).toBeGreaterThan(24);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("budget member toggles keep mobile tap targets", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
