@@ -1300,6 +1300,40 @@ test("packing checklist controls keep usable tap targets", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("packing checklist renders compact departure cards", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "打包" }).click();
+  await page.locator(".packing-template-bar button").nth(0).click();
+  await page.locator(".packing-template-bar button").nth(2).click();
+  await page.getByLabel("打包物品名称").nth(0).fill("护照原件");
+  await page.getByLabel("打包物品名称").nth(1).fill("相机充电器");
+
+  await expect(page.locator(".packing-progress-card")).toBeVisible();
+  await expect(page.locator(".packing-progress-card strong")).toHaveText("0/2 已打包");
+  await page.getByRole("checkbox", { name: "打包完成" }).first().click();
+  await expect(page.locator(".packing-progress-card strong")).toHaveText("1/2 已打包");
+  await expect(page.locator(".packing-row").first()).toHaveClass(/packed/);
+
+  const layout = await page.evaluate(() => {
+    const firstRow = document.querySelector<HTMLElement>(".packing-row")?.getBoundingClientRect();
+    const templateBar = document.querySelector<HTMLElement>(".packing-template-bar")?.getBoundingClientRect();
+    return {
+      viewport: document.documentElement.clientWidth,
+      firstRowHeight: Math.round(firstRow?.height ?? 0),
+      templateBarHeight: Math.round(templateBar?.height ?? 0)
+    };
+  });
+
+  if (layout.viewport <= 500) {
+    expect(layout.firstRowHeight, JSON.stringify(layout)).toBeLessThanOrEqual(170);
+    expect(layout.templateBarHeight, JSON.stringify(layout)).toBeLessThanOrEqual(58);
+  } else {
+    expect(layout.firstRowHeight, JSON.stringify(layout)).toBeLessThanOrEqual(110);
+  }
+  await expectNoHorizontalOverflow(page);
+});
+
 test("global AI launcher does not cover mobile editor forms", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

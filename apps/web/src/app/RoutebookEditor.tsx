@@ -1212,6 +1212,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   );
   const routebookNeedsMeta = false;
   const settlements = useMemo(() => calculateBudgetSettlements(draft.budgetMembers, draft.budgetItems), [draft.budgetMembers, draft.budgetItems]);
+  const packingProgress = useMemo(() => {
+    const total = draft.packingItems.length;
+    const packed = draft.packingItems.filter((item) => item.packed).length;
+    return {
+      total,
+      packed,
+      percent: total > 0 ? Math.round((packed / total) * 100) : 0
+    };
+  }, [draft.packingItems]);
   const shareUrl = shareInfo ? buildShareUrl(shareInfo.token) : null;
   const shareButtonTitle = !user ? "登录后可分享只读路书" : shareUrl ? "复制只读分享链接" : "分享只读路书";
   const mapPlaces = useMemo(() => sortPlacesByVisitOrder(draft.places, draft.days), [draft.days, draft.places]);
@@ -3113,17 +3122,33 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
             {activeModule === "packing" ? (
               <div className="module-list">
+                <div className="packing-progress-card">
+                  <div>
+                    <p className="eyebrow">出发检查</p>
+                    <strong>{packingProgress.packed}/{packingProgress.total} 已打包</strong>
+                    <span>{packingProgress.total === 0 ? "添加证件、衣物、电子设备和药品清单。" : packingProgress.percent === 100 ? "全部就绪，可以安心出发。" : "继续确认剩余物品。"}</span>
+                  </div>
+                  <div className="packing-progress-meter" aria-hidden="true">
+                    <span style={{ width: `${packingProgress.percent}%` }} />
+                  </div>
+                </div>
                 <div className="packing-template-bar">
                   {packingCategories.map((category) => (
-                    <Button key={category} variant="secondary" size="sm" type="button" onClick={() => addPackingItem(category)}>
+                    <Button key={category} className="packing-template-chip" variant="secondary" size="sm" type="button" onClick={() => addPackingItem(category)}>
                       <Plus size={15} />
                       <span>{packingCategoryLabels[category ?? "other"]}</span>
                     </Button>
                   ))}
                 </div>
                 {draft.packingItems.map((item) => (
-                  <label key={item.id} className="check-row packing-row">
-                    <Checkbox aria-label="打包完成" checked={item.packed} onCheckedChange={(checked) => updatePacking(item.id, { packed: checked === true })} />
+                  <article key={item.id} className={`check-row packing-row${item.packed ? " packed" : ""}`}>
+                    <div className="packing-check-cell">
+                      <Checkbox aria-label="打包完成" checked={item.packed} onCheckedChange={(checked) => updatePacking(item.id, { packed: checked === true })} />
+                    </div>
+                    <div className="packing-item-main">
+                      <span>{packingCategoryLabels[item.category ?? "other"]}</span>
+                      <Input aria-label="打包物品名称" value={item.title} onChange={(event) => updatePacking(item.id, { title: event.target.value })} />
+                    </div>
                     <Select value={item.category ?? "other"} onValueChange={(value) => updatePacking(item.id, { category: value as PackingItem["category"] })}>
                       <SelectTrigger aria-label="打包分类">
                         <SelectValue />
@@ -3132,8 +3157,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         {packingCategories.map((category) => <SelectItem key={category ?? "other"} value={category ?? "other"}>{packingCategoryLabels[category ?? "other"]}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    <Input aria-label="打包物品名称" value={item.title} onChange={(event) => updatePacking(item.id, { title: event.target.value })} />
-                    <Input aria-label="打包数量" type="number" min={1} value={item.quantity} onChange={(event) => updatePacking(item.id, { quantity: Number(event.target.value) || 1 })} />
+                    <label className="packing-quantity-field">
+                      <span>数量</span>
+                      <Input aria-label="打包数量" type="number" min={1} value={item.quantity} onChange={(event) => updatePacking(item.id, { quantity: Number(event.target.value) || 1 })} />
+                    </label>
                     <IconButton
                       className="row-ai-button"
                       type="button"
@@ -3146,7 +3173,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     >
                       <Sparkles size={16} />
                     </IconButton>
-                  </label>
+                  </article>
                 ))}
               </div>
             ) : null}
