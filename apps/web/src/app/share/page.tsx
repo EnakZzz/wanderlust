@@ -141,6 +141,8 @@ export default function SharePage() {
   const places = trip.places ?? [];
   const bookings = trip.bookings ?? [];
   const packingItems = trip.packingItems ?? [];
+  const placeSummaryLabel = places.length > 0 ? `${places.length} 个地点` : "待整理";
+  const bookingSummaryLabel = bookings.length > 0 ? `${bookings.length} 项确认` : "待整理";
   const packingSummaryLabel = packingItems.length > 0 ? `${packingItems.filter((item) => item.packed).length}/${packingItems.length}` : "待整理";
 
   return (
@@ -230,7 +232,7 @@ export default function SharePage() {
           <MotionDiv className="share-sidebar" transition={{ delay: 0.2, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}>
             <section className="share-side-card">
               <p className="eyebrow">地点清单</p>
-              <h2>{places.length} 个地点</h2>
+              <h2>{placeSummaryLabel}</h2>
               <div className="share-place-list">
                 {places.slice(0, 8).map((place) => (
                   <a
@@ -250,7 +252,7 @@ export default function SharePage() {
 
             <section className="share-side-card">
               <p className="eyebrow">预订</p>
-              <h2>{bookings.length} 项确认</h2>
+              <h2>{bookingSummaryLabel}</h2>
               <div className="share-booking-list">
                 {bookings.slice(0, 6).map((booking) => (
                   <div key={booking.id}>
