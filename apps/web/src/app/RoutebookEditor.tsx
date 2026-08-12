@@ -1003,6 +1003,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   function selectEditorModule(module: EditorModule, options: { scrollIntoView?: boolean } = {}) {
     shouldScrollModuleOnChangeRef.current = Boolean(options.scrollIntoView);
     setActiveModule(module);
+    syncEditorModuleRoute(module);
   }
 
   function toggleItineraryItemEditor(itemId: string, isExpanded: boolean) {
@@ -1157,21 +1158,38 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash || "#editor"}`);
   }
 
-  function clearModuleDeepLink() {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    if (!params.has("module")) return;
-    params.delete("module");
-    const nextSearch = params.toString();
-    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash || "#editor"}`);
+  function getRequestedEditorModule(): EditorModule | null {
+    if (typeof window === "undefined") return null;
+    const moduleParam = new URLSearchParams(window.location.search).get("module")?.trim();
+    return modules.find((module) => module.id === moduleParam)?.id ?? null;
   }
 
-  function updateTripRoute(tripId: string, mode: "push" | "replace" = "push") {
+  function buildTripEditorRoute(tripId: string, module: EditorModule) {
+    const params = new URLSearchParams(window.location.search);
+    params.delete("tripId");
+    if (module === "itinerary") {
+      params.delete("module");
+    } else {
+      params.set("module", module);
+    }
+    const nextSearch = params.toString();
+    return `${buildTripEditorPath(tripId)}${nextSearch ? `?${nextSearch}` : ""}#editor`;
+  }
+
+  function updateTripRoute(tripId: string, mode: "push" | "replace" = "push", module: EditorModule = getRequestedEditorModule() ?? activeModule) {
     if (typeof window === "undefined") return;
-    const nextPath = buildTripEditorPath(tripId);
+    const nextPath = buildTripEditorRoute(tripId, module);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     if (currentPath === nextPath) return;
     window.history[mode === "replace" ? "replaceState" : "pushState"]({}, "", nextPath);
+  }
+
+  function syncEditorModuleRoute(module: EditorModule, mode: "push" | "replace" = "replace") {
+    if (typeof window === "undefined") return;
+    const routeTripId = getTripIdFromLocation();
+    const targetTripId = routeTripId ?? (isAccountTripPersisted ? draft.id : null);
+    if (!targetTripId) return;
+    updateTripRoute(targetTripId, mode, module);
   }
 
   function clearDeletedTripRoute(tripId: string) {
@@ -1285,8 +1303,8 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     setInitialModuleConsumed(true);
     if (!requestedModule) return;
     setActiveModule(requestedModule);
+    syncEditorModuleRoute(requestedModule);
     window.setTimeout(() => document.getElementById("editor")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
-    clearModuleDeepLink();
   }, [initialModuleConsumed, isAuthChecked]);
 
   if (!isAuthChecked) {

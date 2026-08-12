@@ -1202,5 +1202,36 @@ test("id based journey URL fallback preserves requested editor module", async ({
   await expect(page.getByRole("radio", { name: "地点" })).toHaveAttribute("aria-checked", "true");
   await expect(page.locator(".module-heading p")).toHaveText("地点");
   await expect(page.getByRole("button", { name: "添加地点" })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => new URL(window.location.href).searchParams.get("module"))).toBe("places");
+  await expect(page).toHaveURL(/\/journeys\/trip_11111111-1111-4111-8111-111111111111\?module=places#editor$/);
+  await expectNoHorizontalOverflow(page);
+});
+
+test("legacy edit URL preserves the requested module when canonicalized", async ({ page }) => {
+  await mockSignedInRuntime(page);
+
+  await page.goto("/journeys/edit?tripId=trip_11111111-1111-4111-8111-111111111111&module=map", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("radio", { name: "地图" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.locator(".module-heading p")).toHaveText("地图");
+  await expect.poll(() => page.evaluate(() => new URL(window.location.href).searchParams.get("module"))).toBe("map");
+  await expect(page).toHaveURL(/\/journeys\/trip_11111111-1111-4111-8111-111111111111\?module=map#editor$/);
+  await expectNoHorizontalOverflow(page);
+});
+
+test("editor module navigation keeps shareable module URLs", async ({ page }) => {
+  await mockSignedInRuntime(page);
+
+  await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111", { waitUntil: "domcontentloaded" });
+  await page.getByRole("radio", { name: "地图" }).click();
+
+  await expect(page.getByRole("radio", { name: "地图" })).toHaveAttribute("aria-checked", "true");
+  await expect.poll(() => page.evaluate(() => new URL(window.location.href).searchParams.get("module"))).toBe("map");
+  await expect(page).toHaveURL(/\/journeys\/trip_11111111-1111-4111-8111-111111111111\?module=map#editor$/);
+
+  await page.getByRole("radio", { name: "行程" }).click();
+  await expect(page.getByRole("radio", { name: "行程" })).toHaveAttribute("aria-checked", "true");
+  await expect.poll(() => page.evaluate(() => new URL(window.location.href).searchParams.get("module"))).toBeNull();
+  await expect(page).toHaveURL(/\/journeys\/trip_11111111-1111-4111-8111-111111111111#editor$/);
   await expectNoHorizontalOverflow(page);
 });
