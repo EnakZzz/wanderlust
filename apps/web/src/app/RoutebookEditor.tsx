@@ -2843,17 +2843,17 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 </div>
                 {draft.packingItems.map((item) => (
                   <label key={item.id} className="check-row packing-row">
-                    <Checkbox aria-label={`${item.title} packed`} checked={item.packed} onCheckedChange={(checked) => updatePacking(item.id, { packed: checked === true })} />
+                    <Checkbox aria-label="打包完成" checked={item.packed} onCheckedChange={(checked) => updatePacking(item.id, { packed: checked === true })} />
                     <Select value={item.category ?? "other"} onValueChange={(value) => updatePacking(item.id, { category: value as PackingItem["category"] })}>
-                      <SelectTrigger aria-label={`${item.title} packing category`}>
+                      <SelectTrigger aria-label="打包分类">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {packingCategories.map((category) => <SelectItem key={category ?? "other"} value={category ?? "other"}>{packingCategoryLabels[category ?? "other"]}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    <Input aria-label={`${item.title} packing title`} value={item.title} onChange={(event) => updatePacking(item.id, { title: event.target.value })} />
-                    <Input aria-label={`${item.title} quantity`} type="number" min={1} value={item.quantity} onChange={(event) => updatePacking(item.id, { quantity: Number(event.target.value) || 1 })} />
+                    <Input aria-label="打包物品名称" value={item.title} onChange={(event) => updatePacking(item.id, { title: event.target.value })} />
+                    <Input aria-label="打包数量" type="number" min={1} value={item.quantity} onChange={(event) => updatePacking(item.id, { quantity: Number(event.target.value) || 1 })} />
                     <IconButton
                       className="row-ai-button"
                       type="button"

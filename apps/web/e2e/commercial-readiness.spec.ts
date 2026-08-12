@@ -989,11 +989,11 @@ test("packing checklist controls keep usable tap targets", async ({ page }) => {
   await page.getByRole("radio", { name: "打包" }).click();
   await page.locator(".packing-template-bar button").first().click();
 
-  const checkbox = page.getByRole("checkbox", { name: "新的打包物品 packed" });
+  const checkbox = page.getByRole("checkbox", { name: "打包完成" });
   await expect(checkbox).toHaveAttribute("aria-checked", "false");
-  await expect(page.getByRole("combobox", { name: "新的打包物品 packing category" })).toBeVisible();
-  await expect(page.getByLabel("新的打包物品 packing title")).toBeVisible();
-  await expect(page.getByLabel("新的打包物品 quantity")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "打包分类" })).toBeVisible();
+  await expect(page.getByLabel("打包物品名称")).toBeVisible();
+  await expect(page.getByLabel("打包数量")).toBeVisible();
   await expectVisibleTapTargetsAtLeast44(page, ".packing-row [role='checkbox'], .packing-row .row-ai-button");
 
   await checkbox.click();
