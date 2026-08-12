@@ -1976,8 +1976,12 @@ test("invalid public share links show a customer-facing error", async ({ page })
 
   await page.goto("/share?token=missing_share", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByRole("heading", { name: "分享不可用" })).toBeVisible();
-  await expect(page.getByText("无法打开分享路书")).toBeVisible();
+  await expect(page.getByText("分享不可用")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "无法打开分享路书" })).toBeVisible();
+  await expect(page.getByText("链接可能已过期、被取消分享，或复制时缺少了一部分。")).toBeVisible();
+  await expect(page.getByRole("link", { name: "回到路书首页" })).toHaveAttribute("href", "/");
+  await expect(page.getByRole("link", { name: "新建路书" })).toHaveAttribute("href", "/journeys/edit");
+  await expect(page.getByRole("link", { name: "搜索目的地" })).toHaveAttribute("href", "/search");
   await expect(page.getByText(/Unexpected token|DOCTYPE|JSON/i)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "打开 AI 修改窗口" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "打开全局命令窗口" })).toHaveCount(0);

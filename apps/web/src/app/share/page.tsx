@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, CheckSquare, Clock, ExternalLink, MapPin, Plane, Share2, Ticket } from "lucide-react";
+import { CalendarDays, CheckSquare, Clock, Compass, ExternalLink, MapPin, Plane, Plus, Search, Share2, Ticket } from "lucide-react";
 import { buildGoogleMapsPlaceUrl, productBrand, sortItineraryItems, type ItineraryItem, type Place, type Trip } from "@wanderlust/domain";
 import { MotionDiv, MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
@@ -115,11 +115,22 @@ export default function SharePage() {
   if (status !== "ready" || !payload) {
     return (
       <main className="share-page">
-        <MotionSection className="share-state">
-          <Share2 size={30} />
-          <h1>{status === "loading" ? "打开路书" : "分享不可用"}</h1>
-          <p>{message}</p>
-          <a href="/">{productBrand.name}</a>
+        <MotionSection className={`share-state${status === "loading" ? " loading" : ""}`}>
+          <div className="share-state-panel">
+            <div className="share-state-icon" aria-hidden="true">
+              <Share2 size={30} />
+            </div>
+            <p className="eyebrow">{status === "loading" ? "正在读取分享" : "分享不可用"}</p>
+            <h1>{status === "loading" ? "打开路书" : "无法打开分享路书"}</h1>
+            <p>{status === "loading" ? message : "链接可能已过期、被取消分享，或复制时缺少了一部分。"}</p>
+            {status === "loading" ? null : (
+              <div className="share-state-actions">
+                <a href="/"><Compass size={16} />回到路书首页</a>
+                <a href="/journeys/edit"><Plus size={16} />新建路书</a>
+                <a href="/search"><Search size={16} />搜索目的地</a>
+              </div>
+            )}
+          </div>
         </MotionSection>
       </main>
     );
