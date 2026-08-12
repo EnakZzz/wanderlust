@@ -2695,6 +2695,11 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .place-row .row-ai-button {
   align-self: center;
 }
+.place-row.focused {
+  border-color: rgba(71,104,120,0.46);
+  box-shadow: 0 14px 34px rgba(71,104,120,0.14);
+  outline: none;
+}
 .row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2825,7 +2830,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   border-color: rgba(71,104,120,0.46);
   box-shadow: 0 14px 34px rgba(71,104,120,0.14);
 }
-.map-place-item button {
+.map-place-focus {
   min-width: 0;
   min-height: 56px;
   border: 0;
@@ -2839,21 +2844,24 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   text-align: left;
   cursor: pointer;
 }
-.map-place-item button:hover,
-.map-place-item button:focus-visible {
+.map-place-focus:hover,
+.map-place-focus:focus-visible {
   background: rgba(71,104,120,0.07);
   outline: none;
 }
-.map-place-item a {
+.map-place-jump {
   min-width: 44px;
   min-height: 56px;
+  border: 0;
   border-radius: 8px 18px 18px 8px;
   display: grid;
   place-items: center;
+  background: transparent;
   color: var(--blue);
+  cursor: pointer;
 }
-.map-place-item a:hover,
-.map-place-item a:focus-visible {
+.map-place-jump:hover,
+.map-place-jump:focus-visible {
   background: rgba(71,104,120,0.08);
   outline: none;
 }
@@ -2874,7 +2882,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .map-place-list strong, .map-place-list span {
   min-width: 0;
 }
-.map-place-item button > span:not(.map-place-index) {
+.map-place-focus > span:not(.map-place-index) {
   color: var(--muted);
   font-weight: 700;
 }

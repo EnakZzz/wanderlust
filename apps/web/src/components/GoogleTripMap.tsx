@@ -15,7 +15,7 @@ type GoogleTripMapProps = {
   staticPreviewUrl?: string;
   staticPreviewFailed: boolean;
   onStaticPreviewFailed: () => void;
-  onSelectPlaces: () => void;
+  onSelectPlace: (placeId: string) => void;
   focusedPlaceId?: string | null;
 };
 
@@ -33,7 +33,7 @@ export function GoogleTripMap({
   staticPreviewUrl,
   staticPreviewFailed,
   onStaticPreviewFailed,
-  onSelectPlaces,
+  onSelectPlace,
   focusedPlaceId
 }: GoogleTripMapProps) {
   const [config, setConfig] = useState<MapsClientConfig | null>(null);
@@ -93,7 +93,7 @@ export function GoogleTripMap({
             zoomControl
             reuseMaps
           >
-            <InteractiveMapContent focusedPlaceId={focusedPlaceId} onSelectPlaces={onSelectPlaces} points={points} />
+            <InteractiveMapContent focusedPlaceId={focusedPlaceId} onSelectPlace={onSelectPlace} points={points} />
           </Map>
         </APIProvider>
       ) : (
@@ -102,7 +102,7 @@ export function GoogleTripMap({
           points={points}
           staticPreviewFailed={staticPreviewFailed}
           staticPreviewUrl={staticPreviewUrl}
-          onSelectPlaces={onSelectPlaces}
+          onSelectPlace={onSelectPlace}
           onStaticPreviewFailed={onStaticPreviewFailed}
           focusedPlaceId={focusedPlaceId}
         />
@@ -118,7 +118,7 @@ function StaticMapFallback({
   points,
   staticPreviewFailed,
   staticPreviewUrl,
-  onSelectPlaces,
+  onSelectPlace,
   onStaticPreviewFailed,
   focusedPlaceId
 }: {
@@ -126,7 +126,7 @@ function StaticMapFallback({
   points: MapPoint[];
   staticPreviewFailed: boolean;
   staticPreviewUrl?: string;
-  onSelectPlaces: () => void;
+  onSelectPlace: (placeId: string) => void;
   onStaticPreviewFailed: () => void;
   focusedPlaceId?: string | null;
 }) {
@@ -149,7 +149,7 @@ function StaticMapFallback({
             className={`map-pin${focusedPlaceId === point.id ? " active" : ""}`}
             style={position}
             type="button"
-            onClick={onSelectPlaces}
+            onClick={() => onSelectPlace(point.id)}
             title={point.name}
           >
             <span>{pointIndex + 1}</span>
@@ -162,11 +162,11 @@ function StaticMapFallback({
 
 function InteractiveMapContent({
   focusedPlaceId,
-  onSelectPlaces,
+  onSelectPlace,
   points
 }: {
   focusedPlaceId?: string | null;
-  onSelectPlaces: () => void;
+  onSelectPlace: (placeId: string) => void;
   points: MapPoint[];
 }) {
   const map = useMap();
@@ -195,7 +195,7 @@ function InteractiveMapContent({
           icon={createPinIcon(pointIndex + 1, focusedPlaceId === point.id)}
           position={point.position}
           title={`${pointIndex + 1}. ${point.name}`}
-          onClick={onSelectPlaces}
+          onClick={() => onSelectPlace(point.id)}
           zIndex={focusedPlaceId === point.id ? 20 : pointIndex + 1}
         />
       ))}

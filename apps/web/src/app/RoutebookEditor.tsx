@@ -622,6 +622,27 @@ function buildStaticMapPreviewUrl(places: Place[]): string | undefined {
   return `/api/maps/static-preview?${params.toString()}`;
 }
 
+function sortPlacesByVisitOrder(places: Place[], days: TripDay[]): Place[] {
+  const placeById = new Map(places.map((place) => [place.id, place]));
+  const orderedPlaceIds: string[] = [];
+  const seenPlaceIds = new Set<string>();
+
+  [...days]
+    .sort((left, right) => left.sortOrder - right.sortOrder)
+    .forEach((day) => {
+      sortItineraryItems(day.items).forEach((item) => {
+        if (!item.placeId || seenPlaceIds.has(item.placeId) || !placeById.has(item.placeId)) return;
+        orderedPlaceIds.push(item.placeId);
+        seenPlaceIds.add(item.placeId);
+      });
+    });
+
+  return [
+    ...orderedPlaceIds.map((placeId) => placeById.get(placeId)!),
+    ...places.filter((place) => !seenPlaceIds.has(place.id))
+  ];
+}
+
 function googleSearchUrl(query: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
@@ -966,6 +987,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [mapPreviewFailed, setMapPreviewFailed] = useState(false);
   const [focusedMapPlaceId, setFocusedMapPlaceId] = useState<string | null>(null);
+  const [focusedPlaceRowId, setFocusedPlaceRowId] = useState<string | null>(null);
   const [placeSearch, setPlaceSearch] = useState("");
   const [googleImportText, setGoogleImportText] = useState("");
   const [routebookDrawerOpen, setRoutebookDrawerOpen] = useState(false);
@@ -1018,6 +1040,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   function toggleItineraryItemEditor(itemId: string, isExpanded: boolean) {
     shouldScrollExpandedItemRef.current = !isExpanded;
     setExpandedItineraryItemId(isExpanded ? null : itemId);
+  }
+
+  function openPlaceFromMap(placeId: string) {
+    setFocusedMapPlaceId(placeId);
+    setFocusedPlaceRowId(placeId);
+    selectEditorModule("places", { scrollIntoView: true });
   }
 
   useEffect(() => {
@@ -1130,7 +1158,8 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const settlements = useMemo(() => calculateBudgetSettlements(draft.budgetMembers, draft.budgetItems), [draft.budgetMembers, draft.budgetItems]);
   const shareUrl = shareInfo ? buildShareUrl(shareInfo.token) : null;
   const shareButtonTitle = !user ? "登录后可分享只读路书" : shareUrl ? "复制只读分享链接" : "分享只读路书";
-  const mapPreviewUrl = useMemo(() => buildStaticMapPreviewUrl(draft.places), [draft.places]);
+  const mapPlaces = useMemo(() => sortPlacesByVisitOrder(draft.places, draft.days), [draft.days, draft.places]);
+  const mapPreviewUrl = useMemo(() => buildStaticMapPreviewUrl(mapPlaces), [mapPlaces]);
   const destinationTheme = useMemo(() => getDestinationTheme(draft.destination), [draft.destination]);
   const aiPatchPreviewTrip = useMemo(() => {
     if (!aiPatchPreview) return null;
@@ -1162,6 +1191,23 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       setFocusedMapPlaceId(null);
     }
   }, [draft.places, focusedMapPlaceId]);
+
+  useEffect(() => {
+    if (focusedPlaceRowId && !draft.places.some((place) => place.id === focusedPlaceRowId)) {
+      setFocusedPlaceRowId(null);
+    }
+  }, [draft.places, focusedPlaceRowId]);
+
+  useEffect(() => {
+    if (activeModule !== "places" || !focusedPlaceRowId) return;
+
+    window.requestAnimationFrame(() => {
+      const selector = `[data-place-row-id="${CSS.escape(focusedPlaceRowId)}"]`;
+      const row = document.querySelector<HTMLElement>(selector);
+      row?.scrollIntoView({ block: "center", inline: "nearest" });
+      row?.focus({ preventScroll: true });
+    });
+  }, [activeModule, focusedPlaceRowId]);
 
   function getRequestedTripId(): string | null {
     const routeTripId = initialTripId?.trim();
@@ -2706,9 +2752,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 {draft.places.map((place) => (
                   <article
                     key={place.id}
-                    className="module-row place-row"
+                    className={`module-row place-row${focusedPlaceRowId === place.id ? " focused" : ""}`}
+                    data-place-row-id={place.id}
                     draggable
                     onDragStart={(event) => handleDragStart(event, { kind: "place", placeId: place.id })}
+                    tabIndex={-1}
                   >
                     <label>
                       <span>地点</span>
@@ -2775,17 +2823,18 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               <div className="map-editor">
                 <GoogleTripMap
                   destination={draft.destination}
-                  places={draft.places}
+                  places={mapPlaces}
                   focusedPlaceId={focusedMapPlaceId}
                   staticPreviewFailed={mapPreviewFailed}
                   staticPreviewUrl={mapPreviewUrl}
-                  onSelectPlaces={() => selectEditorModule("places", { scrollIntoView: true })}
+                  onSelectPlace={openPlaceFromMap}
                   onStaticPreviewFailed={() => setMapPreviewFailed(true)}
                 />
                 <div className="map-place-list">
-                  {draft.places.map((place, placeIndex) => (
+                  {mapPlaces.map((place, placeIndex) => (
                     <div key={place.id} className={`map-place-item${focusedMapPlaceId === place.id ? " active" : ""}`}>
                       <button
+                        className="map-place-focus"
                         type="button"
                         aria-label={`查看列表地点 ${placeIndex + 1}：${place.name}`}
                         onClick={() => setFocusedMapPlaceId(place.id)}
@@ -2794,9 +2843,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         <strong>{place.name}</strong>
                         <span>{placeCategoryLabels[place.category]} · {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}</span>
                       </button>
-                      <a aria-label={`在 Google Maps 打开 ${place.name}`} href={buildMapsUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name }, "google")} target="_blank" rel="noreferrer">
+                      <button className="map-place-jump" type="button" aria-label={`跳转到地点 ${place.name}`} onClick={() => openPlaceFromMap(place.id)}>
                         <Navigation size={16} />
-                      </a>
+                      </button>
                     </div>
                   ))}
                 </div>

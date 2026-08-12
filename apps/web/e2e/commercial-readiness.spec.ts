@@ -1127,6 +1127,33 @@ test("nearby map pins stay visually distinct", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("map place list follows itinerary visit order", async ({ page }) => {
+  await mockGoogleStaticMapPreview(page);
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "地点" }).click();
+  for (const place of [
+    { name: "Second stop", latitude: "30.05", longitude: "31.23" },
+    { name: "First stop", latitude: "30.06", longitude: "31.24" }
+  ]) {
+    await page.getByRole("button", { name: "添加地点" }).click();
+    const row = page.locator(".place-row").last();
+    await row.getByLabel("地点名称").fill(place.name);
+    await row.getByLabel("地点纬度").fill(place.latitude);
+    await row.getByLabel("地点经度").fill(place.longitude);
+  }
+
+  await page.locator(".place-row").nth(1).getByRole("button", { name: /加入当天/ }).click();
+  await page.locator(".place-row").nth(0).getByRole("button", { name: /加入当天/ }).click();
+  await page.getByRole("radio", { name: "地图" }).click();
+
+  await expect(page.locator(".map-place-item strong").nth(0)).toHaveText("First stop");
+  await expect(page.locator(".map-place-item strong").nth(1)).toHaveText("Second stop");
+  await page.getByRole("button", { name: "跳转到地点 First stop" }).click();
+  await expect(page.getByRole("radio", { name: "地点" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.locator(".place-row.focused").getByLabel("地点名称")).toHaveValue("First stop");
+});
+
 test("budget member toggles keep mobile tap targets", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
