@@ -5199,16 +5199,16 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   }
   .global-ai-launcher {
     left: auto;
-    top: calc(13px + env(safe-area-inset-top));
-    right: 192px;
-    bottom: auto;
+    top: auto;
+    right: 18px;
+    bottom: calc(82px + env(safe-area-inset-bottom));
     width: 48px;
     height: 48px;
   }
   .global-command-launcher {
-    top: calc(13px + env(safe-area-inset-top));
-    right: 132px;
-    bottom: auto;
+    top: auto;
+    right: 18px;
+    bottom: calc(24px + env(safe-area-inset-bottom));
     width: 48px;
     height: 48px;
   }

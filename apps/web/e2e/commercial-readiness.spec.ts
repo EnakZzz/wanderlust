@@ -864,8 +864,9 @@ test("routebook drawer keeps the new trip action below the trip list", async ({ 
 
 test("mobile global launchers stay clear of primary card content", async ({ page }) => {
   await mockSignedInTripListRuntime(page);
+  await page.setViewportSize({ width: 390, height: 844 });
 
-  for (const path of ["/journeys", "/journeys/edit", "/dashboard"] as const) {
+  for (const path of ["/journeys", "/journeys/edit", "/dashboard", "/passport"] as const) {
     await page.goto(path, { waitUntil: "domcontentloaded" });
 
     if ((page.viewportSize()?.width ?? 0) <= 500) {
@@ -875,6 +876,8 @@ test("mobile global launchers stay clear of primary card content", async ({ page
           document.querySelectorAll<HTMLElement>(
             [
               ".brand",
+              ".product-nav-brand",
+              ".product-nav-main",
               ".product-nav-actions",
               ".journey-card-copy",
               ".journey-card-topline",
@@ -907,6 +910,24 @@ test("mobile global launchers stay clear of primary card content", async ({ page
       });
 
       expect(overlaps, `${path} primary content should stay readable`).toEqual([]);
+      const launcherPositions = await page.locator(".global-ai-launcher, .global-command-launcher").evaluateAll((launchers) =>
+        launchers.map((launcher) => {
+          const box = launcher.getBoundingClientRect();
+          return {
+            top: Math.round(box.top),
+            bottomGap: Math.round(window.innerHeight - box.bottom)
+          };
+        })
+      );
+      expect(launcherPositions, `${path} global launchers should stay in the lower viewport`).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ top: expect.any(Number), bottomGap: expect.any(Number) })
+        ])
+      );
+      for (const position of launcherPositions) {
+        expect(position.top, `${path} launcher should not compete with the top navigation`).toBeGreaterThan(160);
+        expect(position.bottomGap, `${path} launcher should remain reachable above the viewport bottom`).toBeGreaterThanOrEqual(10);
+      }
     }
   }
 
