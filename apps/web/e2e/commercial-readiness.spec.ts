@@ -1287,7 +1287,7 @@ test("dialogs and select menus keep usable tap targets", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
-test("map pins keep mobile tap targets and return to places", async ({ page }) => {
+test("map pins keep mobile tap targets and open google places", async ({ page }) => {
   await mockGoogleStaticMapPreview(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
@@ -1300,12 +1300,13 @@ test("map pins keep mobile tap targets and return to places", async ({ page }) =
   await expect(preview).toHaveAttribute("src", /\/api\/maps\/static-preview\?/);
   await expect(preview).toHaveJSProperty("complete", true);
   await expectVisibleTapTargetsAtLeast44(page, ".map-pin");
-  const mapPlaceLink = page.getByRole("link", { name: /打开 Google 地点 1：新的收藏地点/ });
+  const mapPinLink = page.locator(".interactive-map").getByRole("link", { name: /打开 Google 地点 1：新的收藏地点/ });
+  await expect(mapPinLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
+  await expect(mapPinLink).not.toHaveAttribute("href", /\/maps\/dir\//);
+  const mapPlaceLink = page.locator(".map-place-list").getByRole("link", { name: /打开 Google 地点 1：新的收藏地点/ });
   await expect(mapPlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(mapPlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
-  await page.locator(".map-pin").first().click();
-
-  await expect(page.getByPlaceholder("搜索或粘贴地点名称")).toBeVisible();
+  await expect(page.getByRole("radio", { name: "地图" })).toBeChecked();
   await expectNoHorizontalOverflow(page);
 });
 
@@ -1327,8 +1328,8 @@ test("nearby map pins stay visually distinct", async ({ page }) => {
   }
   await page.getByRole("radio", { name: "地图" }).click();
 
-  await expect(page.getByRole("button", { name: "地图地点 1：Cairo hotel" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "地图地点 2：Cairo museum" })).toBeVisible();
+  await expect(page.locator(".interactive-map").getByRole("link", { name: "打开 Google 地点 1：Cairo hotel" })).toBeVisible();
+  await expect(page.locator(".interactive-map").getByRole("link", { name: "打开 Google 地点 2：Cairo museum" })).toBeVisible();
   const pinBoxes = await page.locator(".map-pin").evaluateAll((pins) =>
     pins.map((pin) => {
       const rect = pin.getBoundingClientRect();
@@ -1361,7 +1362,7 @@ test("map place list follows itinerary visit order", async ({ page }) => {
 
   await expect(page.locator(".map-place-item strong").nth(0)).toHaveText("First stop");
   await expect(page.locator(".map-place-item strong").nth(1)).toHaveText("Second stop");
-  const googlePlaceLink = page.getByRole("link", { name: "打开 Google 地点 1：First stop" });
+  const googlePlaceLink = page.locator(".map-place-list").getByRole("link", { name: "打开 Google 地点 1：First stop" });
   await expect(googlePlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(googlePlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
 });

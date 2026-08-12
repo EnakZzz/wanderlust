@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { APIProvider, Map, Marker, Polyline, useMap } from "@vis.gl/react-google-maps";
-import type { Place } from "@wanderlust/domain";
+import { buildGoogleMapsPlaceUrl, type Place } from "@wanderlust/domain";
 
 type MapsClientConfig = {
   configured: boolean;
@@ -23,6 +23,7 @@ type MapPoint = {
   id: string;
   name: string;
   position: google.maps.LatLngLiteral;
+  googleMapsUrl: string;
 };
 
 const defaultCenter = { lat: 30.0444, lng: 31.2357 };
@@ -48,7 +49,13 @@ export function GoogleTripMap({
         .map((place): MapPoint => ({
           id: place.id,
           name: place.name,
-          position: { lat: place.latitude, lng: place.longitude }
+          position: { lat: place.latitude, lng: place.longitude },
+          googleMapsUrl: buildGoogleMapsPlaceUrl({
+            latitude: place.latitude,
+            longitude: place.longitude,
+            label: place.name,
+            googlePlaceId: place.googlePlaceId
+          })
         })),
     [places]
   );
@@ -102,7 +109,6 @@ export function GoogleTripMap({
           points={points}
           staticPreviewFailed={staticPreviewFailed}
           staticPreviewUrl={staticPreviewUrl}
-          onSelectPlace={onSelectPlace}
           onStaticPreviewFailed={onStaticPreviewFailed}
           focusedPlaceId={focusedPlaceId}
         />
@@ -118,7 +124,6 @@ function StaticMapFallback({
   points,
   staticPreviewFailed,
   staticPreviewUrl,
-  onSelectPlace,
   onStaticPreviewFailed,
   focusedPlaceId
 }: {
@@ -126,7 +131,6 @@ function StaticMapFallback({
   points: MapPoint[];
   staticPreviewFailed: boolean;
   staticPreviewUrl?: string;
-  onSelectPlace: (placeId: string) => void;
   onStaticPreviewFailed: () => void;
   focusedPlaceId?: string | null;
 }) {
@@ -143,17 +147,18 @@ function StaticMapFallback({
       {points.map((point, pointIndex) => {
         const position = calculateFallbackMapPosition(point, points, pointIndex);
         return (
-          <button
+          <a
             key={point.id}
-            aria-label={`地图地点 ${pointIndex + 1}：${point.name}`}
+            aria-label={`打开 Google 地点 ${pointIndex + 1}：${point.name}`}
             className={`map-pin${focusedPlaceId === point.id ? " active" : ""}`}
+            href={point.googleMapsUrl}
+            rel="noreferrer"
             style={position}
-            type="button"
-            onClick={() => onSelectPlace(point.id)}
+            target="_blank"
             title={point.name}
           >
             <span>{pointIndex + 1}</span>
-          </button>
+          </a>
         );
       })}
     </>
@@ -195,7 +200,10 @@ function InteractiveMapContent({
           icon={createPinIcon(pointIndex + 1, focusedPlaceId === point.id)}
           position={point.position}
           title={`${pointIndex + 1}. ${point.name}`}
-          onClick={() => onSelectPlace(point.id)}
+          onClick={() => {
+            onSelectPlace(point.id);
+            window.open(point.googleMapsUrl, "_blank", "noopener,noreferrer");
+          }}
           zIndex={focusedPlaceId === point.id ? 20 : pointIndex + 1}
         />
       ))}
