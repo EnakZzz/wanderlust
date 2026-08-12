@@ -851,6 +851,7 @@ test("expanded itinerary editor inputs keep usable tap targets", async ({ page }
 
   await page.getByRole("button", { name: "添加行程项" }).click();
   await page.getByRole("button", { name: "编辑 新的行程项" }).click();
+  await page.locator(".route-step-editor").scrollIntoViewIfNeeded();
 
   await expect(page.getByLabel("行程项标题")).toBeVisible();
   await expect(page.getByLabel("行程项地点")).toBeVisible();
@@ -1206,8 +1207,12 @@ test("signed-in users can save and create a share link for a routebook", async (
   await page.getByRole("button", { name: "保存" }).click();
   await page.getByRole("button", { name: "分享" }).click();
 
-  await expect(page.getByText(/分享链接已(复制|生成)/)).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "分享路书" })).toBeVisible();
+  await expect(page.getByText("把这条只读链接发给同行人，对方无需编辑权限也能查看路书。")).toBeVisible();
+  await expect(page.getByLabel("只读分享链接")).toHaveValue(/token=public_tokyo_test/);
+  await expect(page.getByRole("button", { name: "复制链接" })).toBeVisible();
   await expect(page.getByRole("link", { name: "打开只读页" })).toHaveAttribute("href", /token=public_tokyo_test/);
+  await expect(page.getByText(/分享链接已(复制|生成)/)).toHaveCount(0);
   await expect
     .poll(async () => page.evaluate(async () => (window as unknown as { getCommercialApiCalls: () => Promise<{ saves: number; shares: number }> }).getCommercialApiCalls()))
     .toMatchObject({ saves: 1, shares: 1 });

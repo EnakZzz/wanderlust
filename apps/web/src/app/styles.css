@@ -2926,23 +2926,60 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   overflow-wrap: anywhere;
 }
 
-.share-status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 13px;
-  border: 1px solid rgba(111, 123, 102, 0.25);
+.share-dialog-content {
+  max-width: min(540px, calc(100vw - 24px));
+}
+.share-dialog-heading {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.share-dialog-mark {
+  width: 46px;
+  height: 46px;
   border-radius: 16px;
-  background: #eef2ed;
+  display: grid;
+  place-items: center;
+  color: #fff8ee;
+  background: linear-gradient(145deg, var(--blue), var(--accent));
+  box-shadow: 0 14px 30px rgba(97, 121, 134, 0.22);
+}
+.share-link-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(111, 123, 102, 0.22);
+  border-radius: 18px;
+  background: #f5f7f2;
+}
+.share-link-panel label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+.share-link-panel input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+}
+.share-link-meta {
+  display: grid;
+  gap: 4px;
   color: var(--moss);
   font-size: 13px;
   font-weight: 900;
 }
-.share-status a {
-  color: var(--blue);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.share-link-meta small {
+  color: var(--muted);
+  font-weight: 750;
+}
+.share-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
 }
 
 .share-page {

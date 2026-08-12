@@ -957,6 +957,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [isSharing, setIsSharing] = useState(false);
   const isPersistingRef = useRef(false);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [placeSearch, setPlaceSearch] = useState("");
   const [googleImportText, setGoogleImportText] = useState("");
   const [routebookDrawerOpen, setRoutebookDrawerOpen] = useState(false);
@@ -1628,15 +1629,21 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   async function copyShareUrl(url: string) {
     try {
       await navigator.clipboard.writeText(url);
-      setShareStatus("分享链接已复制。");
+      setShareStatus("链接已复制到剪贴板。");
     } catch {
-      setShareStatus("分享链接已生成，可手动复制。");
+      setShareStatus("链接已生成，请手动复制上方地址。");
     }
   }
 
   async function createOrCopyShare() {
     if (!user) {
       setSyncError("请先登录再分享路书。");
+      return;
+    }
+
+    if (shareUrl) {
+      setShareDialogOpen(true);
+      await copyShareUrl(shareUrl);
       return;
     }
 
@@ -1653,6 +1660,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
       const share = await createTripShare(target.id);
       setShareInfo(share);
+      setShareDialogOpen(true);
       await copyShareUrl(buildShareUrl(share.token));
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "无法创建分享链接");
@@ -1669,6 +1677,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     try {
       await deleteShare(shareInfo.id);
       setShareInfo(null);
+      setShareDialogOpen(false);
       setShareStatus("已取消当前分享链接。");
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "无法取消分享");
@@ -2220,6 +2229,58 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
             </DialogContent>
           </Dialog>
         ) : null}
+        {user && !showPlanHome ? (
+          <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+            <DialogContent className="share-dialog-content" aria-label="分享路书">
+              <DialogHeader className="share-dialog-heading">
+                <div className="share-dialog-mark" aria-hidden="true">
+                  <Share2 size={18} />
+                </div>
+                <div>
+                  <DialogTitle>分享路书</DialogTitle>
+                  <DialogDescription>把这条只读链接发给同行人，对方无需编辑权限也能查看路书。</DialogDescription>
+                </div>
+              </DialogHeader>
+              {shareUrl ? (
+                <div className="share-link-panel">
+                  <label>
+                    <span>只读链接</span>
+                    <Input aria-label="只读分享链接" value={shareUrl} readOnly onFocus={(event) => event.currentTarget.select()} />
+                  </label>
+                  <div className="share-link-meta">
+                    <span>{shareStatus ?? "链接已准备好。"}</span>
+                    <small>取消分享后，这条链接会立即失效。</small>
+                  </div>
+                </div>
+              ) : (
+                <div className="share-link-panel">
+                  <strong>正在准备分享链接</strong>
+                  <span>保存路书并生成只读访问地址。</span>
+                </div>
+              )}
+              <DialogFooter className="share-dialog-actions">
+                <Button variant="ghost" type="button" onClick={() => setShareDialogOpen(false)}>
+                  <X size={17} />
+                  <span>关闭</span>
+                </Button>
+                {shareUrl ? (
+                  <>
+                    <Button variant="secondary" type="button" onClick={() => copyShareUrl(shareUrl)}>
+                      <Share2 size={17} />
+                      <span>复制链接</span>
+                    </Button>
+                    <Button asChild>
+                      <a href={shareUrl} target="_blank" rel="noreferrer">
+                        <MapIcon size={17} />
+                        <span>打开只读页</span>
+                      </a>
+                    </Button>
+                  </>
+                ) : null}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        ) : null}
 
         {showPlanHome ? (
           <div className="plan-home">
@@ -2241,7 +2302,6 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
           </div>
         ) : (
           <>
-            {shareStatus ? <div className="share-status">{shareStatus}{shareUrl ? <a href={shareUrl} target="_blank" rel="noreferrer">打开只读页</a> : null}</div> : null}
             {syncError ? <div className="sync-error">{syncError}</div> : null}
 
             <div ref={moduleHeadingRef} className="module-heading">
