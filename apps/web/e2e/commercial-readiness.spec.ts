@@ -1244,6 +1244,8 @@ test("signed-in users can save and create a share link for a routebook", async (
   await expect(page.getByLabel("只读分享链接")).toHaveValue(/token=public_tokyo_test/);
   await expect(page.getByRole("button", { name: "复制链接" })).toBeVisible();
   await expect(page.getByRole("link", { name: "打开只读页" })).toHaveAttribute("href", /token=public_tokyo_test/);
+  await expect(page.getByText("链接已准备好，可复制给同行人。")).toBeVisible();
+  await expect(page.getByText(/链接已复制|请手动复制/)).toHaveCount(0);
   await expect(page.getByText(/分享链接已(复制|生成)/)).toHaveCount(0);
   await expect
     .poll(async () => page.evaluate(async () => (window as unknown as { getCommercialApiCalls: () => Promise<{ saves: number; shares: number }> }).getCommercialApiCalls()))

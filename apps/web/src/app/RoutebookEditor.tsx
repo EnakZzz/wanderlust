@@ -1645,7 +1645,6 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
     if (shareUrl) {
       setShareDialogOpen(true);
-      await copyShareUrl(shareUrl);
       return;
     }
 
@@ -1662,8 +1661,8 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
       const share = await createTripShare(target.id);
       setShareInfo(share);
+      setShareStatus(null);
       setShareDialogOpen(true);
-      await copyShareUrl(buildShareUrl(share.token));
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "无法创建分享链接");
     } finally {
@@ -2255,7 +2254,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     <Input aria-label="只读分享链接" value={shareUrl} readOnly onFocus={(event) => event.currentTarget.select()} />
                   </label>
                   <div className="share-link-meta">
-                    <span>{shareStatus ?? "链接已准备好。"}</span>
+                    <span>{shareStatus ?? "链接已准备好，可复制给同行人。"}</span>
                     <small>取消分享后，这条链接会立即失效。</small>
                   </div>
                 </div>
