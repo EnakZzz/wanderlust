@@ -9,7 +9,9 @@ export default function NotFound() {
   useEffect(() => {
     const tripId = parseTripIdFromEditorPath(window.location.pathname);
     if (tripId) {
-      window.location.replace(`/journeys/edit?tripId=${encodeURIComponent(tripId)}#editor`);
+      const params = new URLSearchParams(window.location.search);
+      params.set("tripId", tripId);
+      window.location.replace(`/journeys/edit?${params.toString()}#editor`);
     }
   }, []);
 
@@ -24,4 +26,3 @@ export default function NotFound() {
     </main>
   );
 }
-

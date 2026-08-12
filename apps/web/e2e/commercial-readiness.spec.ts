@@ -1193,3 +1193,14 @@ test("id based journey URL has a browser fallback in static-compatible routing",
   await expect(page.locator("main")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
+
+test("id based journey URL fallback preserves requested editor module", async ({ page }) => {
+  await mockSignedInRuntime(page);
+
+  await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111?module=places", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("radio", { name: "地点" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.locator(".module-heading p")).toHaveText("地点");
+  await expect(page.getByRole("button", { name: "添加地点" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
