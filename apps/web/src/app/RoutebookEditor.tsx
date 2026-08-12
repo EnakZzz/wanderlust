@@ -2789,8 +2789,8 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         {packingCategories.map((category) => <SelectItem key={category ?? "other"} value={category ?? "other"}>{packingCategoryLabels[category ?? "other"]}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    <Input value={item.title} onChange={(event) => updatePacking(item.id, { title: event.target.value })} />
-                    <Input type="number" min={1} value={item.quantity} onChange={(event) => updatePacking(item.id, { quantity: Number(event.target.value) || 1 })} />
+                    <Input aria-label={`${item.title} packing title`} value={item.title} onChange={(event) => updatePacking(item.id, { title: event.target.value })} />
+                    <Input aria-label={`${item.title} quantity`} type="number" min={1} value={item.quantity} onChange={(event) => updatePacking(item.id, { quantity: Number(event.target.value) || 1 })} />
                     <IconButton
                       className="row-ai-button"
                       type="button"

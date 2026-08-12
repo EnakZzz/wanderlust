@@ -912,6 +912,8 @@ test("packing checklist controls keep usable tap targets", async ({ page }) => {
 
   const checkbox = page.locator(".packing-row [role='checkbox']").first();
   await expect(checkbox).toHaveAttribute("aria-checked", "false");
+  await expect(page.getByLabel("新的打包物品 packing title")).toBeVisible();
+  await expect(page.getByLabel("新的打包物品 quantity")).toBeVisible();
   await expectVisibleTapTargetsAtLeast44(page, ".packing-row [role='checkbox'], .packing-row .row-ai-button");
 
   await checkbox.click();
