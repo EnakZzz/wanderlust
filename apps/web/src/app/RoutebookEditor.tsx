@@ -2681,7 +2681,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                             onDrop={(event) => dropOnItem(event, selectedDay.id, item.id)}
                           >
                             <aside className="route-step-date-panel">
-                              <span>Day {dayNumber}</span>
+                              <span>第 {dayNumber} 天</span>
                               <strong>{formatDayMonthDate(selectedDay.date)}</strong>
                               <small>{formatWeekday(selectedDay.date)}</small>
                               <em>{getItineraryIconLabel(item)}</em>

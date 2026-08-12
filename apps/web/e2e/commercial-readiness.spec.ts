@@ -938,6 +938,8 @@ test("local routebook editing supports a first itinerary item without login", as
 
   await page.getByRole("button", { name: "添加行程项" }).click();
   await expect(page.getByRole("heading", { name: "新的行程项" })).toBeVisible();
+  await expect(page.locator(".route-step-date-panel")).toContainText("第 1 天");
+  await expect(page.locator(".route-step-date-panel").getByText("Day 1", { exact: true })).toHaveCount(0);
 
   await page.getByRole("button", { name: "编辑 新的行程项" }).click();
   await expect(page.getByLabel("行程项地点")).toBeVisible();
