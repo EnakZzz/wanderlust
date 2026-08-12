@@ -1194,7 +1194,10 @@ test("anonymous share action explains that login is required", async ({ page }) 
   await expect(shareButton).toHaveAttribute("title", "登录后可分享只读路书");
   await shareButton.click();
 
-  await expect(page.getByText("请先登录再分享路书。")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "分享路书" })).toBeVisible();
+  await expect(page.getByText("登录后可生成一条只读链接，用来发给同行人查看路书。")).toBeVisible();
+  await expect(page.locator(".share-dialog-actions").getByRole("button", { name: "关闭" })).toBeVisible();
+  await expect(page.locator(".sync-error")).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 

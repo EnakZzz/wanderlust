@@ -1637,7 +1637,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
   async function createOrCopyShare() {
     if (!user) {
-      setSyncError("请先登录再分享路书。");
+      setSyncError(null);
+      setShareStatus(null);
+      setShareDialogOpen(true);
       return;
     }
 
@@ -2229,7 +2231,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
             </DialogContent>
           </Dialog>
         ) : null}
-        {user && !showPlanHome ? (
+        {!showPlanHome ? (
           <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
             <DialogContent className="share-dialog-content" aria-label="分享路书">
               <DialogHeader className="share-dialog-heading">
@@ -2241,7 +2243,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   <DialogDescription>把这条只读链接发给同行人，对方无需编辑权限也能查看路书。</DialogDescription>
                 </div>
               </DialogHeader>
-              {shareUrl ? (
+              {!user ? (
+                <div className="share-link-panel">
+                  <strong>登录后可分享路书</strong>
+                  <span>登录后可生成一条只读链接，用来发给同行人查看路书。</span>
+                </div>
+              ) : shareUrl ? (
                 <div className="share-link-panel">
                   <label>
                     <span>只读链接</span>
