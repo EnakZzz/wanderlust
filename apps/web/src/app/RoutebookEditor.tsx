@@ -953,6 +953,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [deletingTripId, setDeletingTripId] = useState<string | null>(null);
   const [deleteCandidate, setDeleteCandidate] = useState<TripSummary | null>(null);
+  const [switchCandidate, setSwitchCandidate] = useState<{ tripId: string; routeMode?: "push" | "replace"; updateRoute?: boolean } | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [shareInfo, setShareInfo] = useState<RoutebookShare | null>(null);
   const [isSharing, setIsSharing] = useState(false);
@@ -1208,11 +1209,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       if (!routeTripId || routeTripId === draft.id) return;
 
       if (!isSaved) {
-        const confirmed = window.confirm("当前路书还有未保存修改，切换路书会丢失这些修改。继续切换吗？");
-        if (!confirmed) {
-          updateTripRoute(draft.id, "replace");
-          return;
-        }
+        setSwitchCandidate({ tripId: routeTripId, updateRoute: false });
+        updateTripRoute(draft.id, "replace");
+        return;
       }
 
       void loadTrip(routeTripId, { updateRoute: false });
@@ -1548,6 +1547,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
       setShareStatus(null);
       setMetaDialogMode(null);
       setRoutebookDrawerOpen(false);
+      setSwitchCandidate(null);
       if (options.updateRoute) {
         updateTripRoute(hydrated.id, options.routeMode);
       }
@@ -1556,6 +1556,28 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     } finally {
       setIsSyncing(false);
     }
+  }
+
+  function requestLoadTrip(tripId: string, options: { updateRoute?: boolean; routeMode?: "push" | "replace" } = {}) {
+    if (tripId === draft.id || isSyncing) return;
+    if (!isSaved) {
+      setSyncError(null);
+      setSwitchCandidate({ tripId, updateRoute: options.updateRoute, routeMode: options.routeMode });
+      return;
+    }
+    void loadTrip(tripId, options);
+  }
+
+  function cancelSwitchTrip() {
+    if (isSyncing) return;
+    setSwitchCandidate(null);
+    setRoutebookDrawerOpen(false);
+  }
+
+  function confirmSwitchTrip() {
+    const target = switchCandidate;
+    if (!target || isSyncing) return;
+    void loadTrip(target.tripId, { updateRoute: target.updateRoute, routeMode: target.routeMode });
   }
 
   function requestDeleteTrip(trip: TripSummary) {
@@ -2006,7 +2028,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   function renderTripCard(trip: TripSummary) {
     return (
       <article key={trip.id} className={trip.id === draft.id ? "trip-card active" : "trip-card"}>
-        <button className="trip-card-open" type="button" aria-label={`打开 ${trip.title}`} onClick={() => loadTrip(trip.id, { updateRoute: true })}>
+        <button className="trip-card-open" type="button" aria-label={`打开 ${trip.title}`} onClick={() => requestLoadTrip(trip.id, { updateRoute: true })}>
           <span className="trip-card-icon" aria-hidden="true">
             <MapPin size={22} />
           </span>
@@ -2294,6 +2316,35 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
             </DialogContent>
           </Dialog>
         ) : null}
+        <Dialog open={Boolean(switchCandidate)} onOpenChange={(open) => {
+          if (!open && !isSyncing) setSwitchCandidate(null);
+        }}>
+          <DialogContent className="switch-dialog-content" aria-label="切换路书">
+            <DialogHeader className="switch-dialog-heading">
+              <div className="switch-dialog-mark" aria-hidden="true">
+                <PanelLeftOpen size={18} />
+              </div>
+              <div>
+                <DialogTitle>切换路书</DialogTitle>
+                <DialogDescription>切换前请确认当前编辑内容是否还需要保存。</DialogDescription>
+              </div>
+            </DialogHeader>
+            <div className="switch-dialog-panel">
+              <strong>当前路书还有未保存修改。</strong>
+              <span>继续切换会放弃这些临时修改，已保存到账号的内容不受影响。</span>
+            </div>
+            <DialogFooter className="switch-dialog-actions">
+              <Button variant="ghost" type="button" onClick={cancelSwitchTrip} disabled={isSyncing}>
+                <X size={17} />
+                <span>继续编辑</span>
+              </Button>
+              <Button variant="secondary" type="button" onClick={confirmSwitchTrip} disabled={isSyncing}>
+                <PanelLeftOpen size={17} />
+                <span>{isSyncing ? "切换中" : "放弃修改并切换"}</span>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Dialog open={Boolean(deleteCandidate)} onOpenChange={(open) => {
           if (!open && !deletingTripId) setDeleteCandidate(null);
         }}>

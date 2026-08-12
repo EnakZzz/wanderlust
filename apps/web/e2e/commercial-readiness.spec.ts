@@ -146,6 +146,60 @@ async function mockSignedInRuntime(page: Page, options: { saveDelayMs?: number }
 }
 
 async function mockSignedInTripListRuntime(page: Page) {
+  const tokyoTrip = {
+    id: "trip_tokyo",
+    ownerId: "google:test-user",
+    title: "东京亲子路书",
+    destination: "Tokyo, Japan",
+    startDate: "2026-09-01",
+    endDate: "2026-09-05",
+    timezone: "Asia/Tokyo",
+    status: "draft",
+    days: [
+      {
+        id: "trip_tokyo-2026-09-01",
+        tripId: "trip_tokyo",
+        date: "2026-09-01",
+        title: "抵达东京",
+        sortOrder: 0,
+        items: []
+      }
+    ],
+    places: [],
+    bookings: [],
+    attachments: [],
+    packingItems: [],
+    weather: [],
+    budgetMembers: [],
+    budgetItems: []
+  };
+  const egyptTrip = {
+    id: "trip_legacy_published",
+    ownerId: "google:test-user",
+    title: "埃及红海路书",
+    destination: "Egypt Cairo Red Sea",
+    startDate: "2026-10-01",
+    endDate: "2026-10-09",
+    timezone: "Africa/Cairo",
+    status: "published",
+    days: [
+      {
+        id: "trip_legacy_published-2026-10-01",
+        tripId: "trip_legacy_published",
+        date: "2026-10-01",
+        title: "开罗集合",
+        sortOrder: 0,
+        items: []
+      }
+    ],
+    places: [],
+    bookings: [],
+    attachments: [],
+    packingItems: [],
+    weather: [],
+    budgetMembers: [],
+    budgetItems: []
+  };
   await page.route("**/auth/session", (route) =>
     route.fulfill({
       status: 200,
@@ -159,6 +213,12 @@ async function mockSignedInTripListRuntime(page: Page) {
       contentType: "application/json",
       body: JSON.stringify({ providers: { google: { configured: true }, apple: { configured: false } } })
     })
+  );
+  await page.route("**/api/trips/trip_tokyo", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ trip: tokyoTrip }) })
+  );
+  await page.route("**/api/trips/trip_legacy_published", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ trip: egyptTrip }) })
   );
   await page.route("**/api/trips", (route) =>
     route.fulfill({
@@ -642,6 +702,7 @@ test("mobile product page headings avoid vertical clipping", async ({ page }) =>
 });
 
 test("editor module rail and module AI actions keep usable tap targets", async ({ page }) => {
+  await mockAnonymousRuntime(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
   await page.locator(".editor-module-rail").scrollIntoViewIfNeeded();
@@ -650,6 +711,7 @@ test("editor module rail and module AI actions keep usable tap targets", async (
 });
 
 test("mobile editor module rail shows all modules without horizontal overflow", async ({ page }) => {
+  await mockAnonymousRuntime(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
   if ((page.viewportSize()?.width ?? 0) <= 500) {
@@ -1125,6 +1187,38 @@ test("signed-in journey cards keep destination imagery full bleed", async ({ pag
   await expectNoHorizontalOverflow(page);
 });
 
+test("switching routebooks with unsaved edits uses an in-app confirmation", async ({ page }) => {
+  await mockSignedInTripListRuntime(page);
+  const nativeDialogs: string[] = [];
+  page.on("dialog", async (dialog) => {
+    nativeDialogs.push(dialog.message());
+    await dialog.dismiss();
+  });
+
+  await page.goto("/journeys/edit", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "打开 东京亲子路书" }).click();
+  await expect(page.locator(".routebook-current")).toContainText("东京亲子路书");
+
+  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".routebook-current").click();
+  await page.getByRole("button", { name: "打开 埃及红海路书" }).click();
+
+  await expect(page.getByRole("dialog", { name: "切换路书" })).toBeVisible();
+  await expect(page.getByText("当前路书还有未保存修改。")).toBeVisible();
+  await page.locator(".switch-dialog-actions").getByRole("button", { name: "继续编辑" }).click();
+  await expect(page.getByRole("dialog", { name: "切换路书" })).toHaveCount(0);
+  await expect(page.locator(".routebook-current")).toContainText("东京亲子路书");
+
+  await page.locator(".routebook-current").click();
+  await page.getByRole("button", { name: "打开 埃及红海路书" }).click();
+  await expect(page.getByRole("dialog", { name: "切换路书" })).toBeVisible();
+  await page.locator(".switch-dialog-actions").getByRole("button", { name: "放弃修改并切换" }).click();
+
+  await expect(page.locator(".routebook-current")).toContainText("埃及红海路书");
+  expect(nativeDialogs).toEqual([]);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("public and journey list display typography avoids vertical clipping", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const homeOverflow = await page.locator(".hero-copy h1").evaluateAll((elements) =>
@@ -1188,6 +1282,7 @@ test("public and journey list display typography avoids vertical clipping", asyn
 });
 
 test("anonymous users can create a named local routebook and keep it after refresh", async ({ page }) => {
+  await mockAnonymousRuntime(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
   await page.getByRole("button", { name: "编辑路书信息" }).click();
