@@ -3046,12 +3046,127 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   justify-self: end;
 }
 .file-row-editor {
-  grid-template-columns: 22px minmax(180px, 1fr) minmax(140px, 0.6fr) minmax(180px, 0.8fr) 42px;
-  align-items: end;
+  grid-template-columns: minmax(220px, 0.42fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
 }
-.file-row-editor svg {
+
+.file-card-preview {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 124px;
+  margin: -14px 0 -14px -14px;
+  padding: 18px 16px;
+  border-right: 1px dashed color-mix(in srgb, var(--accent) 32%, var(--line));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, #fff 82%), #fffdf8 54%),
+    radial-gradient(circle at 20% 10%, rgba(255,255,255,0.86), transparent 34%);
+}
+
+.file-card-preview::before,
+.file-card-preview::after {
+  content: "";
+  position: absolute;
+  right: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fffdf8;
+  border: 1px solid var(--line);
+}
+
+.file-card-preview::before {
+  top: -9px;
+}
+
+.file-card-preview::after {
+  bottom: -9px;
+}
+
+.file-card-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 52px;
+  border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--line));
+  border-radius: 8px 8px 14px 8px;
   color: var(--accent);
-  margin-bottom: 13px;
+  background: rgba(255,255,255,0.74);
+  box-shadow: inset -8px -10px 0 rgba(255,255,255,0.42);
+}
+
+.file-card-meta {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.file-card-meta span {
+  width: fit-content;
+  padding: 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+  border-radius: 999px;
+  color: var(--accent);
+  background: rgba(255,255,255,0.62);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.file-card-meta strong,
+.file-card-meta small,
+.file-card-actions span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-card-meta strong {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.file-card-meta small,
+.file-card-actions span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.file-card-preview em {
+  align-self: start;
+  justify-self: end;
+  color: color-mix(in srgb, var(--accent) 76%, var(--ink));
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.file-card-body {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding-left: 16px;
+}
+
+.file-card-fields {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(130px, 0.55fr) minmax(180px, 0.8fr);
+  gap: 10px;
+}
+
+.file-card-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  gap: 10px;
+  align-items: center;
+}
+
+.file-card-actions .row-ai-button {
+  justify-self: end;
 }
 .budget-members {
   display: grid;
@@ -4732,9 +4847,37 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .booking-ticket-fields {
     grid-template-columns: 1fr;
   }
+  .file-row-editor {
+    gap: 12px;
+  }
+  .file-card-preview {
+    min-height: 86px;
+    margin: -14px -14px 0 -14px;
+    padding: 14px;
+    border-right: 0;
+    border-bottom: 1px dashed color-mix(in srgb, var(--accent) 32%, var(--line));
+  }
+  .file-card-preview::before,
+  .file-card-preview::after {
+    display: none;
+  }
+  .file-card-icon {
+    height: 44px;
+  }
+  .file-card-meta strong {
+    font-size: 15px;
+  }
+  .file-card-body {
+    padding-left: 0;
+  }
+  .file-card-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .file-card-fields label:first-child {
+    grid-column: 1 / -1;
+  }
   .ai-preview-heading { align-items: stretch; flex-direction: column; }
   .search-row .new-trip-button { justify-self: start; }
-  .file-row-editor svg { margin-bottom: 0; }
   .editor-heading { align-items: stretch; flex-direction: column; }
   .day-strip { grid-template-columns: repeat(5, minmax(144px, 1fr)); }
   .share-hero {

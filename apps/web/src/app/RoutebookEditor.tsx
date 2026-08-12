@@ -12,6 +12,7 @@ import {
   CheckSquare,
   ChevronDown,
   Clock,
+  FileText,
   FileUp,
   ImageUp,
   Landmark,
@@ -25,6 +26,7 @@ import {
   Save,
   Search,
   Share2,
+  ShieldCheck,
   Sparkles,
   Ticket,
   Trash2,
@@ -165,6 +167,14 @@ const attachmentLinkedTypeLabels: Record<NonNullable<Attachment["linkedType"]>, 
   trip: "整趟旅行",
   place: "地点",
   booking: "预订"
+};
+
+const attachmentTypeLabels: Record<Attachment["type"], string> = {
+  image: "IMAGE",
+  pdf: "PDF",
+  ticket: "TICKET",
+  receipt: "RECEIPT",
+  document: "DOC"
 };
 
 const packingCategoryLabels: Record<NonNullable<PackingItem["category"]>, string> = {
@@ -580,6 +590,24 @@ function formatBudgetPreview(item?: BudgetItem): string {
 
 function formatAttachmentPreview(attachment?: Attachment): string {
   return attachment ? [attachment.title, attachment.type, attachment.category, attachment.linkedType, attachment.linkedId].filter(Boolean).join(" · ") : "未找到";
+}
+
+function formatAttachmentStorageName(attachment: Attachment): string {
+  const source = attachment.storagePath || attachment.localUri || attachment.title || attachment.id;
+  return source.split(/[\\/]/).filter(Boolean).pop() ?? source;
+}
+
+function getAttachmentLinkedLabel(attachment: Attachment, places: Place[], bookings: Booking[]): string {
+  const linkedType = attachment.linkedType ?? "trip";
+  if (linkedType === "place") {
+    const place = places.find((item) => item.id === attachment.linkedId);
+    return place ? `地点 · ${place.name}` : "地点 · 未关联";
+  }
+  if (linkedType === "booking") {
+    const booking = bookings.find((item) => item.id === attachment.linkedId);
+    return booking ? `预订 · ${booking.title}` : "预订 · 未关联";
+  }
+  return attachmentLinkedTypeLabels.trip;
 }
 
 function formatTripSummaryLine(trip: TripSummary): string {
@@ -2999,53 +3027,70 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 </div>
                 {draft.attachments.map((attachment) => (
                   <article key={attachment.id} className="module-row file-row-editor">
-                    <Paperclip size={18} />
-                    <label>
-                      <span>标题</span>
-                      <Input aria-label="文件标题" value={attachment.title ?? ""} onChange={(event) => updateAttachment(attachment.id, { title: event.target.value })} />
-                    </label>
-                    <label>
-                      <span>分类</span>
-                      <Select value={attachment.category ?? "other"} onValueChange={(value) => updateAttachment(attachment.id, { category: value as Attachment["category"] })}>
-                        <SelectTrigger aria-label="文件分类">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {attachmentCategories.map((category) => <SelectItem key={category ?? "other"} value={category ?? "other"}>{attachmentCategoryLabels[category ?? "other"]}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </label>
-                    <label>
-                      <span>关联到</span>
-                      <Select
-                        value={`${attachment.linkedType ?? "trip"}:${attachment.linkedId ?? ""}`}
-                        onValueChange={(value) => {
-                          const [linkedType, linkedId] = value.split(":");
-                          updateAttachment(attachment.id, { linkedType: linkedType as Attachment["linkedType"], linkedId: linkedId || undefined });
-                        }}
-                      >
-                        <SelectTrigger aria-label="文件关联对象">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="trip:">整趟旅行</SelectItem>
-                          {draft.places.map((place) => <SelectItem key={place.id} value={`place:${place.id}`}>地点 · {place.name}</SelectItem>)}
-                          {draft.bookings.map((booking) => <SelectItem key={booking.id} value={`booking:${booking.id}`}>预订 · {booking.title}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </label>
-                    <IconButton
-                      className="row-ai-button"
-                      type="button"
-                      label={`AI 优化文件 ${attachment.title ?? attachment.id}`}
-                      tooltip={user ? "用 AI 修改这个文件资料，先生成预览" : "打开预览，登录后可生成修改"}
-                      onClick={() => openEntityAiAssistant(
-                        { moduleId: "files", entityType: "attachment", entityId: attachment.id, label: `文件 · ${attachment.title ?? attachment.id}` },
-                        `帮我优化文件 ${attachment.title ?? attachment.id}，可以调整标题、类型、分类或关联对象，但不要修改 storagePath 或 localUri`
-                      )}
-                    >
-                      <Sparkles size={16} />
-                    </IconButton>
+                    <div className="file-card-preview" aria-hidden="true">
+                      <div className="file-card-icon">
+                        {attachment.category === "passport" || attachment.category === "visa" || attachment.category === "insurance" ? <ShieldCheck size={22} /> : attachment.type === "image" ? <ImageUp size={22} /> : <FileText size={22} />}
+                      </div>
+                      <div className="file-card-meta">
+                        <span>{attachmentCategoryLabels[attachment.category ?? "other"]}</span>
+                        <strong>{attachment.title || formatAttachmentStorageName(attachment)}</strong>
+                        <small>{getAttachmentLinkedLabel(attachment, draft.places, draft.bookings)}</small>
+                      </div>
+                      <em>{attachmentTypeLabels[attachment.type]}</em>
+                    </div>
+                    <div className="file-card-body">
+                      <div className="file-card-fields">
+                        <label>
+                          <span>标题</span>
+                          <Input aria-label="文件标题" value={attachment.title ?? ""} onChange={(event) => updateAttachment(attachment.id, { title: event.target.value })} />
+                        </label>
+                        <label>
+                          <span>分类</span>
+                          <Select value={attachment.category ?? "other"} onValueChange={(value) => updateAttachment(attachment.id, { category: value as Attachment["category"] })}>
+                            <SelectTrigger aria-label="文件分类">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {attachmentCategories.map((category) => <SelectItem key={category ?? "other"} value={category ?? "other"}>{attachmentCategoryLabels[category ?? "other"]}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </label>
+                        <label>
+                          <span>关联到</span>
+                          <Select
+                            value={`${attachment.linkedType ?? "trip"}:${attachment.linkedId ?? ""}`}
+                            onValueChange={(value) => {
+                              const [linkedType, linkedId] = value.split(":");
+                              updateAttachment(attachment.id, { linkedType: linkedType as Attachment["linkedType"], linkedId: linkedId || undefined });
+                            }}
+                          >
+                            <SelectTrigger aria-label="文件关联对象">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="trip:">整趟旅行</SelectItem>
+                              {draft.places.map((place) => <SelectItem key={place.id} value={`place:${place.id}`}>地点 · {place.name}</SelectItem>)}
+                              {draft.bookings.map((booking) => <SelectItem key={booking.id} value={`booking:${booking.id}`}>预订 · {booking.title}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </label>
+                      </div>
+                      <div className="file-card-actions">
+                        <span>{formatAttachmentStorageName(attachment)}</span>
+                        <IconButton
+                          className="row-ai-button"
+                          type="button"
+                          label={`AI 优化文件 ${attachment.title ?? attachment.id}`}
+                          tooltip={user ? "用 AI 修改这个文件资料，先生成预览" : "打开预览，登录后可生成修改"}
+                          onClick={() => openEntityAiAssistant(
+                            { moduleId: "files", entityType: "attachment", entityId: attachment.id, label: `文件 · ${attachment.title ?? attachment.id}` },
+                            `帮我优化文件 ${attachment.title ?? attachment.id}，可以调整标题、类型、分类或关联对象，但不要修改 storagePath 或 localUri`
+                          )}
+                        >
+                          <Sparkles size={16} />
+                        </IconButton>
+                      </div>
+                    </div>
                   </article>
                 ))}
                 {draft.attachments.length === 0 ? <div className="empty-trip-card">还没有文件。出发前先上传资料。</div> : null}

@@ -1081,6 +1081,39 @@ test("file attachment fields expose stable labels", async ({ page }) => {
   await expect(page.getByRole("combobox", { name: "文件关联对象" })).toBeVisible();
 });
 
+test("file attachment editor renders compact document cards", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "文件" }).click();
+  await page.getByLabel("上传旅行文件").locator("input[type='file']").setInputFiles({
+    name: "egypt-visa.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n")
+  });
+
+  await expect(page.locator(".file-card-preview")).toBeVisible();
+  await expect(page.locator(".file-card-preview em")).toHaveText("PDF");
+  await expect(page.getByLabel("文件标题")).toBeVisible();
+  await expect(page.getByRole("button", { name: "AI 优化文件 egypt-visa.pdf" })).toBeVisible();
+
+  const card = await page.locator(".file-row-editor").first().evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const preview = element.querySelector<HTMLElement>(".file-card-preview")?.getBoundingClientRect();
+    return {
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      previewWidth: Math.round(preview?.width ?? 0),
+      viewport: document.documentElement.clientWidth
+    };
+  });
+
+  expect(card.previewWidth, JSON.stringify(card)).toBeGreaterThanOrEqual(180);
+  if (card.viewport >= 900) {
+    expect(card.height, JSON.stringify(card)).toBeLessThanOrEqual(190);
+  }
+  await expectNoHorizontalOverflow(page);
+});
+
 test("AI planning and import prompts expose stable labels", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
