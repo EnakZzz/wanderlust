@@ -413,6 +413,78 @@ async function mockPublicShareWithEmptyDepartureRuntime(page: Page) {
   );
 }
 
+async function mockPublicShareWithDraftCoordinatesRuntime(page: Page) {
+  const tripId = "trip_public_draft_coordinates";
+  await page.route("**/api/share/public_draft_coordinates", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        share: {
+          id: "share_draft_coordinates",
+          tripId,
+          token: "public_draft_coordinates",
+          visibility: "public",
+          allowCopy: true,
+          revokedAt: null,
+          expiresAt: null
+        },
+        trip: {
+          id: tripId,
+          ownerId: "google:test-user",
+          title: "冰岛公开路书",
+          destination: "Iceland",
+          startDate: "2026-11-01",
+          endDate: "2026-11-02",
+          timezone: "Atlantic/Reykjavik",
+          status: "published",
+          places: [
+            {
+              id: "place_draft_lagoon",
+              tripId,
+              name: "蓝湖温泉",
+              category: "nature",
+              latitude: 0,
+              longitude: 0,
+              tags: [],
+              isFavorite: false
+            }
+          ],
+          bookings: [],
+          attachments: [],
+          packingItems: [],
+          weather: [],
+          budgetMembers: [],
+          budgetItems: [],
+          days: [
+            {
+              id: "day_iceland_1",
+              tripId,
+              date: "2026-11-01",
+              title: "抵达冰岛",
+              sortOrder: 0,
+              items: [
+                {
+                  id: "item_draft_lagoon",
+                  dayId: "day_iceland_1",
+                  tripId,
+                  type: "place",
+                  title: "蓝湖温泉",
+                  startTime: "15:00",
+                  placeId: "place_draft_lagoon",
+                  notes: "地点还在确认中。",
+                  attachmentIds: [],
+                  sortOrder: 0
+                }
+              ]
+            }
+          ]
+        }
+      })
+    })
+  );
+}
+
 async function expectNoHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => {
     const root = document.documentElement;
@@ -2104,6 +2176,21 @@ test("public share routebook uses customer-facing empty checklist copy", async (
   await expect(page.locator(".share-side-card").filter({ hasText: "出发清单" }).getByRole("heading", { name: "待整理" })).toBeVisible();
   await expect(page.getByText("0/0")).toHaveCount(0);
   await expect(page.getByText("暂未整理打包清单。")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("public share routebook does not link draft coordinates to google maps", async ({ page }) => {
+  await mockPublicShareWithDraftCoordinatesRuntime(page);
+  await page.goto("/share?token=public_draft_coordinates", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "冰岛公开路书" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "蓝湖温泉" })).toBeVisible();
+  await expect(page.locator(".share-step-place")).toContainText("蓝湖温泉");
+  await expect(page.locator(".share-side-card").filter({ hasText: "地点清单" })).toContainText("蓝湖温泉");
+  await expect(page.getByRole("link", { name: "打开 Google 地点 蓝湖温泉" })).toHaveCount(0);
+  await expect(page.locator(".share-nav-link")).toHaveCount(0);
+  await expect(page.locator(".share-place-list a")).toHaveCount(0);
+  await expect(page.getByText(/0,0/)).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 

@@ -61,11 +61,23 @@ function getDescription(item: ItineraryItem, place?: Place): string {
   return item.reason?.trim() || item.notes?.trim() || place?.notes?.trim() || "这一步还没有补充说明。";
 }
 
+function hasUsableCoordinates(target: { latitude?: unknown; longitude?: unknown }): target is { latitude: number; longitude: number } {
+  return typeof target.latitude === "number"
+    && typeof target.longitude === "number"
+    && Number.isFinite(target.latitude)
+    && Number.isFinite(target.longitude)
+    && !(target.latitude === 0 && target.longitude === 0);
+}
+
 function getGooglePlaceHref(item: ItineraryItem, place?: Place): string | undefined {
-  const latitude = place?.latitude ?? item.latitude;
-  const longitude = place?.longitude ?? item.longitude;
-  if (typeof latitude !== "number" || typeof longitude !== "number") return undefined;
-  return buildGoogleMapsPlaceUrl({ latitude, longitude, label: getLocationLabel(item, place), googlePlaceId: place?.googlePlaceId ?? item.googlePlaceId });
+  const target = { latitude: place?.latitude ?? item.latitude, longitude: place?.longitude ?? item.longitude };
+  if (!hasUsableCoordinates(target)) return undefined;
+  return buildGoogleMapsPlaceUrl({ latitude: target.latitude, longitude: target.longitude, label: getLocationLabel(item, place), googlePlaceId: place?.googlePlaceId ?? item.googlePlaceId });
+}
+
+function getGooglePlaceHrefForPlace(place: Place): string | undefined {
+  if (!hasUsableCoordinates(place)) return undefined;
+  return buildGoogleMapsPlaceUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name, googlePlaceId: place.googlePlaceId });
 }
 
 function getDaySummary(items: ItineraryItem[]): string {
@@ -234,18 +246,26 @@ export default function SharePage() {
               <p className="eyebrow">地点清单</p>
               <h2>{placeSummaryLabel}</h2>
               <div className="share-place-list">
-                {places.slice(0, 8).map((place) => (
-                  <a
-                    key={place.id}
-                    aria-label={`打开 Google 地点 ${place.name}`}
-                    href={buildGoogleMapsPlaceUrl({ latitude: place.latitude, longitude: place.longitude, label: place.name, googlePlaceId: place.googlePlaceId })}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <MapPin size={15} />
-                    <span>{place.name}</span>
-                  </a>
-                ))}
+                {places.slice(0, 8).map((place) => {
+                  const placeHref = getGooglePlaceHrefForPlace(place);
+                  return placeHref ? (
+                    <a
+                      key={place.id}
+                      aria-label={`打开 Google 地点 ${place.name}`}
+                      href={placeHref}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <MapPin size={15} />
+                      <span>{place.name}</span>
+                    </a>
+                  ) : (
+                    <span key={place.id}>
+                      <MapPin size={15} />
+                      {place.name}
+                    </span>
+                  );
+                })}
                 {places.length === 0 ? <span>暂未整理地点。</span> : null}
               </div>
             </section>
