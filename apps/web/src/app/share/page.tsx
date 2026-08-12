@@ -189,7 +189,7 @@ export default function SharePage() {
   const packingItems = trip.packingItems ?? [];
   const usablePackingItems = packingItems.filter(hasUsablePackingItem);
   const placeSummaryLabel = shareablePlaceCount > 0 ? `${shareablePlaceCount} 个地点` : "待整理";
-  const bookingSummaryLabel = usableBookings.length > 0 ? `${usableBookings.length} 项确认` : "待整理";
+  const bookingSummaryLabel = usableBookings.length > 0 ? `${usableBookings.length} 项预订` : "待整理";
   const packingSummaryLabel = usablePackingItems.length > 0 ? `${usablePackingItems.filter((item) => item.packed).length}/${usablePackingItems.length}` : "待整理";
 
   return (

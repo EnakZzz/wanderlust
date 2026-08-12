@@ -421,6 +421,54 @@ async function mockPublicShareWithEmptyDepartureRuntime(page: Page) {
   );
 }
 
+async function mockPublicShareWithPendingBookingRuntime(page: Page) {
+  const tripId = "trip_public_pending_booking";
+  await page.route("**/api/share/public_pending_booking", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        share: {
+          id: "share_pending_booking",
+          tripId,
+          token: "public_pending_booking",
+          visibility: "public",
+          allowCopy: true,
+          revokedAt: null,
+          expiresAt: null
+        },
+        trip: {
+          id: tripId,
+          ownerId: "google:test-user",
+          title: "曼谷公开路书",
+          destination: "Bangkok, Thailand",
+          startDate: "2026-11-05",
+          endDate: "2026-11-07",
+          timezone: "Asia/Bangkok",
+          status: "published",
+          places: [],
+          bookings: [{
+            id: "booking_pending_dinner",
+            tripId,
+            type: "ticket",
+            title: "晚餐候补确认",
+            status: "todo",
+            startsAt: "2026-11-05 19:00",
+            attachmentIds: [],
+            segments: []
+          }],
+          attachments: [],
+          packingItems: [],
+          weather: [],
+          budgetMembers: [],
+          budgetItems: [],
+          days: []
+        }
+      })
+    })
+  );
+}
+
 async function mockPublicShareWithDraftCoordinatesRuntime(page: Page) {
   const tripId = "trip_public_draft_coordinates";
   await page.route("**/api/share/public_draft_coordinates", (route) =>
@@ -2191,6 +2239,21 @@ test("public share routebook uses customer-facing empty checklist copy", async (
   await expect(page.getByText("0/0")).toHaveCount(0);
   await expect(page.getByText("1/1")).toHaveCount(0);
   await expect(page.getByText("暂未整理打包清单。")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("public share routebook does not label pending bookings as confirmed", async ({ page }) => {
+  await mockPublicShareWithPendingBookingRuntime(page);
+  await page.goto("/share?token=public_pending_booking", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "曼谷公开路书" })).toBeVisible();
+  const bookingSideCard = page.locator(".share-side-card").filter({ hasText: "预订" });
+  await expect(bookingSideCard.getByRole("heading", { name: "1 项预订" })).toBeVisible();
+  await expect(page.getByText("1 项确认")).toHaveCount(0);
+  await expect(bookingSideCard).toContainText("晚餐候补确认");
+  await expect(bookingSideCard).toContainText("2026-11-05 19:00");
+  await expect(bookingSideCard).not.toContainText("已确认");
+  await expect(page.locator(".share-stat-grid div").filter({ hasText: "预订" }).locator("strong")).toHaveText("1");
   await expectNoHorizontalOverflow(page);
 });
 
