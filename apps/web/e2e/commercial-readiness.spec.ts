@@ -1158,6 +1158,59 @@ test("AI planning and import prompts expose stable labels", async ({ page }) => 
   await expect(page.getByLabel("AI 导入材料")).toBeVisible();
 });
 
+test("AI workbench presents a clear preview-first workflow", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("radio", { name: "AI" }).click();
+
+  await expect(page.locator(".ai-command-strip")).toBeVisible();
+  await expect(page.locator(".ai-command-strip")).toContainText("先看预览，再写入路书");
+  await expect(page.getByLabel("AI 修改流程")).toContainText("输入");
+  await expect(page.getByLabel("AI 修改流程")).toContainText("预览");
+  await expect(page.getByLabel("AI 修改流程")).toContainText("确认");
+  await expect(page.locator(".ai-card-step").nth(0)).toHaveText("01");
+  await expect(page.locator(".ai-card-step").nth(1)).toHaveText("02");
+  await expect(page.locator(".ai-status-card")).toContainText("登录后启用 AI 生成");
+  await expectNoHorizontalOverflow(page);
+
+  const desktop = await page.locator(".ai-workbench").evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const strip = element.querySelector<HTMLElement>(".ai-command-strip")?.getBoundingClientRect();
+    const steps = Array.from(element.querySelectorAll<HTMLElement>(".ai-command-steps span")).map((step) => {
+      const stepRect = step.getBoundingClientRect();
+      return { width: Math.round(stepRect.width), height: Math.round(stepRect.height), text: step.textContent?.trim() ?? "" };
+    });
+    const actions = Array.from(element.querySelectorAll<HTMLElement>("button, .file-upload-button")).map((action) => {
+      const actionRect = action.getBoundingClientRect();
+      return { width: Math.round(actionRect.width), height: Math.round(actionRect.height), text: action.textContent?.trim() ?? "" };
+    });
+    return {
+      height: Math.round(rect.height),
+      stripHeight: Math.round(strip?.height ?? 0),
+      steps,
+      actions,
+      viewport: document.documentElement.clientWidth
+    };
+  });
+  expect(desktop.stripHeight, JSON.stringify(desktop)).toBeLessThan(150);
+  expect(desktop.steps.length).toBe(3);
+  desktop.steps.forEach((step) => {
+    expect(step.width, JSON.stringify(desktop)).toBeGreaterThanOrEqual(44);
+    expect(step.height, JSON.stringify(desktop)).toBeGreaterThanOrEqual(44);
+  });
+  expect(desktop.actions.length, JSON.stringify(desktop)).toBeGreaterThanOrEqual(2);
+  desktop.actions.forEach((action) => {
+    expect(action.width, `${action.text} width`).toBeGreaterThanOrEqual(44);
+    expect(action.height, `${action.text} height`).toBeGreaterThanOrEqual(44);
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".ai-command-strip")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  const mobileStripHeight = await page.locator(".ai-command-strip").evaluate((element) => Math.round(element.getBoundingClientRect().height));
+  expect(mobileStripHeight).toBeLessThan(240);
+});
+
 test("dialogs and select menus keep usable tap targets", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

@@ -3318,12 +3318,26 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
             {activeModule === "ai" ? (
               <div className="ai-workbench">
+                <section className="ai-command-strip">
+                  <div>
+                    <p className="eyebrow">AI Copilot</p>
+                    <strong>先看预览，再写入路书</strong>
+                    <span>规划、导入、截图识别和全局修改都走同一套确认流程。</span>
+                  </div>
+                  <div className="ai-command-steps" aria-label="AI 修改流程">
+                    <span>输入</span>
+                    <span>预览</span>
+                    <span>确认</span>
+                  </div>
+                </section>
+
                 <div className="ai-card ai-plan-card">
                   <div className="ai-card-heading">
-                    <Sparkles size={20} />
+                    <span className="ai-card-step">01</span>
                     <div>
                       <p className="eyebrow">AI 路书</p>
                       <strong>规划一个路书草稿</strong>
+                      <span>适合从一句需求开始生成天级路线。</span>
                     </div>
                   </div>
                   <Textarea
@@ -3339,10 +3353,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
                 <div className="ai-card ai-import-card">
                   <div className="ai-card-heading">
-                    <FileUp size={20} />
+                    <span className="ai-card-step">02</span>
                     <div>
                       <p className="eyebrow">导入到草稿</p>
                       <strong>把素材整理成路书</strong>
+                      <span>适合把订单、截图、邮件和已有笔记整理成结构化行程。</span>
                     </div>
                   </div>
                   <Textarea
@@ -3372,7 +3387,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                   ) : null}
                 </div>
 
-                {!user ? <div className="ai-status-card">运行 AI 草稿前请先用 Google 或 Apple 登录。</div> : null}
+                {!user ? (
+                  <div className="ai-status-card">
+                    <ShieldCheck size={20} />
+                    <div>
+                      <strong>登录后启用 AI 生成</strong>
+                      <span>现在可以先整理 prompt 和导入材料；登录后会先生成预览，确认后才写入路书。</span>
+                    </div>
+                  </div>
+                ) : null}
                 {aiError ? <div className="sync-error">{aiError}</div> : null}
 
                 {aiDraftPreview ? (
