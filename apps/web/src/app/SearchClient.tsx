@@ -34,6 +34,12 @@ export function SearchClient() {
         </Button>
       </div>
 
+      <DestinationSearchPanel
+        className="search-page-panel"
+        placeholder="试试京都、里斯本、首尔或墨西哥城..."
+        suggestions={["京都", "里斯本", "首尔", "墨西哥城", "曼谷", "巴黎"]}
+      />
+
       <section className="search-flow-strip" aria-label="目的地搜索流程">
         {searchFlowSteps.map((step, index) => {
           const Icon = step.icon;
@@ -47,12 +53,6 @@ export function SearchClient() {
           );
         })}
       </section>
-
-      <DestinationSearchPanel
-        className="search-page-panel"
-        placeholder="试试京都、里斯本、首尔或墨西哥城..."
-        suggestions={["京都", "里斯本", "首尔", "墨西哥城", "曼谷", "巴黎"]}
-      />
 
       <div className="search-inspiration-grid" aria-label="目的地灵感">
         {destinationBriefs.map((destination) => (

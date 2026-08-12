@@ -576,6 +576,9 @@ test("destination search guides selection into routebook planning", async ({ pag
   await expectNoHorizontalOverflow(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByLabel("搜索目的地")).toBeInViewport();
+  const mobileSearchPosition = await page.locator(".destination-panel-search").first().boundingBox();
+  expect(mobileSearchPosition?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(760);
   await expect(page.locator(".search-flow-step").first()).toBeVisible();
   await expect(page.locator(".search-inspiration-card").first()).toBeVisible();
   await expectVisibleTapTargetsAtLeast44(page, ".search-heading a, .destination-quick-grid a, .search-inspiration-card");
