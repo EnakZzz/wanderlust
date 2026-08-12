@@ -2630,11 +2630,11 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                     </label>
                     <label>
                       <span>标题</span>
-                      <Input value={booking.title} onChange={(event) => updateBooking(booking.id, { title: event.target.value })} />
+                      <Input aria-label={`${booking.title} booking title`} value={booking.title} onChange={(event) => updateBooking(booking.id, { title: event.target.value })} />
                     </label>
                     <label>
                       <span>编号</span>
-                      <Input value={booking.confirmationCode ?? ""} onChange={(event) => updateBooking(booking.id, { confirmationCode: event.target.value })} />
+                      <Input aria-label={`${booking.title} confirmation code`} value={booking.confirmationCode ?? ""} onChange={(event) => updateBooking(booking.id, { confirmationCode: event.target.value })} />
                     </label>
                     <label>
                       <span>状态</span>
