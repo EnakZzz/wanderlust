@@ -698,6 +698,8 @@ test("AI itinerary changes render a confirmable preview before applying", async 
   await page.getByRole("button", { name: "生成修改预览" }).click();
 
   await expect(page.getByText("上午节奏调整预览")).toBeVisible();
+  await expect(page.locator(".ai-patch-preview")).toContainText("2026年9月1日");
+  await expect(page.locator(".ai-patch-preview").getByText(/2026-09-01/)).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "浅草寺慢游" })).toHaveCount(0);
   await expect(page.getByRole("checkbox", { name: "应用 AI 修改 把上午行程改成浅草寺慢游" })).toHaveAttribute("aria-checked", "true");
   await expectVisibleTapTargetsAtLeast44(page, ".ai-operation-checkbox, .ai-patch-preview-heading button");
@@ -931,6 +933,8 @@ test("local routebook editing supports a first itinerary item without login", as
 
   await expect(page.getByText(/3 天 · 登录后同步/)).toBeVisible();
   await expect(page.getByText(/1 day · 登录后同步/)).toHaveCount(0);
+  await expect(page.locator(".day-strip")).toContainText("2026年10月12日");
+  await expect(page.locator(".day-strip").getByText("2026-10-12", { exact: true })).toHaveCount(0);
 
   await page.getByRole("button", { name: "添加行程项" }).click();
   await expect(page.getByRole("heading", { name: "新的行程项" })).toBeVisible();

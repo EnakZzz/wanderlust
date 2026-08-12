@@ -478,7 +478,7 @@ function describeAiPatchOperation(operation: AiItineraryPatchOperation, trip: Tr
   }
 
   const day = trip.days.find((item) => item.id === operation.dayId);
-  const dayTitle = day ? `${day.title} · ${day.date}` : "未找到的日期";
+  const dayTitle = day ? `${day.title} · ${formatDisplayDayDate(day.date)}` : "未找到的日期";
   if (operation.type === "add_item") {
     return {
       dayTitle,
@@ -489,8 +489,8 @@ function describeAiPatchOperation(operation: AiItineraryPatchOperation, trip: Tr
   if (operation.type === "update_day") {
     return {
       dayTitle,
-      before: [day?.title, day?.date].filter(Boolean).join(" · ") || "无",
-      after: [operation.after.title ?? day?.title, operation.after.date ?? day?.date].filter(Boolean).join(" · ")
+      before: [day?.title, day?.date ? formatDisplayDayDate(day.date) : undefined].filter(Boolean).join(" · ") || "无",
+      after: [operation.after.title ?? day?.title, formatDisplayDayDate(operation.after.date ?? day?.date)].filter(Boolean).join(" · ")
     };
   }
   const item = day?.items.find((entry) => entry.id === operation.itemId);
@@ -506,7 +506,7 @@ function describeAiPatchOperation(operation: AiItineraryPatchOperation, trip: Tr
     return {
       dayTitle,
       before: item ? `${dayTitle} · ${item.title}` : "未找到",
-      after: `${toDay ? `${toDay.title} · ${toDay.date}` : operation.toDayId}${typeof operation.toSortOrder === "number" ? ` · 第 ${operation.toSortOrder + 1} 位` : ""}`
+      after: `${toDay ? `${toDay.title} · ${formatDisplayDayDate(toDay.date)}` : operation.toDayId}${typeof operation.toSortOrder === "number" ? ` · 第 ${operation.toSortOrder + 1} 位` : ""}`
     };
   }
   return {
@@ -682,6 +682,10 @@ function googlePlaceDisplayUrl(place: Place): string {
     label: place.name,
     googlePlaceId: place.googlePlaceId
   });
+}
+
+function formatDisplayDayDate(date?: string): string {
+  return formatTripDateRange(date, date);
 }
 
 function googleMapsSearchUrl(query: string): string {
@@ -2611,7 +2615,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       onDrop={(event) => dropOnDay(event, day.id)}
                     >
                       <strong>{day.title}</strong>
-                      <span>{day.date}</span>
+                      <span>{formatDisplayDayDate(day.date)}</span>
                     </button>
                   ))}
                 </div>
@@ -3456,7 +3460,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         <article key={day.id ?? day.date} className="ai-day-preview">
                           <div>
                             <strong>{day.title}</strong>
-                            <span>{day.date}</span>
+                            <span>{formatDisplayDayDate(day.date)}</span>
                           </div>
                           {(day.items ?? []).map((item) => (
                             <p key={item.id ?? `${day.date}-${item.title}`}>
@@ -3563,7 +3567,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         if (!day) return null;
                         return (
                           <article key={day.id} className="ai-route-mini-day">
-                            <span>{day.title} · {day.date}</span>
+                            <span>{day.title} · {formatDisplayDayDate(day.date)}</span>
                             {day.items.map((item) => <p key={item.id}><b>{item.startTime ?? "--:--"}</b>{item.title}</p>)}
                           </article>
                         );
@@ -3576,7 +3580,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                         if (!day) return null;
                         return (
                           <article key={day.id} className="ai-route-mini-day">
-                            <span>{day.title} · {day.date}</span>
+                            <span>{day.title} · {formatDisplayDayDate(day.date)}</span>
                             {day.items.map((item) => <p key={item.id}><b>{item.startTime ?? "--:--"}</b>{item.title}</p>)}
                           </article>
                         );
