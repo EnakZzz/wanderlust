@@ -16,11 +16,11 @@ type ProductNavProps = {
 const openGlobalAiDialogEvent = "wanderlust:open-global-ai-dialog";
 
 const navItems = [
-  { id: "dashboard", label: "控制台", href: "/dashboard", icon: LayoutDashboard },
-  { id: "journeys", label: "路书", href: "/journeys", icon: Route },
-  { id: "passport", label: "足迹", href: "/passport", icon: MapPinned },
-  { id: "search", label: "搜索", href: "/search", icon: Search },
-  { id: "assistant", label: "AI", href: "/?ai=1#editor", icon: Sparkles }
+  { id: "dashboard", label: "控制台", ariaLabel: "打开控制台", href: "/dashboard", icon: LayoutDashboard },
+  { id: "journeys", label: "路书", ariaLabel: "打开路书列表", href: "/journeys", icon: Route },
+  { id: "passport", label: "足迹", ariaLabel: "打开旅行足迹", href: "/passport", icon: MapPinned },
+  { id: "search", label: "搜索", ariaLabel: "打开搜索页面", href: "/search", icon: Search },
+  { id: "assistant", label: "AI", ariaLabel: "打开 AI 修改入口", href: "/?ai=1#editor", icon: Sparkles }
 ] as const;
 
 export function ProductNav({ tone = "light", active = "home" }: ProductNavProps) {
@@ -42,7 +42,7 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
 
   return (
     <nav className={className} aria-label="Primary">
-      <a className="product-nav-brand" href="/">
+      <a className="product-nav-brand" href="/" aria-label="返回首页">
         <Plane size={18} />
         <span>{productBrand.shortName}</span>
       </a>
@@ -57,7 +57,7 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
                   <a
                     className={active === item.id ? "active" : undefined}
                     href={item.href}
-                    aria-label={item.label}
+                    aria-label={item.ariaLabel}
                     onClick={item.id === "assistant" ? openAssistantInCurrentEditor : undefined}
                   >
                     <Icon size={16} />

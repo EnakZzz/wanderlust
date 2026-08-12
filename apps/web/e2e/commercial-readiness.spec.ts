@@ -393,6 +393,9 @@ for (const path of ["/", "/dashboard"] as const) {
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect(page.locator(path === "/" ? ".hero-shell .product-nav" : ".product-nav").first()).toBeVisible();
     await expect(page.locator(".product-nav-actions a").first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "返回首页" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "打开路书列表" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "打开 AI 修改入口" })).toBeVisible();
 
     const actions = await page.locator(".product-nav-brand, .product-nav-links a, .product-nav-actions a").evaluateAll((links) =>
       links
