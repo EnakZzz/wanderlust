@@ -896,7 +896,8 @@ label span {
 }
 
 .journeys-grid {
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(290px, 420px));
+  align-items: stretch;
 }
 
 .journey-card,
@@ -909,6 +910,7 @@ label span {
 }
 
 .journey-empty {
+  grid-column: 1 / -1;
   position: relative;
   overflow: hidden;
   align-content: center;

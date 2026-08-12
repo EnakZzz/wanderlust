@@ -1298,6 +1298,27 @@ test("signed-in journey cards keep destination imagery full bleed", async ({ pag
   await expectNoHorizontalOverflow(page);
 });
 
+test("single journey card stays card-sized on desktop", async ({ page }) => {
+  await mockSignedInRuntime(page);
+
+  await page.goto("/journeys", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(".journey-photo-card")).toHaveCount(1);
+
+  const card = await page.locator(".journey-photo-card").first().evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      viewport: document.documentElement.clientWidth
+    };
+  });
+
+  expect(card.width, JSON.stringify(card)).toBeLessThanOrEqual(460);
+  expect(card.width, JSON.stringify(card)).toBeLessThan(card.viewport * 0.5);
+  expect(card.height, JSON.stringify(card)).toBeGreaterThanOrEqual(320);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("empty journey library presents compact commercial actions", async ({ page }) => {
   await page.goto("/journeys", { waitUntil: "domcontentloaded" });
 
