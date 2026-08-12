@@ -496,7 +496,7 @@ test("global command has a visible launcher and can hand prompts to AI", async (
   await expect(page.locator(".global-ai-launcher")).toHaveCSS("visibility", "hidden");
   await expect(page.locator(".global-command-launcher")).toHaveCSS("visibility", "hidden");
 
-  await page.getByPlaceholder("搜索页面，或输入一句话让 AI 修改当前路书...").fill("把第一天节奏放慢");
+  await page.getByRole("combobox", { name: "全局命令输入" }).fill("把第一天节奏放慢");
   await page.getByText("AI 修改当前路书").click();
 
   await expect(page.getByRole("dialog", { name: "AI 修改路书" })).toBeVisible();

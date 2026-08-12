@@ -63,6 +63,7 @@ export function GlobalCommand() {
           <Command className="command-menu" loop>
             <Command.Input
               className="command-input"
+              aria-label="全局命令输入"
               placeholder="搜索页面，或输入一句话让 AI 修改当前路书..."
               value={query}
               onValueChange={setQuery}
