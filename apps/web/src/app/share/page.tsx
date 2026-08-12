@@ -199,6 +199,7 @@ export default function SharePage() {
   const placeSummaryLabel = shareablePlaces.length > 0 ? `${shareablePlaces.length} 个地点` : "待整理";
   const bookingSummaryLabel = usableBookings.length > 0 ? `${usableBookings.length} 项预订` : "待整理";
   const packingSummaryLabel = usablePackingItems.length > 0 ? `${usablePackingItems.filter((item) => item.packed).length}/${usablePackingItems.length} 已打包` : "待整理";
+  const hasSidebarPublicDetails = shareablePlaces.length > 0 || usableBookings.length > 0 || usablePackingItems.length > 0;
 
   return (
     <main className="share-page">
@@ -231,7 +232,11 @@ export default function SharePage() {
               <section className="share-empty-route">
                 <p className="eyebrow">每日行程</p>
                 <h2>暂未整理每日行程。</h2>
-                <span>这本路书还没有公开具体日期安排，可先查看右侧已整理的地点、预订和出发清单。</span>
+                <span>
+                  {hasSidebarPublicDetails
+                    ? "这本路书还没有公开具体日期安排，可先查看右侧已整理的地点、预订和出发清单。"
+                    : "创建者尚未公开具体安排。"}
+                </span>
               </section>
             ) : null}
             {days.map((day, dayIndex) => {

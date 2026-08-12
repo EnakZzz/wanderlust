@@ -469,6 +469,45 @@ async function mockPublicShareWithPendingBookingRuntime(page: Page) {
   );
 }
 
+async function mockPublicShareWithNoPublicDetailsRuntime(page: Page) {
+  const tripId = "trip_public_no_details";
+  await page.route("**/api/share/public_no_details", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        share: {
+          id: "share_no_details",
+          tripId,
+          token: "public_no_details",
+          visibility: "public",
+          allowCopy: true,
+          revokedAt: null,
+          expiresAt: null
+        },
+        trip: {
+          id: tripId,
+          ownerId: "google:test-user",
+          title: "空白公开路书",
+          destination: "Taipei, Taiwan",
+          startDate: "2027-02-01",
+          endDate: "2027-02-03",
+          timezone: "Asia/Taipei",
+          status: "published",
+          places: [],
+          bookings: [],
+          attachments: [],
+          packingItems: [],
+          weather: [],
+          budgetMembers: [],
+          budgetItems: [],
+          days: []
+        }
+      })
+    })
+  );
+}
+
 async function mockPublicShareWithManyPlacesRuntime(page: Page) {
   const tripId = "trip_public_many_places";
   const places = Array.from({ length: 10 }, (_, index) => ({
@@ -2404,6 +2443,20 @@ test("public share routebook does not label pending bookings as confirmed", asyn
   await expect(bookingSideCard).not.toContainText("已确认");
   await expect(page.locator(".share-stat-grid div").filter({ hasText: "预订" }).locator("strong")).toHaveText("1");
   await expect(page.getByText("暂未整理每日行程。")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("public share routebook uses accurate copy when nothing public is organized", async ({ page }) => {
+  await mockPublicShareWithNoPublicDetailsRuntime(page);
+  await page.goto("/share?token=public_no_details", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "空白公开路书" })).toBeVisible();
+  await expect(page.getByText("暂未整理每日行程。")).toBeVisible();
+  await expect(page.getByText("创建者尚未公开具体安排。")).toBeVisible();
+  await expect(page.getByText(/可先查看右侧已整理/)).toHaveCount(0);
+  await expect(page.locator(".share-side-card").filter({ hasText: "地点清单" }).getByRole("heading", { name: "待整理" })).toBeVisible();
+  await expect(page.locator(".share-side-card").filter({ hasText: "预订" }).getByRole("heading", { name: "待整理" })).toBeVisible();
+  await expect(page.locator(".share-side-card").filter({ hasText: "出发清单" }).getByRole("heading", { name: "待整理" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
