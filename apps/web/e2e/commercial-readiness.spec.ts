@@ -1010,6 +1010,17 @@ test("signed-in journey cards keep destination imagery full bleed", async ({ pag
 });
 
 test("public and journey list display typography avoids vertical clipping", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const homeOverflow = await page.locator(".hero-copy h1").evaluateAll((elements) =>
+    elements.map((element) => ({
+      text: element.textContent?.trim(),
+      overflow: element.scrollHeight - element.clientHeight
+    }))
+  );
+  for (const item of homeOverflow) {
+    expect(item.overflow, `${item.text} should not clip vertically`).toBeLessThanOrEqual(2);
+  }
+
   await mockSignedInTripListRuntime(page);
   await page.goto("/journeys", { waitUntil: "domcontentloaded" });
 
@@ -1031,6 +1042,17 @@ test("public and journey list display typography avoids vertical clipping", asyn
     }))
   );
   for (const item of dashboardOverflow) {
+    expect(item.overflow, `${item.text} should not clip vertically`).toBeLessThanOrEqual(2);
+  }
+
+  await page.goto("/passport", { waitUntil: "domcontentloaded" });
+  const passportOverflow = await page.locator(".passport-hero h1, .passport-section-heading h2, .passport-empty strong").evaluateAll((elements) =>
+    elements.map((element) => ({
+      text: element.textContent?.trim(),
+      overflow: element.scrollHeight - element.clientHeight
+    }))
+  );
+  for (const item of passportOverflow) {
     expect(item.overflow, `${item.text} should not clip vertically`).toBeLessThanOrEqual(2);
   }
 
