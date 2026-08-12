@@ -1342,12 +1342,13 @@ test("map pins keep mobile tap targets and open google places", async ({ page })
   const mapPinLink = page.locator(".interactive-map").getByRole("link", { name: /打开 Google 地点 1：新的收藏地点/ });
   await expect(mapPinLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(mapPinLink).not.toHaveAttribute("href", /\/maps\/dir\//);
-  const mapPlaceFocus = page.locator(".map-place-list").getByRole("button", { name: /在地图中显示 1：新的收藏地点/ });
-  await mapPlaceFocus.click();
+  await expect(page.locator(".map-place-list").getByRole("button", { name: /在地图中显示 1：新的收藏地点/ })).toHaveCount(0);
+  const mapPlaceFocus = page.locator(".map-place-list .map-place-focus").first();
+  await expect(mapPlaceFocus).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
+  await expect(mapPlaceFocus).not.toHaveAttribute("href", /\/maps\/dir\//);
+  await expect(mapPlaceFocus).toHaveAttribute("aria-label", /打开 Google 地点 1：新的收藏地点/);
   await expect(page.getByRole("radio", { name: "地图" })).toBeChecked();
-  await expect(page.locator(".map-place-item").first()).toHaveClass(/active/);
   const mapPlaceLink = page.locator(".map-place-list").getByRole("link", { name: /打开 Google 地点 1：新的收藏地点/ });
-  await expect(mapPlaceLink).toContainText("Google 地点");
   await expect(mapPlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(mapPlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
   await expect(page.getByRole("radio", { name: "地图" })).toBeChecked();
@@ -1406,11 +1407,9 @@ test("map place list follows itinerary visit order", async ({ page }) => {
 
   await expect(page.locator(".map-place-item strong").nth(0)).toHaveText("First stop");
   await expect(page.locator(".map-place-item strong").nth(1)).toHaveText("Second stop");
-  const focusButton = page.locator(".map-place-list").getByRole("button", { name: "在地图中显示 1：First stop" });
-  await focusButton.click();
-  await expect(page.getByRole("radio", { name: "地图" })).toBeChecked();
-  await expect(page.locator(".map-place-item").first()).toHaveClass(/active/);
-  const googlePlaceLink = page.locator(".map-place-list").getByRole("link", { name: "打开 Google 地点 1：First stop" });
+  await expect(page.locator(".map-place-list").getByRole("button", { name: "在地图中显示 1：First stop" })).toHaveCount(0);
+  const googlePlaceLink = page.locator(".map-place-list .map-place-focus").first();
+  await expect(googlePlaceLink).toHaveAttribute("aria-label", "打开 Google 地点 1：First stop");
   await expect(googlePlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(googlePlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
 });

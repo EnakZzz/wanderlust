@@ -3225,7 +3225,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .map-place-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(112px, auto);
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -3240,11 +3240,11 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   min-width: 0;
   min-height: 56px;
   border: 0;
-  border-radius: 18px 8px 8px 18px;
+  border-radius: 18px;
   display: grid;
   grid-template-columns: 30px 1fr;
   gap: 6px 10px;
-  padding: 14px 4px 14px 14px;
+  padding: 14px;
   background: transparent;
   color: inherit;
   text-align: left;
@@ -3254,29 +3254,6 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .map-place-focus:hover,
 .map-place-focus:focus-visible {
   background: rgba(71,104,120,0.07);
-  outline: none;
-}
-.map-place-google {
-  min-width: 44px;
-  min-height: 56px;
-  border: 0;
-  border-radius: 8px 18px 18px 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 12px;
-  background: rgba(66, 133, 244, 0.08);
-  color: var(--blue);
-  cursor: pointer;
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 950;
-  white-space: nowrap;
-}
-.map-place-google:hover,
-.map-place-google:focus-visible {
-  background: rgba(66, 133, 244, 0.14);
   outline: none;
 }
 .map-place-index {
@@ -5603,12 +5580,8 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     grid-template-columns: minmax(0, 1fr);
   }
   .map-place-focus {
-    border-radius: 18px 18px 8px 8px;
+    border-radius: 18px;
     padding-right: 14px;
-  }
-  .map-place-google {
-    min-height: 48px;
-    border-radius: 8px 8px 18px 18px;
   }
   .ai-command-strip {
     grid-template-columns: 1fr;

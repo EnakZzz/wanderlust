@@ -2994,19 +2994,17 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 <div className="map-place-list">
                   {mapPlaces.map((place, placeIndex) => (
                     <div key={place.id} className={`map-place-item${focusedMapPlaceId === place.id ? " active" : ""}`}>
-                      <button
+                      <a
                         className="map-place-focus"
-                        aria-label={`在地图中显示 ${placeIndex + 1}：${place.name}`}
-                        type="button"
+                        aria-label={`打开 Google 地点 ${placeIndex + 1}：${place.name}`}
+                        href={googlePlaceDisplayUrl(place)}
+                        target="_blank"
+                        rel="noreferrer"
                         onClick={() => setFocusedMapPlaceId(place.id)}
                       >
                         <span className="map-place-index">{placeIndex + 1}</span>
                         <strong>{place.name}</strong>
                         <span>{placeCategoryLabels[place.category]} · {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}</span>
-                      </button>
-                      <a className="map-place-google" aria-label={`打开 Google 地点 ${placeIndex + 1}：${place.name}`} href={googlePlaceDisplayUrl(place)} target="_blank" rel="noreferrer" title="打开 Google 地点">
-                        <ExternalLink size={16} />
-                        <span>Google 地点</span>
                       </a>
                     </div>
                   ))}
