@@ -621,6 +621,18 @@ function calculateMapPosition(place: Place, places: Place[]): { left: string; to
   return { left: `${left}%`, top: `${top}%` };
 }
 
+function buildStaticMapPreviewUrl(places: Place[]): string | undefined {
+  const markers = places
+    .filter((place) => Number.isFinite(place.latitude) && Number.isFinite(place.longitude))
+    .slice(0, 18);
+  if (!markers.length) return undefined;
+  const params = new URLSearchParams({ width: "900", height: "560" });
+  markers.forEach((place) => {
+    params.append("marker", `${place.latitude.toFixed(6)},${place.longitude.toFixed(6)}`);
+  });
+  return `/api/maps/static-preview?${params.toString()}`;
+}
+
 function googleSearchUrl(query: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
@@ -963,6 +975,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const persistedVersionRef = useRef(0);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [mapPreviewFailed, setMapPreviewFailed] = useState(false);
   const [placeSearch, setPlaceSearch] = useState("");
   const [googleImportText, setGoogleImportText] = useState("");
   const [routebookDrawerOpen, setRoutebookDrawerOpen] = useState(false);
@@ -1127,6 +1140,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const settlements = useMemo(() => calculateBudgetSettlements(draft.budgetMembers, draft.budgetItems), [draft.budgetMembers, draft.budgetItems]);
   const shareUrl = shareInfo ? buildShareUrl(shareInfo.token) : null;
   const shareButtonTitle = !user ? "登录后可分享只读路书" : shareUrl ? "复制只读分享链接" : "分享只读路书";
+  const mapPreviewUrl = useMemo(() => buildStaticMapPreviewUrl(draft.places), [draft.places]);
   const destinationTheme = useMemo(() => getDestinationTheme(draft.destination), [draft.destination]);
   const aiPatchPreviewTrip = useMemo(() => {
     if (!aiPatchPreview) return null;
@@ -1148,6 +1162,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     "--journey-line": destinationTheme.line,
     "--journey-glow": destinationTheme.glow
   } as CSSProperties;
+
+  useEffect(() => {
+    setMapPreviewFailed(false);
+  }, [mapPreviewUrl]);
 
   function getRequestedTripId(): string | null {
     const routeTripId = initialTripId?.trim();
@@ -2759,7 +2777,15 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
             {activeModule === "map" ? (
               <div className="map-editor">
-                <div className="map-card interactive-map">
+                <div className={`map-card interactive-map${mapPreviewUrl && !mapPreviewFailed ? " has-google-preview" : ""}`}>
+                  {mapPreviewUrl && !mapPreviewFailed ? (
+                    <img
+                      alt={`${draft.destination} Google 地图预览`}
+                      className="map-preview-image"
+                      src={mapPreviewUrl}
+                      onError={() => setMapPreviewFailed(true)}
+                    />
+                  ) : null}
                   {draft.places.map((place) => {
                     const position = calculateMapPosition(place, draft.places);
                     return (
@@ -2768,7 +2794,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                       </button>
                     );
                   })}
-                  <span>{draft.destination} 路线分布</span>
+                  <span className="map-caption">{draft.destination} 路线分布</span>
                 </div>
                 <div className="map-place-list">
                   {draft.places.map((place) => (

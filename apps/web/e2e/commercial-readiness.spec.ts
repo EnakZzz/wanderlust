@@ -145,6 +145,21 @@ async function mockSignedInRuntime(page: Page, options: { saveDelayMs?: number }
   await page.exposeFunction("getCommercialApiCalls", () => calls);
 }
 
+async function mockGoogleStaticMapPreview(page: Page) {
+  await page.route("**/api/maps/static-preview**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "image/svg+xml",
+      body: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560">
+        <rect width="900" height="560" fill="#d8e7dc"/>
+        <path d="M0 420 C180 360 300 470 470 390 S700 250 900 300" fill="none" stroke="#8a9f8a" stroke-width="28"/>
+        <path d="M70 130 H830 M150 0 V560 M420 0 V560 M0 260 H900" stroke="#f8f0df" stroke-width="18" opacity="0.82"/>
+        <circle cx="350" cy="260" r="28" fill="#8a3f36"/>
+      </svg>`
+    })
+  );
+}
+
 async function mockSignedInTripListRuntime(page: Page) {
   const tokyoTrip = {
     id: "trip_tokyo",
@@ -1053,12 +1068,17 @@ test("dialogs and select menus keep usable tap targets", async ({ page }) => {
 });
 
 test("map pins keep mobile tap targets and return to places", async ({ page }) => {
+  await mockGoogleStaticMapPreview(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
   await page.getByRole("radio", { name: "地点" }).click();
   await page.getByRole("button", { name: "添加地点" }).click();
   await page.getByRole("radio", { name: "地图" }).click();
 
+  const preview = page.locator(".map-preview-image");
+  await expect(preview).toBeVisible();
+  await expect(preview).toHaveAttribute("src", /\/api\/maps\/static-preview\?/);
+  await expect(preview).toHaveJSProperty("complete", true);
   await expectVisibleTapTargetsAtLeast44(page, ".map-pin");
   await page.locator(".map-pin").first().click();
 

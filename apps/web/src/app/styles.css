@@ -2708,6 +2708,23 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .interactive-map {
   min-height: 440px;
 }
+.map-preview-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.92) contrast(1.02);
+}
+.interactive-map.has-google-preview::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255,248,238,0.06), rgba(35,30,24,0.14)),
+    radial-gradient(circle at 20% 18%, rgba(255,248,238,0.22), transparent 34%);
+}
 .map-pin {
   width: 44px;
   height: 44px;
@@ -2716,10 +2733,23 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   display: grid;
   place-items: center;
   position: absolute;
+  z-index: 2;
   color: #fff8ee;
   background: var(--accent);
-  box-shadow: 0 0 0 9px rgba(148,111,71,0.18);
+  box-shadow:
+    0 0 0 3px rgba(255,248,238,0.92),
+    0 0 0 10px rgba(148,111,71,0.18),
+    0 14px 32px rgba(45,35,26,0.28);
   cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+.map-pin:hover,
+.map-pin:focus-visible {
+  background: #8a3f36;
+  box-shadow:
+    0 0 0 3px rgba(255,248,238,0.98),
+    0 0 0 12px rgba(138,63,54,0.2),
+    0 16px 36px rgba(45,35,26,0.34);
 }
 .map-pin.pin-1 { left: 24%; top: 28%; }
 .map-pin.pin-2 { left: 58%; top: 45%; background: var(--blue); }
@@ -3797,7 +3827,20 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     linear-gradient(30deg, rgba(71,104,120,0.2), rgba(148,111,71,0.2)),
     repeating-linear-gradient(45deg, #f3ebdc 0 18px, #eadfcf 18px 20px);
 }
-.map-card span { position: absolute; left: 18px; bottom: 18px; font-weight: 900; }
+.map-card .map-caption {
+  position: absolute;
+  z-index: 2;
+  left: 18px;
+  bottom: 18px;
+  max-width: calc(100% - 36px);
+  padding: 9px 12px;
+  border: 1px solid rgba(255,248,238,0.58);
+  border-radius: 999px;
+  background: rgba(42,35,28,0.62);
+  color: #fff8ee;
+  font-weight: 900;
+  backdrop-filter: blur(12px);
+}
 .pin { width: 16px; height: 16px; border-radius: 999px; background: var(--accent); position: absolute; box-shadow: 0 0 0 7px rgba(148,111,71,0.22); }
 .pin.one { left: 24%; top: 28%; }
 .pin.two { left: 58%; top: 44%; background: var(--blue); }

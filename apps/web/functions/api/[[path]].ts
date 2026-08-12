@@ -440,6 +440,10 @@ export const onRequest: PagesFunction<AuthEnv> = async ({ request, env, params }
     return searchDestinations(request, env);
   }
 
+  if (path === "maps/static-preview" && request.method === "GET") {
+    return getStaticMapPreview(request, env);
+  }
+
   const publicShareMatch = path.match(/^share\/([^/]+)$/);
   if (publicShareMatch && request.method === "GET") {
     return getPublicShare(env, decodeURIComponent(publicShareMatch[1]!));
@@ -564,6 +568,73 @@ function searchFallbackDestinations(query: string): DestinationCandidate[] {
   return fallbackDestinations
     .filter((candidate) => `${candidate.name} ${candidate.fullName}`.toLowerCase().includes(normalized))
     .slice(0, 5);
+}
+
+async function getStaticMapPreview(request: Request, env: AuthEnv): Promise<Response> {
+  if (!env.GOOGLE_MAPS_API_KEY?.trim()) {
+    return json({ error: "google_maps_not_configured" }, 503);
+  }
+
+  const requestUrl = new URL(request.url);
+  const markers = requestUrl.searchParams
+    .getAll("marker")
+    .flatMap((value) => value.split("|"))
+    .map(parseMapCoordinate)
+    .filter((coordinate): coordinate is { latitude: number; longitude: number } => Boolean(coordinate))
+    .slice(0, 18);
+
+  if (!markers.length) {
+    return json({ error: "missing_markers" }, 400);
+  }
+
+  const width = clampInteger(Number(requestUrl.searchParams.get("width")), 320, 900, 900);
+  const height = clampInteger(Number(requestUrl.searchParams.get("height")), 240, 640, 560);
+  const googleUrl = new URL("https://maps.googleapis.com/maps/api/staticmap");
+  googleUrl.searchParams.set("size", `${width}x${height}`);
+  googleUrl.searchParams.set("scale", "2");
+  googleUrl.searchParams.set("maptype", "roadmap");
+  googleUrl.searchParams.set("language", requestUrl.searchParams.get("language") ?? "zh-CN");
+  googleUrl.searchParams.set("markers", `color:0x8a3f36|size:mid|${markers.map(formatMapCoordinate).join("|")}`);
+  if (markers.length > 1) {
+    googleUrl.searchParams.set("path", `color:0x476878cc|weight:4|${markers.map(formatMapCoordinate).join("|")}`);
+  } else {
+    googleUrl.searchParams.set("zoom", "13");
+  }
+  googleUrl.searchParams.set("key", env.GOOGLE_MAPS_API_KEY);
+
+  const response = await fetch(googleUrl.toString(), {
+    headers: { "accept": "image/png,image/*;q=0.8" },
+    cf: { cacheTtl: 60 * 60 * 24 * 14, cacheEverything: true }
+  });
+  if (!response.ok || !response.body) {
+    return json({ error: "google_static_map_failed" }, 502);
+  }
+
+  return new Response(response.body, {
+    status: 200,
+    headers: {
+      "content-type": response.headers.get("content-type") ?? "image/png",
+      "cache-control": "public, max-age=86400, s-maxage=1209600, stale-while-revalidate=604800"
+    }
+  });
+}
+
+function parseMapCoordinate(value: string): { latitude: number; longitude: number } | undefined {
+  const [latitudeText, longitudeText] = value.split(",").map((part) => part.trim());
+  const latitude = Number(latitudeText);
+  const longitude = Number(longitudeText);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return undefined;
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return undefined;
+  return { latitude, longitude };
+}
+
+function formatMapCoordinate(coordinate: { latitude: number; longitude: number }): string {
+  return `${coordinate.latitude.toFixed(6)},${coordinate.longitude.toFixed(6)}`;
+}
+
+function clampInteger(value: number, min: number, max: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(value)));
 }
 
 async function listTrips(request: Request, env: AuthEnv): Promise<Response> {
