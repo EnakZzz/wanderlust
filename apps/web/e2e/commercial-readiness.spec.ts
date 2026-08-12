@@ -773,7 +773,10 @@ test("local routebook editing supports a first itinerary item without login", as
   await expect(page.getByRole("heading", { name: "新的行程项" })).toBeVisible();
 
   await page.getByRole("button", { name: "编辑 新的行程项" }).click();
-  await page.locator(".route-step-editor input").nth(2).fill("浅草寺参观");
+  await expect(page.getByLabel("行程项地点")).toBeVisible();
+  await expect(page.getByLabel("行程项推荐理由")).toBeVisible();
+  await expect(page.getByLabel("行程项备注")).toBeVisible();
+  await page.getByLabel("行程项标题").fill("浅草寺参观");
 
   await expect(page.getByRole("heading", { name: "浅草寺参观" })).toBeVisible();
   await expect(page.getByText("待补地点")).toBeVisible();
@@ -849,8 +852,8 @@ test("expanded itinerary editor inputs keep usable tap targets", async ({ page }
   await page.getByRole("button", { name: "添加行程项" }).click();
   await page.getByRole("button", { name: "编辑 新的行程项" }).click();
 
-  await expect(page.getByLabel("新的行程项 title")).toBeVisible();
-  await expect(page.getByLabel("新的行程项 location")).toBeVisible();
+  await expect(page.getByLabel("行程项标题")).toBeVisible();
+  await expect(page.getByLabel("行程项地点")).toBeVisible();
   await expectVisibleTapTargetsAtLeast44(page, ".route-step-editor input");
   await expectNoHorizontalOverflow(page);
 });

@@ -4185,6 +4185,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   }
   .plan-home-list .trip-card-copy strong {
     line-height: 1.16;
+    min-height: calc(2em * 1.16);
   }
   .plan-home-list .trip-card-copy small {
     margin-top: 10px;

@@ -2417,20 +2417,20 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                                 <div className="route-step-editor" data-route-step-editor={item.id}>
                                   <label className="time-field">
                                     <span>开始</span>
-                                    <Input aria-label={`${item.title} start time`} type="time" value={item.startTime ?? ""} onChange={(event) => updateItem(item.id, { startTime: event.target.value || undefined })} />
+                                    <Input aria-label="行程项开始时间" type="time" value={item.startTime ?? ""} onChange={(event) => updateItem(item.id, { startTime: event.target.value || undefined })} />
                                   </label>
                                   <label className="time-field">
                                     <span>结束</span>
-                                    <Input aria-label={`${item.title} end time`} type="time" value={item.endTime ?? ""} onChange={(event) => updateItem(item.id, { endTime: event.target.value || undefined })} />
+                                    <Input aria-label="行程项结束时间" type="time" value={item.endTime ?? ""} onChange={(event) => updateItem(item.id, { endTime: event.target.value || undefined })} />
                                   </label>
                                   <label>
                                     <Type size={16} />
-                                    <Input aria-label={`${item.title} title`} value={item.title} onChange={(event) => updateItem(item.id, { title: event.target.value })} />
+                                    <Input aria-label="行程项标题" value={item.title} onChange={(event) => updateItem(item.id, { title: event.target.value })} />
                                   </label>
                                   <label>
                                     <MapPin size={16} />
                                     <Input
-                                      aria-label={`${item.title} location`}
+                                      aria-label="行程项地点"
                                       value={linkedPlace?.name ?? item.locationName ?? ""}
                                       placeholder="地点名称"
                                       onChange={(event) => updateItem(item.id, { locationName: event.target.value, placeId: undefined })}
@@ -2439,13 +2439,13 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                                   <label className="reason-field">
                                     <Sparkles size={16} />
                                     <Textarea
-                                      aria-label={`${item.title} route reason`}
+                                      aria-label="行程项推荐理由"
                                       placeholder="为什么放在这里"
                                       value={item.reason ?? ""}
                                       onChange={(event) => updateItem(item.id, { reason: event.target.value })}
                                     />
                                   </label>
-                                  <Textarea aria-label={`${item.title} notes`} value={item.notes ?? ""} onChange={(event) => updateItem(item.id, { notes: event.target.value })} />
+                                  <Textarea aria-label="行程项备注" value={item.notes ?? ""} onChange={(event) => updateItem(item.id, { notes: event.target.value })} />
                                 </div>
                               ) : null}
                             </div>
