@@ -547,6 +547,7 @@ test("AI itinerary changes render a confirmable preview before applying", async 
 
   await expect(page.getByText("上午节奏调整预览")).toBeVisible();
   await expect(page.getByRole("heading", { name: "浅草寺慢游" })).toHaveCount(0);
+  await expect(page.getByRole("checkbox", { name: "应用 AI 修改 把上午行程改成浅草寺慢游" })).toHaveAttribute("aria-checked", "true");
   await expectVisibleTapTargetsAtLeast44(page, ".ai-operation-checkbox, .ai-patch-preview-heading button");
 
   await page.getByRole("button", { name: "应用勾选修改" }).click();
