@@ -256,6 +256,7 @@ export default function SharePage() {
             ) : null}
             {days.map((day, dayIndex) => {
               const dayItems = sortItineraryItems((day.items ?? []).filter(hasUsableItineraryItem));
+              const dayTitle = day.title.trim() || `第 ${dayIndex + 1} 天`;
               return (
               <article key={day.id} className="share-day">
                 <div className="share-day-marker"><span>{String(dayIndex + 1).padStart(2, "0")}</span></div>
@@ -263,7 +264,7 @@ export default function SharePage() {
                   <div className="share-day-heading">
                     <div>
                       <p className="eyebrow">DAY {String(dayIndex + 1).padStart(2, "0")}</p>
-                      <h2>{day.title}</h2>
+                      <h2>{dayTitle}</h2>
                     </div>
                     <span>{formatTripDateRange(day.date, day.date)}</span>
                     <em>{getDaySummary(dayItems)}</em>
