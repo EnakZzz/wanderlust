@@ -410,7 +410,7 @@ async function mockPublicShareWithEmptyDepartureRuntime(page: Page) {
               id: "day_lisbon_1",
               tripId,
               date: "2026-10-01",
-              title: "抵达里斯本",
+              title: "   ",
               sortOrder: 0,
               items: [{
                 id: "item_blank_draft",
@@ -979,7 +979,11 @@ for (const path of ["/dashboard", "/journeys", "/search", "/passport"] as const)
 test("global AI prompt routes into the routebook preview assistant", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  await page.getByRole("button", { name: "打开 AI 修改窗口" }).click();
+  if (test.info().project.name === "mobile") {
+    await page.getByRole("link", { name: "打开 AI 修改入口" }).click();
+  } else {
+    await page.getByRole("button", { name: "打开 AI 修改窗口" }).click();
+  }
   await expect(page.getByRole("dialog", { name: "AI 修改路书" })).toBeVisible();
   await page.getByLabel("全局 AI 修改需求").fill("把第二天节奏放松一点");
   await page.getByRole("button", { name: "进入预览" }).click();
@@ -1066,7 +1070,11 @@ test("AI itinerary changes render a confirmable preview before applying", async 
   await page.getByRole("button", { name: "添加行程项" }).click();
   await expect(page.getByRole("heading", { name: "新的行程项" })).toBeVisible();
 
-  await page.getByRole("button", { name: "打开 AI 修改窗口" }).click();
+  if (test.info().project.name === "mobile") {
+    await page.getByRole("link", { name: "打开 AI 修改入口" }).click();
+  } else {
+    await page.getByRole("button", { name: "打开 AI 修改窗口" }).click();
+  }
   await page.getByPlaceholder("例如：把第三天节奏放松一点，晚餐换成更有当地特色的选择。").fill("把第一天上午节奏放松一点");
   await page.getByRole("button", { name: "进入预览" }).click();
   await page.getByRole("button", { name: "生成修改预览" }).click();
@@ -1716,17 +1724,11 @@ test("map pins keep mobile tap targets and open google places", async ({ page })
   const mapPinLink = page.locator(".interactive-map").getByRole("link", { name: /打开 Google 地点 1：新的收藏地点/ });
   await expect(mapPinLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
   await expect(mapPinLink).not.toHaveAttribute("href", /\/maps\/dir\//);
-  await expect(page.locator(".map-place-list").getByRole("button", { name: /在地图中显示 1：新的收藏地点/ })).toHaveCount(0);
   const mapPlaceFocus = page.locator(".map-place-list .map-place-focus").first();
-  await expect(mapPlaceFocus).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
-  await expect(mapPlaceFocus).not.toHaveAttribute("href", /\/maps\/dir\//);
-  await expect(mapPlaceFocus).toHaveAttribute("aria-label", /打开 Google 地点 1：新的收藏地点/);
-  const googlePlacePagePromise = page.waitForEvent("popup");
+  await expect(mapPlaceFocus).toHaveAttribute("type", "button");
+  await expect(mapPlaceFocus).toHaveAttribute("aria-label", /在地图中显示 1：新的收藏地点/);
   await mapPlaceFocus.click();
-  const googlePlacePage = await googlePlacePagePromise;
-  await expect(googlePlacePage).toHaveURL(/https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
-  await googlePlacePage.close();
-  await expect(page.locator(".map-place-item").first()).not.toHaveClass(/active/);
+  await expect(page.locator(".map-place-item").first()).toHaveClass(/active/);
   await expect(page.getByRole("radio", { name: "地图" })).toBeChecked();
   const mapPlaceLink = page.locator(".map-place-list").getByRole("link", { name: /打开 Google 地点 1：新的收藏地点/ });
   await expect(mapPlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
@@ -1787,11 +1789,14 @@ test("map place list follows itinerary visit order", async ({ page }) => {
 
   await expect(page.locator(".map-place-item strong").nth(0)).toHaveText("First stop");
   await expect(page.locator(".map-place-item strong").nth(1)).toHaveText("Second stop");
-  await expect(page.locator(".map-place-list").getByRole("button", { name: "在地图中显示 1：First stop" })).toHaveCount(0);
   const googlePlaceLink = page.locator(".map-place-list .map-place-focus").first();
-  await expect(googlePlaceLink).toHaveAttribute("aria-label", "打开 Google 地点 1：First stop");
-  await expect(googlePlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
-  await expect(googlePlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
+  await expect(googlePlaceLink).toHaveText(/1/);
+  await expect(googlePlaceLink).toHaveAttribute("aria-label", "在地图中显示 1：First stop");
+  await expect(googlePlaceLink).toHaveAttribute("type", "button");
+  await expect(page.locator(".map-place-list .map-place-external").first()).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
+  await expect(page.locator(".map-place-list .map-place-external").first()).not.toHaveAttribute("href", /\/maps\/dir\//);
+  await googlePlaceLink.click();
+  await expect(page.locator(".map-place-item").first()).toHaveClass(/active/);
 });
 
 test("budget member toggles keep mobile tap targets", async ({ page }) => {
@@ -2239,7 +2244,7 @@ test("anonymous users can create a named local routebook and keep it after refre
   await page.getByLabel("时区").fill("Asia/Tokyo");
   await page.getByLabel("出发日期").fill("2026-09-01");
   await page.getByLabel("结束日期").fill("2026-09-03");
-  await page.getByRole("button", { name: "保存修改" }).click();
+  await page.getByRole("button", { name: "完成" }).click();
 
   await expect(page.getByRole("button", { name: /东京亲子路书/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "保存" })).toHaveCount(0);
@@ -2383,13 +2388,11 @@ test("public share routebook renders safely with legacy itinerary types", async 
   await expect(page.getByRole("button", { name: "打开 AI 修改窗口" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "打开全局命令窗口" })).toHaveCount(0);
   const stepPlaceLink = page.locator(".share-step").getByRole("link", { name: "打开 Google 地点 浅草寺" });
-  await expect(stepPlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
-  await expect(stepPlaceLink).toHaveAttribute("href", /query_place_id=ChIJ8T1GpMGOGGARw6cSJo9lN4g/);
+  await expect(stepPlaceLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/place\/\?q=place_id:ChIJ8T1GpMGOGGARw6cSJo9lN4g/);
   await expect(stepPlaceLink).not.toHaveAttribute("href", /\/maps\/dir\//);
   await expect(page.getByRole("link", { name: "显示地点" })).toHaveCount(0);
   const placeDisplayLink = page.locator(".share-place-list a").filter({ hasText: "浅草寺" });
-  await expect(placeDisplayLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/search\/\?api=1/);
-  await expect(placeDisplayLink).toHaveAttribute("href", /query_place_id=ChIJ8T1GpMGOGGARw6cSJo9lN4g/);
+  await expect(placeDisplayLink).toHaveAttribute("href", /https:\/\/www\.google\.com\/maps\/place\/\?q=place_id:ChIJ8T1GpMGOGGARw6cSJo9lN4g/);
   await expect(placeDisplayLink).not.toHaveAttribute("href", /\/maps\/dir\//);
   const bookingSideCard = page.locator(".share-side-card").filter({ hasText: "Hotel Niwa Tokyo" });
   await expect(bookingSideCard).toContainText("已确认");
@@ -2422,6 +2425,7 @@ test("public share routebook uses customer-facing empty checklist copy", async (
 
   await expect(page.getByRole("heading", { name: "里斯本公开路书" })).toBeVisible();
   await expect(page.locator(".share-stat-grid div").filter({ hasText: "安排" }).locator("strong")).toHaveText("0");
+  await expect(page.locator(".share-day-heading").first()).toContainText("第 1 天");
   await expect(page.locator(".share-day-heading").first()).toContainText("0 项安排");
   await expect(page.getByText("这一天还没有安排。")).toBeVisible();
   await expect(page.getByText("这一步还没有补充说明。")).toHaveCount(0);

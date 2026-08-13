@@ -190,16 +190,17 @@ export function useAuthConfigQuery() {
 }
 
 export function useTripsQuery(enabled = true) {
+  const session = useSessionQuery();
   return useQuery({
-    queryKey: ["trips"],
-    queryFn: readTrips,
-    enabled
+    queryKey: ["trips", session.data ? "authed" : "anon"],
+    queryFn: session.data ? readTrips : async () => [],
+    enabled: enabled && !session.isLoading
   });
 }
 
 export function useDashboardData() {
   const session = useSessionQuery();
-  const trips = useTripsQuery(Boolean(session.data));
+  const trips = useTripsQuery();
   const error = session.error ?? trips.error;
   return {
     user: session.data ?? null,

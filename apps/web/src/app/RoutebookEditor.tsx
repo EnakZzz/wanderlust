@@ -26,7 +26,6 @@ import {
   PanelLeftOpen,
   PencilLine,
   Plus,
-  Save,
   Search,
   Share2,
   ShieldCheck,
@@ -1052,7 +1051,7 @@ function calculateBudgetSettlements(members: BudgetMember[], items: BudgetItem[]
 export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   const queryClient = useQueryClient();
   const sessionQuery = useSessionQuery();
-  const tripsQuery = useTripsQuery(Boolean(sessionQuery.data));
+  const tripsQuery = useTripsQuery();
   const [draft, setDraft] = useState<TripDraft>(() => createEmptyTripDraft());
   const [trips, setTrips] = useState<TripSummary[]>([]);
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -1085,8 +1084,12 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     resolver: zodResolver(routebookMetaSchema),
     defaultValues: createInitialMetaForm()
   });
+  const watchedMetaTitle = metaForm.watch("title");
   const watchedDestination = metaForm.watch("destination");
   const watchedDestinationMeta = metaForm.watch("destinationMeta");
+  const watchedMetaStartDate = metaForm.watch("startDate");
+  const watchedMetaEndDate = metaForm.watch("endDate");
+  const watchedMetaTimezone = metaForm.watch("timezone");
   const [destinationCandidates, setDestinationCandidates] = useState<DestinationMeta[]>([]);
   const [isSearchingDestination, setIsSearchingDestination] = useState(false);
   const [destinationSearchError, setDestinationSearchError] = useState<string | null>(null);
@@ -1135,6 +1138,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     setFocusedMapPlaceId(placeId);
     setFocusedPlaceRowId(placeId);
     selectEditorModule("places", { scrollIntoView: true });
+  }
+
+  function focusPlaceOnMap(placeId: string) {
+    setFocusedMapPlaceId(placeId);
   }
 
   useEffect(() => {
@@ -1500,28 +1507,39 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     }, 450);
     return () => window.clearTimeout(timer);
   }, [deletingTripId, draft, isAuthChecked, isSaved, isSharing, isSyncing, routebookNeedsMeta, trips]);
-
-  if (!isAuthChecked) {
-    return (
-      <section id="editor" className="workspace workspace-editor workspace-loading" aria-busy="true">
-        <div className="panel itinerary-panel editor-loading-panel">
-          <div className="editor-loading-routebook">
-            <span />
-            <div>
-              <p className="eyebrow">路书</p>
-              <strong>正在加载你的路书</strong>
-            </div>
-          </div>
-          <div className="editor-loading-line wide" />
-          <div className="editor-loading-grid">
-            <span />
-            <span />
-            <span />
-          </div>
-        </div>
-      </section>
-    );
-  }
+  useEffect(() => {
+    if (!metaDialogMode) return;
+    const normalized = normalizeMetaForm({
+      title: watchedMetaTitle,
+      destination: watchedDestination,
+      destinationMeta: watchedDestinationMeta,
+      startDate: watchedMetaStartDate,
+      endDate: watchedMetaEndDate,
+      timezone: watchedMetaTimezone
+    });
+    if (
+      normalized.title === draft.title &&
+      normalized.destination === draft.destination &&
+      normalized.startDate === draft.startDate &&
+      normalized.endDate === draft.endDate &&
+      normalized.timezone === draft.timezone &&
+      (normalized.destinationMeta?.fullName ?? "") === (draft.destinationMeta?.fullName ?? "")
+    ) {
+      return;
+    }
+    void applyRoutebookMeta(normalized);
+  }, [
+    applyRoutebookMeta,
+    draft.destination,
+    draft.timezone,
+    metaDialogMode,
+    watchedDestination,
+    watchedDestinationMeta,
+    watchedMetaEndDate,
+    watchedMetaStartDate,
+    watchedMetaTimezone,
+    watchedMetaTitle
+  ]);
 
   function markDirty() {
     saveVersionRef.current += 1;
@@ -1557,36 +1575,22 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     setDestinationSearchError(null);
   }
 
-  async function submitRoutebookMeta(values: RoutebookMetaForm) {
+  async function applyRoutebookMeta(values: RoutebookMetaForm) {
     const normalized = normalizeMetaForm(values);
-    if (metaDialogMode === "create") {
-      const nextDraft = createBlankTripDraft();
-      const nextTrip = hydrateDraft({
-        ...nextDraft,
-        ...normalized,
-        days: createTripDays(nextDraft.id, normalized.startDate, normalized.endDate)
-      });
-      setDraft(nextTrip);
-      setSelectedDayId(nextTrip.days[0]!.id);
-      setIsSaved(false);
-      setMetaDialogMode(null);
-      if (user) await persistDraft(nextTrip, false);
-      return;
-    }
-
-    if (metaDialogMode === "edit") {
-      const dateRangeChanged = normalized.startDate !== draft.startDate || normalized.endDate !== draft.endDate;
-      const nextTrip = hydrateDraft({
-        ...draft,
-        ...normalized,
-        days: dateRangeChanged ? createTripDays(draft.id, normalized.startDate, normalized.endDate) : draft.days
-      });
-      setDraft(nextTrip);
-      setSelectedDayId(nextTrip.days[0]!.id);
-      setMetaDialogMode(null);
+    const dateRangeChanged = normalized.startDate !== draft.startDate || normalized.endDate !== draft.endDate;
+    const nextTrip = hydrateDraft({
+      ...draft,
+      ...normalized,
+      days: dateRangeChanged ? createTripDays(draft.id, normalized.startDate, normalized.endDate) : draft.days
+    });
+    setDraft(nextTrip);
+    setSelectedDayId(nextTrip.days[0]!.id);
+    setIsSaved(false);
+    if (user) {
       await persistDraft(nextTrip);
     }
   }
+
 
   function updateSelectedDay(patch: Partial<Pick<TripDay, "title" | "date">>) {
     setDraft((current) => ({ ...current, days: current.days.map((day) => (day.id === selectedDay.id ? { ...day, ...patch } : day)) }));
@@ -2263,6 +2267,28 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     );
   }
 
+  if (!isAuthChecked) {
+    return (
+      <section id="editor" className="workspace workspace-editor workspace-loading" aria-busy="true">
+        <div className="panel itinerary-panel editor-loading-panel">
+          <div className="editor-loading-routebook">
+            <span />
+            <div>
+              <p className="eyebrow">路书</p>
+              <strong>正在加载你的路书</strong>
+            </div>
+          </div>
+          <div className="editor-loading-line wide" />
+          <div className="editor-loading-grid">
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="editor" className={showPlanHome ? "workspace workspace-plan-home" : "workspace workspace-editor"}>
       <div className="panel itinerary-panel">
@@ -2365,7 +2391,9 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
           <Dialog
             open={Boolean(metaDialogMode)}
             onOpenChange={(open) => {
-              if (!open && !routebookNeedsMeta) setMetaDialogMode(null);
+              if (open) return;
+              void applyRoutebookMeta(metaForm.getValues());
+              if (!routebookNeedsMeta) setMetaDialogMode(null);
             }}
           >
             <DialogContent
@@ -2456,13 +2484,18 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               </div>
               <DialogFooter className="routebook-modal-actions">
                 {!routebookNeedsMeta ? (
-                  <Button variant="secondary" type="button" onClick={() => setMetaDialogMode(null)}>
+                  <Button variant="secondary" type="button" onClick={() => {
+                    void applyRoutebookMeta(metaForm.getValues());
+                    setMetaDialogMode(null);
+                  }}>
                     取消
                   </Button>
                 ) : null}
-                <Button type="button" onClick={metaForm.handleSubmit((values) => void submitRoutebookMeta(values))}>
-                  <Save size={18} />
-                  <span>{routebookNeedsMeta || metaDialogMode === "create" ? "创建路书" : "保存修改"}</span>
+                <Button type="button" onClick={() => {
+                  void applyRoutebookMeta(metaForm.getValues());
+                  setMetaDialogMode(null);
+                }}>
+                  <span>{routebookNeedsMeta || metaDialogMode === "create" ? "创建并完成" : "完成"}</span>
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -3016,16 +3049,24 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
                 <div className="map-place-list">
                   {mapPlaces.map((place, placeIndex) => (
                     <div key={place.id} className={`map-place-item${focusedMapPlaceId === place.id ? " active" : ""}`}>
-                      <a
+                      <button
                         className="map-place-focus"
+                        type="button"
+                        aria-label={`在地图中显示 ${placeIndex + 1}：${place.name}`}
+                        onClick={() => focusPlaceOnMap(place.id)}
+                      >
+                        <span className="map-place-index">{placeIndex + 1}</span>
+                        <strong>{place.name}</strong>
+                        <span>{placeCategoryLabels[place.category]} · {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}</span>
+                      </button>
+                      <a
+                        className="map-place-external"
                         aria-label={`打开 Google 地点 ${placeIndex + 1}：${place.name}`}
                         href={googlePlaceDisplayUrl(place)}
                         target="_blank"
                         rel="noreferrer"
                       >
-                        <span className="map-place-index">{placeIndex + 1}</span>
-                        <strong>{place.name}</strong>
-                        <span>{placeCategoryLabels[place.category]} · {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}</span>
+                        <ExternalLink size={16} />
                       </a>
                     </div>
                   ))}
@@ -3668,3 +3709,6 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     </section>
   );
 }
+
+
+

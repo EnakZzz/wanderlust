@@ -6,9 +6,9 @@ export const storageKey = "wanderlust.editorDraft.v2";
 export const offlineStorageKey = "wanderlust.offlineBundles.v1";
 
 export const moduleCopy: Record<EditorModule, string> = {
-  itinerary: "按天整理路线、顺序、备注和导航目标，手机端可离线查看。",
-  places: "地点只保存一次，可复用到行程、地图、天气和导航。",
-  map: "用坐标预览路线分布，并打开外部地图导航或搜索。",
+  itinerary: "按天整理路线、顺序、备注和地点目标，手机端可离线查看。",
+  places: "地点只保存一次，可复用到行程、地图、天气和搜索。",
+  map: "用坐标预览路线分布，并打开 Google 地点页。",
   bookings: "把确认单和上传文件关联到当前路书。",
   files: "集中管理护照、签证、票券、保险、收据和确认单。",
   packing: "跟踪证件、衣物、电子设备、健康用品、现金卡券和自定义物品。",

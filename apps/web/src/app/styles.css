@@ -3225,8 +3225,8 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .map-place-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 8px;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--surface);
@@ -3250,6 +3250,24 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   text-align: left;
   cursor: pointer;
   text-decoration: none;
+}
+.map-place-external {
+  align-self: center;
+  margin-right: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  text-decoration: none;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+.map-place-external:hover,
+.map-place-external:focus-visible {
+  background: rgba(71,104,120,0.08);
+  color: var(--ink);
+  outline: none;
 }
 .map-place-focus:hover,
 .map-place-focus:focus-visible {
@@ -5596,6 +5614,10 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     flex-direction: column;
   }
   .place-row, .map-editor, .booking-row-editor, .booking-import-panel, .file-row-editor, .budget-members, .budget-row-editor, .check-row, .packing-row, .search-row, .ai-workbench { grid-template-columns: 1fr; }
+  .place-row {
+    grid-template-columns: minmax(0, 0.34fr) minmax(0, 1fr);
+    gap: 0;
+  }
   .map-place-item {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -5605,46 +5627,63 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   }
   .ai-command-strip {
     grid-template-columns: 1fr;
-    gap: 14px;
-    padding: 16px;
+    gap: 10px;
+    padding: 12px;
+  }
+  .ai-command-strip > div:first-child span {
+    display: none;
   }
   .ai-command-strip strong {
-    font-size: 24px;
+    font-size: 20px;
   }
   .ai-command-steps {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+  .ai-command-steps span {
+    min-height: 44px;
+  }
+  .ai-card {
+    padding: 12px;
+    gap: 8px;
+  }
   .ai-card-heading strong {
-    font-size: 22px;
+    font-size: 19px;
+  }
+  .ai-card-step {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
   }
   .place-card-preview {
-    min-height: 122px;
+    min-height: 76px;
     grid-template-columns: auto minmax(0, 1fr);
     grid-template-rows: auto auto;
     align-items: center;
-    gap: 8px 14px;
-    padding: 16px;
+    gap: 4px 8px;
+    padding: 10px;
   }
   .place-card-summary {
     justify-content: center;
   }
   .place-card-summary strong {
-    font-size: 22px;
+    font-size: 17px;
+  }
+  .place-card-editor {
+    padding: 10px;
+    gap: 6px;
   }
   .place-card-meta {
     grid-column: 1 / -1;
   }
   .place-card-fields.primary {
-    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.54fr);
+    grid-template-columns: minmax(0, 1fr) minmax(96px, 0.44fr);
   }
   .place-card-fields.compact {
-    grid-template-columns: 1fr 1fr;
-  }
-  .place-card-fields.compact label:nth-child(n + 3) {
-    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
   }
   .place-card textarea {
-    min-height: 66px;
+    min-height: 44px;
   }
   .booking-ticket-rail {
     min-height: 88px;
@@ -5709,7 +5748,8 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
     grid-column: 1 / -1;
   }
   .budget-row-editor {
-    gap: 12px;
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
   .budget-members {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5721,7 +5761,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .budget-receipt-summary {
     grid-template-columns: 40px minmax(0, 1fr) auto;
     margin: -14px -14px 0 -14px;
-    padding: 14px;
+    padding: 12px;
     border-right: 0;
     border-bottom: 1px dashed color-mix(in srgb, var(--moss) 34%, var(--line));
   }
@@ -5730,7 +5770,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   }
   .budget-receipt-summary strong {
     grid-column: 2 / span 2;
-    font-size: 28px;
+    font-size: 24px;
   }
   .budget-receipt-summary small {
     grid-column: auto;
@@ -5756,7 +5796,9 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   }
   .member-pill {
     min-width: 0;
+    min-width: 44px;
     padding: 0 12px;
+    min-height: 44px;
   }
   .budget-note-row textarea {
     min-height: 48px;
