@@ -415,9 +415,31 @@ label span {
 .product-nav-icon-links a span {
   display: none;
 }
-.product-nav-icon-links a[href^="https://github.com"] {
+.product-nav-icon-button {
   width: 44px;
-  padding: 0;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(139, 115, 91, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--muted);
+  box-shadow: 0 14px 34px rgba(45, 45, 45, 0.045);
+  backdrop-filter: blur(18px);
+}
+.product-nav-dark .product-nav-icon-button {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(28, 25, 21, 0.26);
+  color: rgba(255, 248, 238, 0.76);
+  box-shadow: none;
+}
+.product-nav-icon-button:hover {
+  background: var(--ink);
+  color: #fff8ee;
+}
+.product-nav-dark .product-nav-icon-button:hover {
+  background: #fff8ee;
+  color: #27231f;
 }
 
 .product-nav-dark .product-nav-links a {

@@ -1,3 +1,5 @@
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { TripSchema, createPersistedTripId, isPersistedTripId, reassignTripReferences } from "@wanderlust/domain";
 
 export type Env = {
@@ -6,52 +8,15 @@ export type Env = {
   APP_PUBLIC_URL: string;
 };
 
-const corsHeaders = {
-  "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-  "access-control-allow-headers": "content-type,authorization"
-};
+const app = new Hono<{ Bindings: Env }>();
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders });
-    }
+app.use("*", cors({ origin: "*", allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], allowHeaders: ["content-type", "authorization"] }));
 
-    const url = new URL(request.url);
+app.get("/health", (c) => c.json({ ok: true, service: "wanderlust-api" }));
 
-    try {
-      if (request.method === "GET" && url.pathname === "/health") {
-        return json({ ok: true, service: "wanderlust-api" });
-      }
-
-      if (request.method === "POST" && url.pathname === "/trips") {
-        return createTrip(request, env);
-      }
-
-      const tripMatch = url.pathname.match(/^\/trips\/([^/]+)$/);
-      if (request.method === "GET" && tripMatch) {
-        return getTrip(decodeURIComponent(tripMatch[1]!), env);
-      }
-
-      const attachmentMatch = url.pathname.match(/^\/attachments\/(.+)$/);
-      if (attachmentMatch) {
-        const key = decodeURIComponent(attachmentMatch[1]!);
-        if (request.method === "PUT") return putAttachment(key, request, env);
-        if (request.method === "GET") return getAttachment(key, env);
-        if (request.method === "DELETE") return deleteAttachment(key, env);
-      }
-
-      return json({ error: "not_found" }, 404);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "internal_error";
-      return json({ error: message }, 400);
-    }
-  }
-};
-
-async function createTrip(request: Request, env: Env): Promise<Response> {
-  const parsed = TripSchema.parse(await request.json());
+app.post("/trips", async (c) => {
+  const env = c.env;
+  const parsed = TripSchema.parse(await c.req.json());
   const id = isPersistedTripId(parsed.id) ? parsed.id : createPersistedTripId();
   const trip = TripSchema.parse(reassignTripReferences(parsed, id));
   await env.DB.prepare(
@@ -68,43 +33,48 @@ async function createTrip(request: Request, env: Env): Promise<Response> {
     .bind(trip.id, trip.ownerId, trip.title, trip.destination, trip.status, JSON.stringify(trip))
     .run();
 
-  return json({ trip }, 201);
-}
+  return c.json({ trip }, 201);
+});
 
-async function getTrip(id: string, env: Env): Promise<Response> {
-  const row = await env.DB.prepare("SELECT payload FROM trips WHERE id = ?").bind(id).first<{ payload: string }>();
+app.get("/trips/:id", async (c) => {
+  const row = await c.env.DB.prepare("SELECT payload FROM trips WHERE id = ?").bind(c.req.param("id")).first<{ payload: string }>();
   if (!row) {
-    return json({ error: "trip_not_found" }, 404);
+    return c.json({ error: "trip_not_found" }, 404);
   }
 
-  return json({ trip: TripSchema.parse(JSON.parse(row.payload)) });
-}
+  return c.json({ trip: TripSchema.parse(JSON.parse(row.payload)) });
+});
 
-async function putAttachment(key: string, request: Request, env: Env): Promise<Response> {
-  const body = await request.arrayBuffer();
-  await env.ATTACHMENTS.put(key, body, {
-    httpMetadata: { contentType: request.headers.get("content-type") ?? "application/octet-stream" }
-  });
-  return json({ key, size: body.byteLength }, 201);
-}
+app.put("/attachments/*", async (c) => {
+  const key = c.req.path.slice("/attachments/".length);
+  const body = await c.req.arrayBuffer();
+  await c.env.ATTACHMENTS.put(key, body, { httpMetadata: { contentType: c.req.header("content-type") ?? "application/octet-stream" } });
+  return c.json({ key, size: body.byteLength }, 201);
+});
 
-async function getAttachment(key: string, env: Env): Promise<Response> {
-  const object = await env.ATTACHMENTS.get(key);
+app.get("/attachments/*", async (c) => {
+  const key = c.req.path.slice("/attachments/".length);
+  const object = await c.env.ATTACHMENTS.get(key);
   if (!object) {
-    return json({ error: "attachment_not_found" }, 404);
+    return c.json({ error: "attachment_not_found" }, 404);
   }
 
-  const headers = new Headers(corsHeaders);
+  const headers = new Headers({
+    "access-control-allow-origin": "*",
+    "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
+    "access-control-allow-headers": "content-type,authorization"
+  });
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
   return new Response(object.body, { headers });
-}
+});
 
-async function deleteAttachment(key: string, env: Env): Promise<Response> {
-  await env.ATTACHMENTS.delete(key);
-  return new Response(null, { status: 204, headers: corsHeaders });
-}
+app.delete("/attachments/*", async (c) => {
+  const key = c.req.path.slice("/attachments/".length);
+  await c.env.ATTACHMENTS.delete(key);
+  return new Response(null, { status: 204 });
+});
 
-function json(body: unknown, status = 200): Response {
-  return Response.json(body, { status, headers: corsHeaders });
-}
+app.notFound((c) => c.json({ error: "not_found" }, 404));
+
+export default app;

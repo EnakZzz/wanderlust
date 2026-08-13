@@ -11,7 +11,8 @@
     "dev": "wrangler dev"
   },
   "dependencies": {
-    "@wanderlust/domain": "0.1.0"
+    "@wanderlust/domain": "0.1.0",
+    "hono": "^4.13.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260719.1",

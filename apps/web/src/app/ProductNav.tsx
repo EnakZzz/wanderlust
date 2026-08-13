@@ -16,12 +16,11 @@ type ProductNavProps = {
 const openGlobalAiDialogEvent = "wanderlust:open-global-ai-dialog";
 
 type NavItem = {
-  id: "dashboard" | "journeys" | "passport" | "search" | "assistant" | "github";
+  id: "dashboard" | "journeys" | "passport" | "search" | "assistant";
   label: string;
   ariaLabel: string;
   href: string;
   icon: React.ComponentType<{ size?: number }>;
-  external?: boolean;
 };
 
 const navItems: NavItem[] = [
@@ -29,8 +28,7 @@ const navItems: NavItem[] = [
   { id: "journeys", label: "路书", ariaLabel: "打开路书列表", href: "/journeys", icon: Route },
   { id: "passport", label: "足迹", ariaLabel: "打开旅行足迹", href: "/passport", icon: MapPinned },
   { id: "search", label: "搜索", ariaLabel: "打开搜索页面", href: "/search", icon: Search },
-  { id: "assistant", label: "AI", ariaLabel: "打开 AI 修改入口", href: "/?ai=1#editor", icon: Sparkles },
-  { id: "github", label: "GitHub", ariaLabel: "打开 Wanderlust GitHub 仓库", href: "https://github.com/EnakZzz/wanderlust", icon: Github, external: true }
+  { id: "assistant", label: "AI", ariaLabel: "打开 AI 修改入口", href: "/?ai=1#editor", icon: Sparkles }
 ] as const;
 
 export function ProductNav({ tone = "light", active = "home" }: ProductNavProps) {
@@ -68,8 +66,6 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
                     className={active === item.id ? "active" : undefined}
                     href={item.href}
                     aria-label={item.ariaLabel}
-                    target={item.external ? "_blank" : undefined}
-                    rel={item.external ? "noreferrer" : undefined}
                     onClick={item.id === "assistant" ? openAssistantInCurrentEditor : undefined}
                   >
                     <Icon size={16} />
@@ -84,6 +80,22 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
       </TooltipProvider>
 
       <div className="product-nav-actions">
+        <TooltipProvider delayDuration={120}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                className="product-nav-icon-button"
+                href="https://github.com/EnakZzz/wanderlust"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="打开 Wanderlust GitHub 仓库"
+              >
+                <Github size={16} />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent>GitHub</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         {!loaded ? (
           <span className="product-nav-status">检查登录状态</span>
         ) : user ? (
