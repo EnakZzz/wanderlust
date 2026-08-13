@@ -2547,70 +2547,69 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .journey-day-hero {
   position: relative;
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 12px;
   overflow: hidden;
-  min-height: 154px;
-  padding: 16px;
-  border: 1px solid var(--journey-line);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 18px 48px var(--journey-glow);
+  min-height: 66px;
+  padding: 12px 16px 12px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--journey-line);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
 }
 .journey-day-hero-copy {
   min-width: 0;
   display: grid;
-  gap: 4px;
+  gap: 2px;
+  align-content: center;
+}
+.journey-day-hero-image-overlay {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.58));
 }
 .journey-day-hero-image {
   position: absolute;
   inset: 0;
   z-index: 0;
-}
-.journey-day-hero-image-overlay {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.76));
-}
-.journey-day-hero > :not(.journey-day-hero-image) {
-  position: relative;
-  z-index: 1;
+  opacity: 0.18;
 }
 .journey-day-title-input {
-  width: min(620px, 100%);
-  min-height: 44px;
+  width: min(420px, 100%);
+  min-height: 30px;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--journey-ink);
   font-family: "Noto Serif SC", Georgia, serif;
   font-style: italic;
-  font-size: clamp(30px, 4.6vw, 48px);
-  line-height: 1.02;
+  font-size: clamp(20px, 3vw, 28px);
+  line-height: 1.05;
 }
 .journey-day-title-input:focus {
   outline: 0;
-  box-shadow: inset 0 -2px 0 var(--journey-accent);
+  box-shadow: inset 0 -1px 0 var(--journey-accent);
 }
 .journey-day-tools {
   flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
 }
 .journey-date-control {
-  min-height: 46px;
+  min-height: 38px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
+  padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.78);
   color: var(--muted);
 }
 .journey-date-control input {
-  min-height: 44px;
+  min-height: 36px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -2618,11 +2617,11 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   font-weight: 900;
 }
 .ai-inline-button {
-  min-height: 46px;
+  min-height: 38px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 0 14px;
+  padding: 0 12px;
   border: 1px solid var(--journey-line);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.8);
@@ -5160,27 +5159,27 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   gap: 18px;
 }
 .workspace:not(.workspace-loading) .journey-day-content {
-  gap: 12px;
+  gap: 6px;
 }
 .workspace:not(.workspace-loading) .journey-day-hero {
   align-items: center;
-  min-height: 116px;
-  padding: 18px 20px;
-  border-radius: 18px;
-  box-shadow: 0 12px 34px var(--journey-glow);
+  min-height: 54px;
+  padding: 10px 14px 10px 16px;
+  border-radius: 0;
+  box-shadow: none;
 }
 .workspace:not(.workspace-loading) .journey-day-title-input {
-  min-height: 44px;
-  font-size: clamp(32px, 3.5vw, 48px);
+  min-height: 28px;
+  font-size: clamp(20px, 2.4vw, 28px);
 }
 .workspace:not(.workspace-loading) .journey-day-tools {
   align-items: center;
 }
 .workspace:not(.workspace-loading) .journey-date-control {
-  min-height: 44px;
+  min-height: 36px;
 }
 .workspace:not(.workspace-loading) .ai-inline-button {
-  min-height: 40px;
+  min-height: 36px;
 }
 .workspace:not(.workspace-loading) .journey-timeline {
   gap: 14px;
