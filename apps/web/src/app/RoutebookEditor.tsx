@@ -2253,6 +2253,14 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   function renderTripCard(trip: TripSummary) {
     return (
       <article key={trip.id} className={trip.id === draft.id ? "trip-card active" : "trip-card"}>
+        <IconButton
+          className="trip-card-edit-button"
+          type="button"
+          label={`编辑 ${trip.title}`}
+          onClick={openEditTripMetaDialog}
+        >
+          <PencilLine size={16} />
+        </IconButton>
         <button className="trip-card-open" type="button" aria-label={`打开 ${trip.title}`} onClick={() => requestLoadTrip(trip.id, { updateRoute: true })}>
           <span className="trip-card-icon" aria-hidden="true">
             <MapPin size={22} />
@@ -2332,9 +2340,6 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
               </span>
             </button>
             <div className="trip-library-actions">
-              <IconButton type="button" onClick={openEditTripMetaDialog} disabled={routebookNeedsMeta} label="编辑路书信息">
-                <PencilLine size={18} />
-              </IconButton>
               <Button variant="secondary" type="button" onClick={createOrCopyShare} disabled={routebookNeedsMeta || !isSaved || isSyncing || isSharing} title={shareButtonTitle}>
                 <Share2 size={17} />
                 <span>{isSharing ? "生成中" : shareUrl ? "复制分享" : "分享"}</span>
