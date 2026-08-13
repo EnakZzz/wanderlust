@@ -5157,8 +5157,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   font-size: 13px;
 }
 .workspace:not(.workspace-loading) .journey-day-shell {
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 12px;
+  gap: 18px;
 }
 .workspace:not(.workspace-loading) .journey-day-content {
   gap: 12px;
