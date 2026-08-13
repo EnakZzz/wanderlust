@@ -847,17 +847,15 @@ export function buildMapsUrl(target: NavigationTarget, provider: MapProvider): s
 }
 
 export function buildGoogleMapsPlaceUrl(target: NavigationTarget): string {
+  const placeId = target.googlePlaceId?.trim();
+  if (placeId) {
+    return `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(placeId)}`;
+  }
+
   const query = target.label?.trim()
     ? `${target.label.trim()} ${target.latitude},${target.longitude}`
     : `${target.latitude},${target.longitude}`;
-  const params = new URLSearchParams({
-    api: "1",
-    query
-  });
-  if (target.googlePlaceId?.trim()) {
-    params.set("query_place_id", target.googlePlaceId.trim());
-  }
-  return `https://www.google.com/maps/search/?${params.toString()}`;
+  return `https://www.google.com/maps/search/?${new URLSearchParams({ api: "1", query }).toString()}`;
 }
 
 export function canCreateAiJob(entitlement: Entitlement): GateResult {

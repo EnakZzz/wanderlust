@@ -789,7 +789,17 @@ describe("buildGoogleMapsPlaceUrl", () => {
       googlePlaceId: "ChIJBSFD3ur_AWARsrB-oN69U5w"
     });
 
-    expect(href).toBe("https://www.google.com/maps/search/?api=1&query=Fushimi+Inari+34.9671%2C135.7727&query_place_id=ChIJBSFD3ur_AWARsrB-oN69U5w");
+    expect(href).toBe("https://www.google.com/maps/place/?q=place_id:ChIJBSFD3ur_AWARsrB-oN69U5w");
     expect(href).not.toContain("/maps/dir/");
+  });
+
+  it("falls back to a place search when place id is unavailable", () => {
+    const href = buildGoogleMapsPlaceUrl({
+      latitude: 34.9671,
+      longitude: 135.7727,
+      label: "Fushimi Inari"
+    });
+
+    expect(href).toBe("https://www.google.com/maps/search/?api=1&query=Fushimi+Inari+34.9671%2C135.7727");
   });
 });
