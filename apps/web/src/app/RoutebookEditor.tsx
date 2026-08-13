@@ -1592,15 +1592,26 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   }
 
 
-  function updateSelectedDay(patch: Partial<Pick<TripDay, "title" | "date">>) {
-    setDraft((current) => ({ ...current, days: current.days.map((day) => (day.id === selectedDay.id ? { ...day, ...patch } : day)) }));
+  function focusDay(dayId: string) {
+    setSelectedDayId(dayId);
+    window.requestAnimationFrame(() => {
+      document.getElementById(`day-${dayId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  function updateDay(dayId: string, patch: Partial<Pick<TripDay, "title" | "date">>) {
+    setDraft((current) => ({ ...current, days: current.days.map((day) => (day.id === dayId ? { ...day, ...patch } : day)) }));
     markDirty();
   }
 
-  function updateItem(itemId: string, patch: Partial<Omit<ItineraryItem, "id" | "dayId">>) {
+  function updateSelectedDay(patch: Partial<Pick<TripDay, "title" | "date">>) {
+    updateDay(selectedDay.id, patch);
+  }
+
+  function updateItem(dayId: string, itemId: string, patch: Partial<Omit<ItineraryItem, "id" | "dayId">>) {
     setDraft((current) => ({
       ...current,
-      days: current.days.map((day) => (day.id === selectedDay.id ? { ...day, items: updateItineraryItem(day.items, itemId, patch) } : day))
+      days: current.days.map((day) => (day.id === dayId ? { ...day, items: updateItineraryItem(day.items, itemId, patch) } : day))
     }));
     markDirty();
   }
@@ -1610,6 +1621,7 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
   }
 
   function addItemToDay(dayId: string, place?: Place) {
+    setSelectedDayId(dayId);
     const targetDay = draft.days.find((day) => day.id === dayId) ?? selectedDay;
     const nextItem: ItineraryItem = {
       id: createDraftId("item"),
@@ -1715,10 +1727,10 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
     markDirty();
   }
 
-  function deleteItem(itemId: string) {
+  function deleteItem(dayId: string, itemId: string) {
     setDraft((current) => ({
       ...current,
-      days: current.days.map((day) => (day.id === selectedDay.id ? { ...day, items: removeItineraryItem(day.items, itemId) } : day))
+      days: current.days.map((day) => (day.id === dayId ? { ...day, items: removeItineraryItem(day.items, itemId) } : day))
     }));
     markDirty();
   }
@@ -2683,208 +2695,216 @@ export function RoutebookEditor({ initialTripId }: RoutebookEditorProps = {}) {
 
             {activeModule === "itinerary" ? (
               <>
-                <div className="day-strip" aria-label="整趟旅行 天">
-                  {draft.days.map((day) => (
-                    <button
-                      key={day.id}
-                      className={day.id === selectedDay.id ? "day-tab active" : "day-tab"}
-                      type="button"
-                      onClick={() => setSelectedDayId(day.id)}
-                      onDragOver={(event) => event.preventDefault()}
-                      onDrop={(event) => dropOnDay(event, day.id)}
-                    >
-                      <strong>{day.title}</strong>
-                      <span>{formatDisplayDayDate(day.date)}</span>
-                    </button>
-                  ))}
-                </div>
-
-                <section className="journey-day-shell" style={journeyThemeStyle}>
-                  <div className="journey-day-rail" aria-hidden="true">
-                    <span />
-                  </div>
-                  <div className="journey-day-content">
-                    <div className="journey-day-hero">
-                      <TravelImage
-                        className="journey-day-hero-image"
-                        src={destinationTheme.image}
-                        alt=""
-                        overlayClassName="journey-day-hero-image-overlay"
-                        sizes="(max-width: 900px) 100vw, 900px"
-                        priority={draft.days.findIndex((day) => day.id === selectedDay.id) === 0}
-                      />
-                      <div>
-                        <p className="eyebrow">DAY {String(draft.days.findIndex((day) => day.id === selectedDay.id) + 1).padStart(2, "0")}</p>
-                        <Input
-                          className="journey-day-title-input"
-                          aria-label="天标题"
-                          value={selectedDay.title}
-                          onChange={(event) => updateSelectedDay({ title: event.target.value })}
-                        />
-                      </div>
-                      <div className="journey-day-tools">
-                        <label className="journey-date-control">
-                          <CalendarDays size={16} />
-                          <Input aria-label="编辑当前日期" type="date" value={selectedDay.date} onChange={(event) => updateSelectedDay({ date: event.target.value })} />
-                        </label>
-                        <Button className="compact" size="sm" type="button" onClick={() => addItem()}>
-                          <Plus size={18} />
-                          <span>添加行程项</span>
-                        </Button>
-                        <Button
-                          className="ai-inline-button"
-                          variant="secondary"
-                          size="sm"
-                          type="button"
-                          onClick={() => openAiAssistant({ source: "day", dayId: selectedDay.id, label: selectedDay.title }, `帮我优化${selectedDay.title}的行程安排`)}
-                        >
-                          <Sparkles size={16} />
-                          <span>AI 修改</span>
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="timeline journey-timeline">
-                      {selectedDay.items.length ? selectedDay.items.map((item) => {
-                        const linkedPlace = getPlaceForItem(item, draft.places);
-                        const navigationTarget = getItemNavigationTarget(item, linkedPlace);
-                        const isExpanded = expandedItineraryItemId === item.id;
-                        const dayNumber = draft.days.findIndex((day) => day.id === selectedDay.id) + 1;
-                        return (
-                          <article
-                            key={item.id}
-                            className={isExpanded ? "route-step-card expanded" : "route-step-card"}
-                            draggable
-                            onDragStart={(event) => handleDragStart(event, { kind: "item", itemId: item.id, fromDayId: selectedDay.id })}
-                            onDragOver={(event) => event.preventDefault()}
-                            onDrop={(event) => dropOnItem(event, selectedDay.id, item.id)}
-                          >
-                            <aside className="route-step-date-panel">
-                              <span>第 {dayNumber} 天</span>
-                              <strong>{formatDayMonthDate(selectedDay.date)}</strong>
-                              <small>{formatWeekday(selectedDay.date)}</small>
-                              <em>{getItineraryIconLabel(item)}</em>
-                              <b>{itineraryTypeLabels[item.type]}</b>
-                            </aside>
-                            <TravelImage
-                              className="route-step-image"
-                              src={getItemImage(item, linkedPlace)}
-                              alt=""
-                              overlayClassName="route-step-image-overlay"
-                              sizes="(max-width: 720px) 100vw, 420px"
-                              style={{
-                                backgroundColor: getItineraryTypeVisual(item.type).color
-                              }}
-                            />
-                            <div className="route-step-body">
-                              <div className="route-step-topline">
-                                <div className="route-step-kicker">
-                                  <span>{displayDestination}</span>
-                                  {item.bookingId ? <small>已关联预订</small> : null}
-                                </div>
-                                <div className="route-step-time">
-                                  <Clock size={15} />
-                                  <span>{formatItemTime(item)}</span>
-                                </div>
+                <section className="journey-itinerary-shell" style={journeyThemeStyle}>
+                  <nav className="journey-day-rail" aria-label="行程天数快速跳转">
+                    <span className="journey-day-rail-line" aria-hidden="true" />
+                    {draft.days.map((day, dayIndex) => (
+                      <button
+                        key={day.id}
+                        className={day.id === selectedDay.id ? "journey-day-jump active" : "journey-day-jump"}
+                        type="button"
+                        onClick={() => focusDay(day.id)}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => dropOnDay(event, day.id)}
+                        aria-label={`跳到 DAY ${String(dayIndex + 1).padStart(2, "0")}`}
+                      >
+                        <span>DAY</span>
+                        <strong>{String(dayIndex + 1).padStart(2, "0")}</strong>
+                      </button>
+                    ))}
+                  </nav>
+                  <div className="journey-day-list">
+                    {draft.days.map((day, dayIndex) => {
+                      const dayNumber = dayIndex + 1;
+                      const dayTitle = day.title.trim() || `第 ${dayNumber} 天`;
+                      return (
+                        <section key={day.id} id={`day-${day.id}`} className={day.id === selectedDay.id ? "journey-day-shell active" : "journey-day-shell"}>
+                          <div className="journey-day-content">
+                            <div className="journey-day-hero">
+                              <TravelImage
+                                className="journey-day-hero-image"
+                                src={destinationTheme.image}
+                                alt=""
+                                overlayClassName="journey-day-hero-image-overlay"
+                                sizes="(max-width: 900px) 100vw, 900px"
+                                priority={dayIndex === 0}
+                              />
+                              <div className="journey-day-hero-copy">
+                                <p className="eyebrow">DAY {String(dayNumber).padStart(2, "0")}</p>
+                                <Input
+                                  className="journey-day-title-input"
+                                  aria-label={`第 ${dayNumber} 天标题`}
+                                  value={day.title}
+                                  placeholder={dayTitle}
+                                  onChange={(event) => updateDay(day.id, { title: event.target.value })}
+                                />
                               </div>
-                              <h3>{item.title}</h3>
-                              <p>{getItemDescription(item, linkedPlace)}</p>
-                              <div className="route-step-facts">
-                                <div className="route-step-fact">
-                                  <MapPin size={18} />
-                                  <span>{getItemLocationLabel(item, linkedPlace)}</span>
-                                </div>
-                                <div className="route-step-fact">
-                                  <Navigation size={18} />
-                                  <span>{getTransportSummary(item)}</span>
-                                </div>
-                                <div className="route-step-fact">
-                                  <Landmark size={18} />
-                                  <span>预计费用：{getItemBudgetEstimate(item, selectedDay, draft.budgetItems)}</span>
-                                </div>
-                              </div>
-                              <div className="route-step-actions">
-                                <button className="route-link-button route-detail-button" type="button" onClick={() => toggleItineraryItemEditor(item.id, isExpanded)}>
-                                  <span>{isExpanded ? "收起" : "详情"}</span>
-                                  <ChevronDown size={16} />
-                                </button>
-                                {navigationTarget ? (
-                                  <a
-                                    className="route-link-button strong"
-                                    aria-label={`打开 Google 地点 ${navigationTarget.label}`}
-                                    href={buildGoogleMapsPlaceUrl(navigationTarget)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    <ExternalLink size={16} />
-                                    <span>显示地点</span>
-                                  </a>
-                                ) : (
-                                  <span className="route-link-button muted">
-                                    <MapPin size={16} />
-                                    <span>待补地点</span>
-                                  </span>
-                                )}
-                                <IconButton className="icon-button small" type="button" onClick={() => toggleItineraryItemEditor(item.id, isExpanded)} label={`编辑 ${item.title}`}>
-                                  <PencilLine size={16} />
-                                </IconButton>
-                                <IconButton
-                                  className="icon-button small ai"
+                              <div className="journey-day-tools">
+                                <label className="journey-date-control">
+                                  <CalendarDays size={16} />
+                                  <Input aria-label={`编辑第 ${dayNumber} 天日期`} type="date" value={day.date} onChange={(event) => updateDay(day.id, { date: event.target.value })} />
+                                </label>
+                                <Button className="compact" size="sm" type="button" onClick={() => addItemToDay(day.id)}>
+                                  <Plus size={18} />
+                                  <span>添加行程项</span>
+                                </Button>
+                                <Button
+                                  className="ai-inline-button"
+                                  variant="secondary"
+                                  size="sm"
                                   type="button"
-                                  onClick={() => openAiAssistant({ source: "item", dayId: selectedDay.id, itemId: item.id, label: item.title }, `帮我调整“${item.title}”这个行程项`)}
-                                  label={`用 AI 修改 ${item.title}`}
+                                  onClick={() => openAiAssistant({ source: "day", dayId: day.id, label: dayTitle }, `帮我优化${dayTitle}的行程安排`)}
                                 >
                                   <Sparkles size={16} />
-                                </IconButton>
-                                <IconButton className="icon-button small danger" type="button" onClick={() => deleteItem(item.id)} label={`删除 ${item.title}`}>
-                                  <Trash2 size={16} />
-                                </IconButton>
+                                  <span>AI 修改</span>
+                                </Button>
                               </div>
-                              {isExpanded ? (
-                                <div className="route-step-editor" data-route-step-editor={item.id}>
-                                  <label className="time-field">
-                                    <span>开始</span>
-                                    <Input aria-label="行程项开始时间" type="time" value={item.startTime ?? ""} onChange={(event) => updateItem(item.id, { startTime: event.target.value || undefined })} />
-                                  </label>
-                                  <label className="time-field">
-                                    <span>结束</span>
-                                    <Input aria-label="行程项结束时间" type="time" value={item.endTime ?? ""} onChange={(event) => updateItem(item.id, { endTime: event.target.value || undefined })} />
-                                  </label>
-                                  <label>
-                                    <Type size={16} />
-                                    <Input aria-label="行程项标题" value={item.title} onChange={(event) => updateItem(item.id, { title: event.target.value })} />
-                                  </label>
-                                  <label>
-                                    <MapPin size={16} />
-                                    <Input
-                                      aria-label="行程项地点"
-                                      value={linkedPlace?.name ?? item.locationName ?? ""}
-                                      placeholder="地点名称"
-                                      onChange={(event) => updateItem(item.id, { locationName: event.target.value, placeId: undefined })}
-                                    />
-                                  </label>
-                                  <label className="reason-field">
-                                    <Sparkles size={16} />
-                                    <Textarea
-                                      aria-label="行程项推荐理由"
-                                      placeholder="为什么放在这里"
-                                      value={item.reason ?? ""}
-                                      onChange={(event) => updateItem(item.id, { reason: event.target.value })}
-                                    />
-                                  </label>
-                                  <Textarea aria-label="行程项备注" value={item.notes ?? ""} onChange={(event) => updateItem(item.id, { notes: event.target.value })} />
-                                </div>
-                              ) : null}
                             </div>
-                          </article>
-                        );
-                      }) : (
-                        <div className="journey-empty-card">
-                          <strong>这一天还没有安排</strong>
-                          <span>添加一个行程项，或从地点库拖一个地点到这里。</span>
-                        </div>
-                      )}
-                    </div>
+
+                            <div className="timeline journey-timeline">
+                              {day.items.length ? day.items.map((item) => {
+                                const linkedPlace = getPlaceForItem(item, draft.places);
+                                const navigationTarget = getItemNavigationTarget(item, linkedPlace);
+                                const isExpanded = expandedItineraryItemId === item.id;
+                                return (
+                                  <article
+                                    key={item.id}
+                                    className={isExpanded ? "route-step-card expanded" : "route-step-card"}
+                                    draggable
+                                    onDragStart={(event) => handleDragStart(event, { kind: "item", itemId: item.id, fromDayId: day.id })}
+                                    onDragOver={(event) => event.preventDefault()}
+                                    onDrop={(event) => dropOnItem(event, day.id, item.id)}
+                                  >
+                                    <aside className="route-step-date-panel">
+                                      <span>第 {dayNumber} 天</span>
+                                      <strong>{formatDayMonthDate(day.date)}</strong>
+                                      <small>{formatWeekday(day.date)}</small>
+                                      <em>{getItineraryIconLabel(item)}</em>
+                                      <b>{itineraryTypeLabels[item.type]}</b>
+                                    </aside>
+                                    <TravelImage
+                                      className="route-step-image"
+                                      src={getItemImage(item, linkedPlace)}
+                                      alt=""
+                                      overlayClassName="route-step-image-overlay"
+                                      sizes="(max-width: 720px) 100vw, 420px"
+                                      style={{
+                                        backgroundColor: getItineraryTypeVisual(item.type).color
+                                      }}
+                                    />
+                                    <div className="route-step-body">
+                                      <div className="route-step-topline">
+                                        <div className="route-step-kicker">
+                                          <span>{displayDestination}</span>
+                                          {item.bookingId ? <small>已关联预订</small> : null}
+                                        </div>
+                                        <div className="route-step-time">
+                                          <Clock size={15} />
+                                          <span>{formatItemTime(item)}</span>
+                                        </div>
+                                      </div>
+                                      <h3>{item.title}</h3>
+                                      <p>{getItemDescription(item, linkedPlace)}</p>
+                                      <div className="route-step-facts">
+                                        <div className="route-step-fact">
+                                          <MapPin size={18} />
+                                          <span>{getItemLocationLabel(item, linkedPlace)}</span>
+                                        </div>
+                                        <div className="route-step-fact">
+                                          <Navigation size={18} />
+                                          <span>{getTransportSummary(item)}</span>
+                                        </div>
+                                        <div className="route-step-fact">
+                                          <Landmark size={18} />
+                                          <span>预计费用：{getItemBudgetEstimate(item, day, draft.budgetItems)}</span>
+                                        </div>
+                                      </div>
+                                      <div className="route-step-actions">
+                                        <button className="route-link-button route-detail-button" type="button" onClick={() => toggleItineraryItemEditor(item.id, isExpanded)}>
+                                          <span>{isExpanded ? "收起" : "详情"}</span>
+                                          <ChevronDown size={16} />
+                                        </button>
+                                        {navigationTarget ? (
+                                          <a
+                                            className="route-link-button strong"
+                                            aria-label={`打开 Google 地点 ${navigationTarget.label}`}
+                                            href={buildGoogleMapsPlaceUrl(navigationTarget)}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                          >
+                                            <ExternalLink size={16} />
+                                            <span>显示地点</span>
+                                          </a>
+                                        ) : (
+                                          <span className="route-link-button muted">
+                                            <MapPin size={16} />
+                                            <span>待补地点</span>
+                                          </span>
+                                        )}
+                                        <IconButton className="icon-button small" type="button" onClick={() => toggleItineraryItemEditor(item.id, isExpanded)} label={`编辑 ${item.title}`}>
+                                          <PencilLine size={16} />
+                                        </IconButton>
+                                        <IconButton
+                                          className="icon-button small ai"
+                                          type="button"
+                                          onClick={() => openAiAssistant({ source: "item", dayId: day.id, itemId: item.id, label: item.title }, `帮我调整“${item.title}”这个行程项`)}
+                                          label={`用 AI 修改 ${item.title}`}
+                                        >
+                                          <Sparkles size={16} />
+                                        </IconButton>
+                                        <IconButton className="icon-button small danger" type="button" onClick={() => deleteItem(day.id, item.id)} label={`删除 ${item.title}`}>
+                                          <Trash2 size={16} />
+                                        </IconButton>
+                                      </div>
+                                      {isExpanded ? (
+                                        <div className="route-step-editor" data-route-step-editor={item.id}>
+                                          <label className="time-field">
+                                            <span>开始</span>
+                                            <Input aria-label="行程项开始时间" type="time" value={item.startTime ?? ""} onChange={(event) => updateItem(day.id, item.id, { startTime: event.target.value || undefined })} />
+                                          </label>
+                                          <label className="time-field">
+                                            <span>结束</span>
+                                            <Input aria-label="行程项结束时间" type="time" value={item.endTime ?? ""} onChange={(event) => updateItem(day.id, item.id, { endTime: event.target.value || undefined })} />
+                                          </label>
+                                          <label>
+                                            <Type size={16} />
+                                            <Input aria-label="行程项标题" value={item.title} onChange={(event) => updateItem(day.id, item.id, { title: event.target.value })} />
+                                          </label>
+                                          <label>
+                                            <MapPin size={16} />
+                                            <Input
+                                              aria-label="行程项地点"
+                                              value={linkedPlace?.name ?? item.locationName ?? ""}
+                                              placeholder="地点名称"
+                                              onChange={(event) => updateItem(day.id, item.id, { locationName: event.target.value, placeId: undefined })}
+                                            />
+                                          </label>
+                                          <label className="reason-field">
+                                            <Sparkles size={16} />
+                                            <Textarea
+                                              aria-label="行程项推荐理由"
+                                              placeholder="为什么放在这里"
+                                              value={item.reason ?? ""}
+                                              onChange={(event) => updateItem(day.id, item.id, { reason: event.target.value })}
+                                            />
+                                          </label>
+                                          <Textarea aria-label="行程项备注" value={item.notes ?? ""} onChange={(event) => updateItem(day.id, item.id, { notes: event.target.value })} />
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  </article>
+                                );
+                              }) : (
+                                <div className="journey-empty-card">
+                                  <strong>这一天还没有安排</strong>
+                                  <span>添加一个行程项，或从地点库拖一个地点到这里。</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </section>
+                      );
+                    })}
                   </div>
                 </section>
               </>

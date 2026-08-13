@@ -2405,42 +2405,64 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   color: var(--accent);
   border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
 }
-.day-strip {
+.journey-itinerary-shell {
   display: grid;
-  grid-template-columns: repeat(5, minmax(112px, 1fr));
-  gap: 10px;
-  margin-bottom: 18px;
-  overflow-x: auto;
-  max-width: 100%;
-  padding-bottom: 4px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
 }
-.day-tab {
-  min-height: 74px;
-  text-align: left;
+.journey-day-rail {
+  position: sticky;
+  top: 92px;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.journey-day-rail-line {
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(to bottom, transparent, var(--journey-line) 8%, var(--journey-line) 92%, transparent);
+}
+.journey-day-jump {
+  position: relative;
+  z-index: 1;
+  width: 54px;
+  min-height: 64px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 8px 0;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: var(--surface);
-  color: var(--ink);
-  padding: 12px;
+  background: rgba(255,255,255,0.9);
+  color: var(--muted);
   cursor: pointer;
+  box-shadow: 0 8px 18px rgba(45,45,45,0.04);
 }
-.day-tab.active {
-  background: var(--paper-deep);
+.journey-day-jump span {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+.journey-day-jump strong {
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 900;
+}
+.journey-day-jump.active {
   border-color: var(--accent);
   color: var(--accent);
+  background: var(--paper-deep);
 }
-.day-tab strong, .day-tab span {
-  display: block;
-}
-.day-tab strong {
-  overflow-wrap: anywhere;
-}
-.day-tab span {
-  margin-top: 5px;
-  color: inherit;
-  opacity: 0.78;
-  font-size: 12px;
-  font-weight: 800;
+.journey-day-list {
+  display: grid;
+  gap: 18px;
 }
 .timeline { display: grid; gap: 14px; }
 .timeline-item {
@@ -2491,38 +2513,31 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 .journey-day-shell {
   position: relative;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
+  padding: 0 0 0 14px;
+  border-left: 2px solid var(--journey-line);
   --journey-accent: var(--accent);
   --journey-ink: var(--accent);
   --journey-wash: var(--paper-deep);
   --journey-line: var(--line);
   --journey-glow: rgba(139, 115, 91, 0.18);
 }
-.journey-day-rail {
-  position: relative;
-  display: flex;
-  justify-content: center;
-}
-.journey-day-rail::before {
+.journey-day-shell::before {
   content: "";
   position: absolute;
-  top: 18px;
-  bottom: 10px;
-  width: 2px;
-  background: linear-gradient(to bottom, transparent, var(--journey-line) 12%, var(--journey-line) 88%, transparent);
-}
-.journey-day-rail span {
-  position: sticky;
-  top: 92px;
-  z-index: 1;
-  width: 15px;
-  height: 15px;
-  margin-top: 18px;
+  left: -7px;
+  top: 24px;
+  width: 14px;
+  height: 14px;
   border: 3px solid var(--paper);
   border-radius: 999px;
   background: var(--journey-accent);
   box-shadow: 0 0 0 1px var(--journey-line), 0 10px 28px var(--journey-glow);
+}
+.journey-day-shell.active::before {
+  background: #fffdf8;
+  border-color: var(--journey-accent);
 }
 .journey-day-content {
   min-width: 0;
@@ -2536,11 +2551,17 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   justify-content: space-between;
   gap: 18px;
   overflow: hidden;
-  padding: 22px;
+  min-height: 154px;
+  padding: 16px;
   border: 1px solid var(--journey-line);
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.86);
   box-shadow: 0 18px 48px var(--journey-glow);
+}
+.journey-day-hero-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
 }
 .journey-day-hero-image {
   position: absolute;
@@ -2556,14 +2577,14 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .journey-day-title-input {
   width: min(620px, 100%);
-  min-height: 54px;
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--journey-ink);
   font-family: "Noto Serif SC", Georgia, serif;
   font-style: italic;
-  font-size: clamp(34px, 5vw, 54px);
+  font-size: clamp(30px, 4.6vw, 48px);
   line-height: 1.02;
 }
 .journey-day-title-input:focus {
@@ -2611,6 +2632,7 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
 }
 .journey-timeline {
   gap: 18px;
+  padding-top: 2px;
 }
 .route-step-card {
   min-height: 258px;
@@ -5134,21 +5156,6 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   margin-top: 3px;
   font-size: 13px;
 }
-.workspace:not(.workspace-loading) .day-strip {
-  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-  gap: 8px;
-  margin-bottom: 14px;
-}
-.workspace:not(.workspace-loading) .day-tab {
-  min-height: 58px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.78);
-}
-.workspace:not(.workspace-loading) .day-tab.active {
-  background: #fff;
-  box-shadow: inset 3px 0 0 var(--accent);
-}
 .workspace:not(.workspace-loading) .journey-day-shell {
   grid-template-columns: 18px minmax(0, 1fr);
   gap: 12px;
@@ -5542,12 +5549,30 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .new-trip-button { justify-self: start; }
   .plan-home-heading { align-items: stretch; flex-direction: column; }
   .editor-heading { grid-template-columns: 1fr; }
+  .journey-itinerary-shell {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .journey-day-rail {
+    position: static;
+    grid-auto-flow: column;
+    justify-content: start;
+    overflow-x: auto;
+    padding: 0 0 2px;
+  }
+  .journey-day-rail-line {
+    display: none;
+  }
+  .journey-day-jump {
+    width: 54px;
+    min-height: 54px;
+    flex: 0 0 auto;
+  }
   .journey-day-shell,
   .workspace:not(.workspace-loading) .journey-day-shell {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
-  .journey-day-rail { display: none; }
   .journey-day-content,
   .workspace:not(.workspace-loading) .journey-day-content,
   .journey-timeline,
@@ -5842,7 +5867,6 @@ h3 { font-size: 24px; font-style: italic; font-weight: 500; }
   .ai-preview-heading { align-items: stretch; flex-direction: column; }
   .search-row .new-trip-button { justify-self: start; }
   .editor-heading { align-items: stretch; flex-direction: column; }
-  .day-strip { grid-template-columns: repeat(5, minmax(144px, 1fr)); }
   .share-hero {
     min-height: clamp(390px, 52vh, 470px);
     padding: 118px 20px 34px;

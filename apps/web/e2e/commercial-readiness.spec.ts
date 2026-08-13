@@ -1067,7 +1067,7 @@ test("AI itinerary changes render a confirmable preview before applying", async 
   });
 
   await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".journey-day-list .journey-day-shell").first().locator(".journey-day-tools").getByRole("button", { name: "添加行程项" }).click();
   await expect(page.getByRole("heading", { name: "新的行程项" })).toBeVisible();
 
   if (test.info().project.name === "mobile") {
@@ -1315,10 +1315,11 @@ test("local routebook editing supports a first itinerary item without login", as
 
   await expect(page.getByText(/3 天 · 登录后同步/)).toBeVisible();
   await expect(page.getByText(/1 day · 登录后同步/)).toHaveCount(0);
-  await expect(page.locator(".day-strip")).toContainText("2026年10月12日");
-  await expect(page.locator(".day-strip").getByText("2026-10-12", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".journey-day-rail")).toContainText("DAY");
+  await expect(page.locator("#day-local_draft-2026-10-12 .journey-date-control input")).toHaveValue("2026-10-12");
+  await expect(page.locator("#day-local_draft-2026-10-12").getByText("2026-10-12", { exact: true })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".journey-day-list .journey-day-shell").first().locator(".journey-day-tools").getByRole("button", { name: "添加行程项" }).click();
   await expect(page.getByRole("heading", { name: "新的行程项" })).toBeVisible();
   await expect(page.locator(".route-step-date-panel")).toContainText("第 1 天");
   await expect(page.locator(".route-step-date-panel").getByText("Day 1", { exact: true })).toHaveCount(0);
@@ -1337,7 +1338,7 @@ test("local routebook editing supports a first itinerary item without login", as
 test("expanded itinerary cards stay readable on mobile", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".journey-day-list .journey-day-shell").first().locator(".journey-day-tools").getByRole("button", { name: "添加行程项" }).click();
   await page.getByRole("button", { name: "编辑 新的行程项" }).click();
 
   if ((page.viewportSize()?.width ?? 0) <= 500) {
@@ -1354,7 +1355,7 @@ test("expanded itinerary cards stay readable on mobile", async ({ page }) => {
       };
     });
     expect(layout.columns).toBe(1);
-    expect(layout.cardWidth, JSON.stringify(layout)).toBeGreaterThan(320);
+    expect(layout.cardWidth, JSON.stringify(layout)).toBeGreaterThan(300);
     expect(layout.cardWidth, JSON.stringify(layout)).toBeGreaterThanOrEqual(layout.contentWidth - 2);
     expect(layout.bodyWidth).toBeGreaterThan(260);
   }
@@ -1365,7 +1366,7 @@ test("expanded itinerary cards stay readable on mobile", async ({ page }) => {
 test("mobile itinerary image placeholder does not dominate expanded cards", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".journey-day-list .journey-day-shell").first().locator(".journey-day-tools").getByRole("button", { name: "添加行程项" }).click();
   await page.getByRole("button", { name: "编辑 新的行程项" }).click();
 
   if ((page.viewportSize()?.width ?? 0) <= 500) {
@@ -1390,7 +1391,7 @@ test("mobile itinerary image placeholder does not dominate expanded cards", asyn
 test("expanded itinerary card actions keep usable tap targets", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".journey-day-list .journey-day-shell").first().locator(".journey-day-tools").getByRole("button", { name: "添加行程项" }).click();
   await page.getByRole("button", { name: "编辑 新的行程项" }).click();
 
   await expectVisibleTapTargetsAtLeast44(page, ".route-step-card button, .route-step-card a");
@@ -1400,7 +1401,7 @@ test("expanded itinerary card actions keep usable tap targets", async ({ page })
 test("expanded itinerary editor inputs keep usable tap targets", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".journey-day-list .journey-day-shell").first().locator(".journey-day-tools").getByRole("button", { name: "添加行程项" }).click();
   await page.getByRole("button", { name: "编辑 新的行程项" }).click();
   await page.locator(".route-step-editor").scrollIntoViewIfNeeded();
 
@@ -1413,9 +1414,9 @@ test("expanded itinerary editor inputs keep usable tap targets", async ({ page }
 test("journey date control keeps usable tap target", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  await page.locator(".journey-date-control").scrollIntoViewIfNeeded();
-  await expect(page.getByLabel("编辑当前日期")).toBeVisible();
-  await expectVisibleTapTargetsAtLeast44(page, ".journey-date-control input");
+  await page.locator("#day-local_draft-2026-10-12 .journey-date-control").scrollIntoViewIfNeeded();
+  await expect(page.locator("#day-local_draft-2026-10-12 .journey-date-control input")).toBeVisible();
+  await expectVisibleTapTargetsAtLeast44(page, "#day-local_draft-2026-10-12 .journey-date-control input");
   await expectNoHorizontalOverflow(page);
 });
 
@@ -1437,7 +1438,7 @@ test("routebook readiness strip shows missing departure work and routes to modul
 
   await page.getByRole("button", { name: "行程待补充" }).click();
   await expect(page.getByRole("radio", { name: "行程" })).toHaveAttribute("aria-checked", "true");
-  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".journey-day-list .journey-day-shell").first().locator(".journey-day-tools").getByRole("button", { name: "添加行程项" }).click();
   await expect(readiness).toContainText("1/5");
   await expect(page.getByRole("button", { name: "行程已就绪" })).toBeVisible();
 
@@ -2150,7 +2151,7 @@ test("switching routebooks with unsaved edits uses an in-app confirmation", asyn
   await page.getByRole("button", { name: "打开 东京亲子路书" }).click();
   await expect(page.locator(".routebook-current")).toContainText("东京亲子路书");
 
-  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".journey-day-list .journey-day-shell").first().locator(".journey-day-tools").getByRole("button", { name: "添加行程项" }).click();
   await page.locator(".routebook-current").click();
   await page.getByRole("button", { name: "打开 埃及红海路书" }).click();
 
@@ -2160,7 +2161,7 @@ test("switching routebooks with unsaved edits uses an in-app confirmation", asyn
   await expect(page.getByRole("dialog", { name: "切换路书" })).toHaveCount(0);
   await expect(page.locator(".routebook-current")).toContainText("东京亲子路书");
 
-  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".journey-day-list .journey-day-shell").first().locator(".journey-day-tools").getByRole("button", { name: "添加行程项" }).click();
   await page.locator(".routebook-current").click();
   await page.getByRole("button", { name: "打开 埃及红海路书" }).click();
   await expect(page.getByRole("dialog", { name: "切换路书" })).toBeVisible();
@@ -2248,7 +2249,7 @@ test("anonymous users can create a named local routebook and keep it after refre
 
   await expect(page.getByRole("button", { name: /东京亲子路书/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "保存" })).toHaveCount(0);
-  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".journey-day-list .journey-day-shell").first().locator(".journey-day-tools").getByRole("button", { name: "添加行程项" }).click();
 
   await expect
     .poll(async () =>
@@ -2291,7 +2292,7 @@ test("signed-in users can save and create a share link for a routebook", async (
 
   await expect(page.getByRole("button", { name: "打开 东京商业路书" })).toBeVisible();
   await expect(page.getByRole("button", { name: "保存" })).toHaveCount(0);
-  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".journey-day-list .journey-day-shell").first().locator(".journey-day-tools").getByRole("button", { name: "添加行程项" }).click();
   await expect
     .poll(async () => page.evaluate(async () => (window as unknown as { getCommercialApiCalls: () => Promise<{ saves: number; shares: number }> }).getCommercialApiCalls()))
     .toMatchObject({ saves: 1, shares: 0 });
@@ -2325,7 +2326,7 @@ test("signed-in routebook autosave stays single-flight on slow networks", async 
   await page.goto("/journeys/trip_11111111-1111-4111-8111-111111111111", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("button", { name: "保存" })).toHaveCount(0);
-  await page.getByRole("button", { name: "添加行程项" }).click();
+  await page.locator(".journey-day-list .journey-day-shell").first().locator(".journey-day-tools").getByRole("button", { name: "添加行程项" }).click();
 
   await expect(page.getByRole("button", { name: "分享" })).toBeDisabled();
   await expect
