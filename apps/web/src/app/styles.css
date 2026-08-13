@@ -415,6 +415,10 @@ label span {
 .product-nav-icon-links a span {
   display: none;
 }
+.product-nav-icon-links a[href^="https://github.com"] {
+  width: 44px;
+  padding: 0;
+}
 
 .product-nav-dark .product-nav-links a {
   color: rgba(255, 248, 238, 0.76);

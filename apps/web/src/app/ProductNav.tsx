@@ -1,7 +1,7 @@
 "use client";
 
 import type { MouseEvent } from "react";
-import { Compass, LayoutDashboard, LogOut, MapPinned, Plane, Route, Search, Sparkles } from "lucide-react";
+import { Compass, Github, LayoutDashboard, LogOut, MapPinned, Plane, Route, Search, Sparkles } from "lucide-react";
 import { productBrand } from "@wanderlust/domain";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -15,12 +15,22 @@ type ProductNavProps = {
 
 const openGlobalAiDialogEvent = "wanderlust:open-global-ai-dialog";
 
-const navItems = [
+type NavItem = {
+  id: "dashboard" | "journeys" | "passport" | "search" | "assistant" | "github";
+  label: string;
+  ariaLabel: string;
+  href: string;
+  icon: React.ComponentType<{ size?: number }>;
+  external?: boolean;
+};
+
+const navItems: NavItem[] = [
   { id: "dashboard", label: "控制台", ariaLabel: "打开控制台", href: "/dashboard", icon: LayoutDashboard },
   { id: "journeys", label: "路书", ariaLabel: "打开路书列表", href: "/journeys", icon: Route },
   { id: "passport", label: "足迹", ariaLabel: "打开旅行足迹", href: "/passport", icon: MapPinned },
   { id: "search", label: "搜索", ariaLabel: "打开搜索页面", href: "/search", icon: Search },
-  { id: "assistant", label: "AI", ariaLabel: "打开 AI 修改入口", href: "/?ai=1#editor", icon: Sparkles }
+  { id: "assistant", label: "AI", ariaLabel: "打开 AI 修改入口", href: "/?ai=1#editor", icon: Sparkles },
+  { id: "github", label: "GitHub", ariaLabel: "打开 Wanderlust GitHub 仓库", href: "https://github.com/EnakZzz/wanderlust", icon: Github, external: true }
 ] as const;
 
 export function ProductNav({ tone = "light", active = "home" }: ProductNavProps) {
@@ -58,6 +68,8 @@ export function ProductNav({ tone = "light", active = "home" }: ProductNavProps)
                     className={active === item.id ? "active" : undefined}
                     href={item.href}
                     aria-label={item.ariaLabel}
+                    target={item.external ? "_blank" : undefined}
+                    rel={item.external ? "noreferrer" : undefined}
                     onClick={item.id === "assistant" ? openAssistantInCurrentEditor : undefined}
                   >
                     <Icon size={16} />
