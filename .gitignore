@@ -42,3 +42,4 @@ apps/server/wrangler.jsonc
 Thumbs.db
 *.log
 .superpowers/
+.local/private/
