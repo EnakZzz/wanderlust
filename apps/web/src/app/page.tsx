@@ -1,18 +1,17 @@
 import { Plane } from "lucide-react";
 import { productBrand } from "@wanderlust/domain";
-import { MotionSection } from "@/components/MotionShell";
 import { TravelImage } from "@/components/TravelImage";
 import { Button } from "@/components/ui/button";
 import { heroVisuals } from "@/lib/travel-visuals";
-import { ProductNav } from "./ProductNav";
-import { RoutebookEditor } from "./RoutebookEditor";
+import { HomeEditorShell } from "./HomeEditorShell";
+import { HomeNav } from "./HomeNav";
 
 export default function HomePage() {
   return (
     <main>
-      <MotionSection className="hero-shell" transition={{ duration: 0.58, ease: [0.22, 1, 0.36, 1] }}>
-        <TravelImage src={heroVisuals.home} alt="" className="hero-image" overlayClassName="hero-image-overlay" sizes="100vw" priority />
-        <ProductNav tone="dark" active="home" />
+      <section className="hero-shell">
+        <TravelImage src={heroVisuals.home} alt="" className="hero-image" overlayClassName="hero-image-overlay" sizes="100vw" />
+        <HomeNav />
         <div className="hero-copy">
           <p className="eyebrow">离线优先的旅行路书</p>
           <h1>{productBrand.name}</h1>
@@ -28,9 +27,9 @@ export default function HomePage() {
             </Button>
           </div>
         </div>
-      </MotionSection>
+      </section>
 
-      <RoutebookEditor />
+      <HomeEditorShell />
     </main>
   );
 }

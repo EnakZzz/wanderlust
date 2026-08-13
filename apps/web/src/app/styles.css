@@ -881,6 +881,7 @@ label span {
 }
 .dashboard-discovery-grid a {
   overflow: hidden;
+  background: transparent;
   background-position: center;
   background-size: cover;
   color: #fff8ee;
@@ -892,22 +893,28 @@ label span {
   z-index: 0;
 }
 .dashboard-discovery-image-overlay {
-  background: linear-gradient(180deg, rgba(29,27,24,0.08), rgba(29,27,24,0.68));
+  background:
+    linear-gradient(180deg, rgba(29, 27, 24, 0.08) 0%, rgba(29, 27, 24, 0.26) 42%, rgba(29, 27, 24, 0.54) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
 }
 .dashboard-discovery-grid a > :not(.dashboard-discovery-image) {
   position: relative;
   z-index: 1;
 }
+.dashboard-discovery-grid a > :not(.dashboard-discovery-image):not(.dashboard-discovery-image-overlay) {
+  position: relative;
+  z-index: 2;
+}
 .dashboard-discovery-grid a span {
-  background: rgba(255, 248, 238, 0.16);
-  color: #fff8ee;
-  backdrop-filter: blur(12px);
+  background: rgba(255, 248, 238, 0.14);
+  color: #fffaf1;
+  backdrop-filter: blur(6px);
 }
 .dashboard-discovery-grid a strong {
-  color: #fff8ee;
+  color: #fffaf1;
 }
 .dashboard-discovery-grid a small {
-  color: rgba(255, 248, 238, 0.86);
+  color: rgba(255, 248, 238, 0.92);
 }
 
 .journeys-heading {
